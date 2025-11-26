@@ -1,0 +1,62 @@
+<main class="app-container">
+  <header class="app-header">
+    <div class="header-content">
+      <h1>{{ title() }}</h1>
+      <nav class="main-nav">
+        <button
+          class="nav-btn ghost"
+          type="button"
+          routerLink="/dashboard"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+        >
+          Dashboard
+        </button>
+
+        <div class="dropdown" [class.open]="openMenu() === 'overall'">
+          <button class="nav-btn" type="button" (click)="toggleMenu('overall')">
+            Overall KPI
+            <span class="chevron">▾</span>
+          </button>
+          <ul class="dropdown-menu" [class.visible]="openMenu() === 'overall'">
+            <li *ngFor="let option of overallOptions">
+              <button type="button" (click)="handleSelection(option.path)">{{ option.label }}</button>
+            </li>
+          </ul>
+        </div>
+
+        <div class="dropdown" [class.open]="openMenu() === 'platform'">
+          <button class="nav-btn" type="button" (click)="toggleMenu('platform')">
+            Platform KPI
+            <span class="chevron">▾</span>
+          </button>
+          <ul class="dropdown-menu" [class.visible]="openMenu() === 'platform'">
+            <li *ngFor="let option of platformOptions">
+              <button type="button" (click)="handleSelection(option.path)">{{ option.label }}</button>
+            </li>
+          </ul>
+        </div>
+
+        <div class="dropdown" [class.open]="openMenu() === 'admin'">
+          <button class="nav-btn" type="button" (click)="toggleMenu('admin')">
+            Admin
+            <span class="chevron">▾</span>
+          </button>
+          <ul class="dropdown-menu" [class.visible]="openMenu() === 'admin'">
+            <li *ngFor="let option of adminOptions">
+              <button type="button" (click)="handleSelection(option.path)">{{ option.label }}</button>
+            </li>
+          </ul>
+        </div>
+
+        <button class="nav-btn logout" type="button" (click)="logout()">
+          Logout
+        </button>
+      </nav>
+    </div>
+  </header>
+  
+  <section class="main-content">
+    <router-outlet></router-outlet>
+  </section>
+</main>
