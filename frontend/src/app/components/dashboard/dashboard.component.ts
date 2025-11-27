@@ -120,61 +120,56 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   private async loadRegionData(): Promise<void> {
-    try {
-      // Mock data for demonstration - replace with actual API call
-      const items: any[] = [
-        // Add your mock data here for testing
-        // { region: 'Metro', networkEngineer: 'Engineer A' },
-        // { region: 'Region 1', networkEngineer: 'Engineer B' },
-      ];
-      
-      const byRegion = new Map<string, Set<string>>();
-      items.forEach(({ region, networkEngineer }) => {
-        const code = this.normalizeEngineer(networkEngineer);
-        if (!byRegion.has(region)) byRegion.set(region, new Set());
-        byRegion.get(region)!.add(code);
-      });
-
-      this.regions = Array.from(byRegion.entries())
-        .sort(([a], [b]) => this.sortRegionNames(a, b))
-        .map(([title, set]) => ({ title, meters: Array.from(set) }));
-    } catch (e) {
-      console.error('Failed to load region table', e);
-      this.regions = [];
-    }
+    // Hardcoded regions to match React component exactly
+    this.regions = [
+      { title: 'Metro', meters: ['NW/WPC', 'NW/WPNE', 'NW/WPSW', 'NW/WPSE', 'NW/WPE'] },
+      { title: 'Region1', meters: ['NW/WPN', 'NW/NWPE', 'NW/NWPW', 'NW/CPN', 'NW/CPS', 'NW/NCP'] },
+      { title: 'Region2', meters: ['NW/UVA', 'NW/SAB', 'NW/SPE', 'NW/SPW', 'NW/WPS'] },
+      { title: 'Region3', meters: ['NW/EP', 'NW/NP-1', 'NW/NP-2'] },
+    ];
   }
 
   private initializeTotals(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
+    if (!isPlatformBrowser(this.platformId)) {
+      this.loading = false;
+      return;
+    }
 
-    let attempts = 0;
-    const maxAttempts = 20;
+    // Check immediately first
+    const ls = this.readRow12FromLocalStorage();
+    if (ls && Object.keys(ls).length) {
+      this.totals = ls;
+      this.loading = false;
+    } else {
+      // If no data, show dashboard with empty totals (will display 0.00%)
+      this.totals = {};
+      this.loading = false;
+    }
 
-    const tryLoad = () => {
-      const ls = this.readRow12FromLocalStorage();
-      if (ls && Object.keys(ls).length) {
-        this.totals = ls;
-        this.loading = false;
-      } else if (attempts < maxAttempts) {
-        attempts += 1;
-        setTimeout(tryLoad, 1000);
-      } else {
-        this.totals = {};
-        this.loading = false;
-      }
-    };
-
-    tryLoad();
-
-    // Set up storage event listener
+    // Set up storage event listener for future updates
     this.storageEventListener = (event: StorageEvent) => {
       if (event.key === 'row12Payload') {
         const map = this.readRow12FromLocalStorage();
-        if (map) this.totals = map;
+        if (map) {
+          this.totals = map;
+        }
       }
     };
 
     window.addEventListener('storage', this.storageEventListener);
+
+    // Also listen for same-tab localStorage changes (using a custom event or polling)
+    // For now, we'll check periodically if data becomes available
+    const checkInterval = setInterval(() => {
+      const currentData = this.readRow12FromLocalStorage();
+      if (currentData && Object.keys(currentData).length > 0 && Object.keys(this.totals).length === 0) {
+        this.totals = currentData;
+        clearInterval(checkInterval);
+      }
+    }, 2000);
+
+    // Clean up interval after 60 seconds
+    setTimeout(() => clearInterval(checkInterval), 60000);
   }
 
   valueForMeter(meter: string): number {
@@ -203,15 +198,18 @@ export class DashboardComponent implements OnInit, OnDestroy {
     const isMax = this.isMaxValue(meter, meters);
     
     if (isMax) {
-      return 'limegreen';
+      // 10% Accent - Green for good KPIs
+      return '#28A745';
     }
     
+    // 30% Secondary - SLT Blue with opacity
     const opacity = value / 100;
-    return `rgba(62, 152, 199, ${opacity})`;
+    return `rgba(0, 87, 166, ${opacity})`;
   }
 
   getMeterTextColor(meter: string, meters: string[]): string {
-    return this.isMaxValue(meter, meters) ? 'limegreen' : '#444';
+    // 10% Accent - Green for max values (good KPIs)
+    return this.isMaxValue(meter, meters) ? '#28A745' : '#000';
   }
 
   getMeterFontWeight(meter: string, meters: string[]): string {
@@ -221,9 +219,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
   getCircularProgressBackground(meter: string, meters: string[]): string {
     const value = this.valueForMeter(meter);
     const isMax = this.isMaxValue(meter, meters);
-    const color = isMax ? 'limegreen' : `rgba(62, 152, 199, ${value / 100})`;
+    const maxValue = 102; // Match React's maxValue
+    const normalizedValue = Math.min(value, maxValue);
+    // 10% Accent - Green for max (good KPIs), 30% Secondary - SLT Blue for others
+    const color = isMax ? '#28A745' : `rgba(0, 87, 166, ${normalizedValue / 100})`;
+    // 60% Primary - Light grey trail
+    const trailColor = '#E0E0E0';
     
-    return `conic-gradient(${color} 0% ${value}%, #eee ${value}% 100%)`;
+    return `conic-gradient(${color} 0% ${normalizedValue}%, ${trailColor} ${normalizedValue}% 100%)`;
+  }
+
+  getProgressTextColor(meter: string, meters: string[]): string {
+    // 10% Accent - Green for max values (good KPIs)
+    return this.isMaxValue(meter, meters) ? '#28A745' : '#000';
   }
 
   // Fix: Add Object reference for template

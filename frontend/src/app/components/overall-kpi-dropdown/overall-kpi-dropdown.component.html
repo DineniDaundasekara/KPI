@@ -1,0 +1,12 @@
+<div class="dropdown" [class.open]="isOpen">
+  <button class="nav-btn" type="button" (click)="onToggleMenu()">
+    Overall KPI
+    <span class="chevron">▾</span>
+  </button>
+  <ul class="dropdown-menu" [class.visible]="isOpen">
+    <li *ngFor="let option of options">
+      <button type="button" (click)="onSelection(option.path)">{{ option.label }}</button>
+    </li>
+  </ul>
+</div>
+
