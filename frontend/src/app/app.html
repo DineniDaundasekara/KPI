@@ -1,57 +1,42 @@
 <main class="app-container">
   <header class="app-header">
     <div class="header-content">
-      <h1>{{ title() }}</h1>
+      <div class="header-left">
+        <div class="logo-section">
+          <div class="logo">SLTMOBITEL</div>
+          <div class="logo-tagline">The Connection</div>
+        </div>
+        <app-header-title [title]="title()"></app-header-title>
+      </div>
       <nav class="main-nav">
-        <button
-          class="nav-btn ghost"
-          type="button"
-          routerLink="/dashboard"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-        >
-          Dashboard
-        </button>
+        <app-dashboard-button></app-dashboard-button>
+        
+        <app-overall-kpi-dropdown
+          [options]="overallOptions"
+          [isOpen]="openMenu() === 'overall'"
+          (toggleMenu)="toggleMenu('overall')"
+          (closeMenu)="closeMenus()"
+          (selection)="handleSelection($event)"
+        ></app-overall-kpi-dropdown>
 
-        <div class="dropdown" [class.open]="openMenu() === 'overall'">
-          <button class="nav-btn" type="button" (click)="toggleMenu('overall')">
-            Overall KPI
-            <span class="chevron">▾</span>
-          </button>
-          <ul class="dropdown-menu" [class.visible]="openMenu() === 'overall'">
-            <li *ngFor="let option of overallOptions">
-              <button type="button" (click)="handleSelection(option.path)">{{ option.label }}</button>
-            </li>
-          </ul>
-        </div>
+        <app-platform-kpi-dropdown
+          [options]="platformOptions"
+          [isOpen]="openMenu() === 'platform'"
+          (toggleMenu)="toggleMenu('platform')"
+          (closeMenu)="closeMenus()"
+          (selection)="handleSelection($event)"
+        ></app-platform-kpi-dropdown>
 
-        <div class="dropdown" [class.open]="openMenu() === 'platform'">
-          <button class="nav-btn" type="button" (click)="toggleMenu('platform')">
-            Platform KPI
-            <span class="chevron">▾</span>
-          </button>
-          <ul class="dropdown-menu" [class.visible]="openMenu() === 'platform'">
-            <li *ngFor="let option of platformOptions">
-              <button type="button" (click)="handleSelection(option.path)">{{ option.label }}</button>
-            </li>
-          </ul>
-        </div>
+        <app-admin-dropdown
+          [options]="adminOptions"
+          [isOpen]="openMenu() === 'admin'"
+          (toggleMenu)="toggleMenu('admin')"
+          (closeMenu)="closeMenus()"
+          (selection)="handleSelection($event)"
+        ></app-admin-dropdown>
 
-        <div class="dropdown" [class.open]="openMenu() === 'admin'">
-          <button class="nav-btn" type="button" (click)="toggleMenu('admin')">
-            Admin
-            <span class="chevron">▾</span>
-          </button>
-          <ul class="dropdown-menu" [class.visible]="openMenu() === 'admin'">
-            <li *ngFor="let option of adminOptions">
-              <button type="button" (click)="handleSelection(option.path)">{{ option.label }}</button>
-            </li>
-          </ul>
-        </div>
-
-        <button class="nav-btn logout" type="button" (click)="logout()">
-          Logout
-        </button>
+        <span class="welcome-text">Welcome, test</span>
+        <app-logout-button (logout)="logout()"></app-logout-button>
       </nav>
     </div>
   </header>
@@ -59,4 +44,10 @@
   <section class="main-content">
     <router-outlet></router-outlet>
   </section>
+  
+  <footer class="app-footer">
+    <div class="footer-content">
+      <p>© 2025 KPI Monitor Website| SOC and SM. All rights reserved.</p>
+    </div>
+  </footer>
 </main>

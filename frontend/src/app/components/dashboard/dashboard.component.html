@@ -1,7 +1,7 @@
 <div 
   class="dashboard-container"
   @fadeIn
-  *ngIf="!loading && Object.keys(totals).length > 0; else loadingOrEmpty"
+  *ngIf="!loading; else loadingOrEmpty"
 >
   <div class="final-tables-container">
     <div class="regions-container">
@@ -33,7 +33,10 @@
                 class="circular-progress" 
                 [style.background]="getCircularProgressBackground(meter, region.meters)"
               >
-                <span class="progress-value">{{ valueForMeter(meter).toFixed(2) }}%</span>
+                <span 
+                  class="progress-value"
+                  [style.color]="getProgressTextColor(meter, region.meters)"
+                >{{ valueForMeter(meter).toFixed(2) }}%</span>
               </div>
             </div>
             <p 
@@ -53,12 +56,5 @@
 <ng-template #loadingOrEmpty>
   <div class="loading-container">
     <div *ngIf="loading" class="loading">Loading…</div>
-    <div *ngIf="!loading && Object.keys(totals).length === 0" class="no-data">
-      <h2>Dashboard</h2>
-      <p>
-        No totals available yet. Ensure <code>FinalTables</code> publishes Row-12
-        to <code>localStorage</code> or provide an API at <code>/api/finaltable/row12</code>.
-      </p>
-    </div>
   </div>
 </ng-template>

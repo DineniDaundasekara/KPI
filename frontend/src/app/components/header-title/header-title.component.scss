@@ -1,0 +1,15 @@
+:host {
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+h1 {
+  margin: 0;
+  /* White text on blue header */
+  color: #FFFFFF;
+  font-size: 1.8rem;
+  font-weight: bold;
+  font-family: Arial, sans-serif;
+  white-space: nowrap;
+}
+
