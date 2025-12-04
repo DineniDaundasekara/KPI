@@ -3,12 +3,240 @@
     <h1>{{ pageTitle }}</h1>
     <p class="page-subtitle">Manage service fulfilment settings and configurations</p>
   </div>
+
   <div class="page-content">
-    <div class="content-placeholder">
-      <div class="placeholder-icon">⚙️</div>
-      <h2>Content Coming Soon</h2>
-      <p>This page will contain service fulfilment management tools and settings.</p>
+    <div class="dashboard-container">
+      <!-- KPI Statistics Cards -->
+      <div class="stats-container">
+        <div class="stat-card">
+          <div class="stat-icon">📊</div>
+          <div class="stat-content">
+            <h3>Active KPIs</h3>
+            <p class="stat-value">{{ activeKpis }}</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🎯</div>
+          <div class="stat-content">
+            <h3>Targets Met</h3>
+            <p class="stat-value">{{ targetsMet }}%</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">⚖️</div>
+          <div class="stat-content">
+            <h3>Avg Weightage</h3>
+            <p class="stat-value">{{ avgWeightage }}%</p>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">👥</div>
+          <div class="stat-content">
+            <h3>DGM Responsible</h3>
+            <p class="stat-value">{{ dgmCount }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Management Form -->
+      <div class="form-container">
+        <div class="form-header">
+          <h2>Service Fulfilment KPI Configuration</h2>
+          <p>Add or edit service fulfilment KPIs with details</p>
+          <button class="btn-add" (click)="addNewKpi()">
+            <span>+</span> Add New KPI
+          </button>
+        </div>
+
+        <form [formGroup]="kpiForm" (ngSubmit)="onSubmit()" class="kpi-form">
+          <!-- Form Row 1 -->
+          <div class="form-row">
+            <div class="form-group">
+              <label for="no">NO</label>
+              <input 
+                type="text" 
+                id="no" 
+                formControlName="no"
+                placeholder="Enter KPI number"
+                [class.invalid]="kpiForm.get('no')?.invalid && kpiForm.get('no')?.touched">
+              <div class="error-message" *ngIf="kpiForm.get('no')?.invalid && kpiForm.get('no')?.touched">
+                KPI number is required
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="kpi">KPI</label>
+              <input 
+                type="text" 
+                id="kpi" 
+                formControlName="kpi"
+                placeholder="Enter KPI name"
+                [class.invalid]="kpiForm.get('kpi')?.invalid && kpiForm.get('kpi')?.touched">
+              <div class="error-message" *ngIf="kpiForm.get('kpi')?.invalid && kpiForm.get('kpi')?.touched">
+                KPI name is required
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="target">Target</label>
+              <input 
+                type="text" 
+                id="target" 
+                formControlName="target"
+                placeholder="e.g., 95% or 24h"
+                [class.invalid]="kpiForm.get('target')?.invalid && kpiForm.get('target')?.touched">
+              <div class="error-message" *ngIf="kpiForm.get('target')?.invalid && kpiForm.get('target')?.touched">
+                Target is required
+              </div>
+            </div>
+          </div>
+
+          <!-- Form Row 2 -->
+          <div class="form-row">
+            <div class="form-group full-width">
+              <label for="calculation">Calculation</label>
+              <textarea 
+                id="calculation" 
+                formControlName="calculation"
+                rows="2"
+                placeholder="Describe how this KPI is calculated"
+                [class.invalid]="kpiForm.get('calculation')?.invalid && kpiForm.get('calculation')?.touched"></textarea>
+              <div class="error-message" *ngIf="kpiForm.get('calculation')?.invalid && kpiForm.get('calculation')?.touched">
+                Calculation method is required
+              </div>
+            </div>
+          </div>
+
+          <!-- Form Row 3 -->
+<div class="form-row">
+
+  <!-- Platform as text input -->
+  <div class="form-group">
+    <label for="platform">Platform</label>
+    <input 
+      type="text"
+      id="platform"
+      formControlName="platform"
+      placeholder="Enter platform (e.g., Web, Mobile, API)"
+      [class.invalid]="kpiForm.get('platform')?.invalid && kpiForm.get('platform')?.touched">
+    <div class="error-message" *ngIf="kpiForm.get('platform')?.invalid && kpiForm.get('platform')?.touched">
+      Platform is required
+    </div>
+  </div>
+
+  <!-- Responsible DGM as text input -->
+  <div class="form-group">
+    <label for="responsibleDgm">Responsible DGM</label>
+    <input 
+      type="text"
+      id="responsibleDgm"
+      formControlName="responsibleDgm"
+      placeholder="Enter responsible DGM name"
+      [class.invalid]="kpiForm.get('responsibleDgm')?.invalid && kpiForm.get('responsibleDgm')?.touched">
+    <div class="error-message" *ngIf="kpiForm.get('responsibleDgm')?.invalid && kpiForm.get('responsibleDgm')?.touched">
+      Responsible DGM is required
+    </div>
+  </div>
+
+  <!-- Weightage as number input -->
+  <div class="form-group">
+    <label for="weightage">Weightage (%)</label>
+    <input 
+      type="number" 
+      id="weightage" 
+      formControlName="weightage"
+      min="0" 
+      max="100"
+      placeholder="0-100"
+      [class.invalid]="kpiForm.get('weightage')?.invalid && kpiForm.get('weightage')?.touched">
+    <div class="error-message" *ngIf="kpiForm.get('weightage')?.invalid && kpiForm.get('weightage')?.touched">
+      Valid weightage (0-100) is required
+    </div>
+  </div>
+
+</div>
+
+
+          <!-- Form Row 4 -->
+          <div class="form-row">
+            <div class="form-group full-width">
+              <label for="definedOla">Defined OLA Details</label>
+              <textarea 
+                id="definedOla" 
+                formControlName="definedOla"
+                rows="3"
+                placeholder="Describe the Operational Level Agreement details"
+                [class.invalid]="kpiForm.get('definedOla')?.invalid && kpiForm.get('definedOla')?.touched"></textarea>
+              <div class="error-message" *ngIf="kpiForm.get('definedOla')?.invalid && kpiForm.get('definedOla')?.touched">
+                OLA details are required
+              </div>
+            </div>
+          </div>
+
+          <!-- Form Row 5 -->
+          <div class="form-row">
+            <div class="form-group full-width">
+              <label for="dataSources">Data Sources</label>
+              <textarea 
+                id="dataSources" 
+                formControlName="dataSources"
+                rows="3"
+                placeholder="List the data sources for this KPI"
+                [class.invalid]="kpiForm.get('dataSources')?.invalid && kpiForm.get('dataSources')?.touched"></textarea>
+              <div class="error-message" *ngIf="kpiForm.get('dataSources')?.invalid && kpiForm.get('dataSources')?.touched">
+                Data sources are required
+              </div>
+            </div>
+          </div>
+
+          <!-- Form Actions -->
+          <div class="form-actions">
+            <button type="button" class="btn-cancel" (click)="resetForm()">Reset</button>
+            <button type="submit" class="btn-submit" [disabled]="kpiForm.invalid">
+              {{ isEditing ? 'Update KPI' : 'Save KPI' }}
+            </button>
+          </div>
+        </form>
+
+        <!-- KPI List Table -->
+        <div class="kpi-list-container" *ngIf="kpiList.length > 0">
+          <h3>Configured KPIs</h3>
+          <div class="table-responsive">
+            <table class="kpi-table">
+              <thead>
+                <tr>
+                  <th>NO</th>
+                  <th>KPI</th>
+                  <th>Target</th>
+                  <th>Platform</th>
+                  <th>Responsible DGM</th>
+                  <th>Weightage</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let kpi of kpiList; let i = index">
+                  <td>{{ kpi.no }}</td>
+                  <td>{{ kpi.kpi }}</td>
+                  <td>{{ kpi.target }}</td>
+                  <td><span class="platform-badge">{{ kpi.platform }}</span></td>
+                  <td>{{ kpi.responsibleDgm }}</td>
+                  <td>
+                    <div class="weightage-display">
+                      <div class="weightage-bar" [style.width.%]="kpi.weightage"></div>
+                      <span>{{ kpi.weightage }}%</span>
+                    </div>
+                  </td>
+                  <td class="action-buttons">
+                    <button class="btn-edit" (click)="editKpi(i)">Edit</button>
+                    <button class="btn-delete" (click)="deleteKpi(i)">Delete</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
-
