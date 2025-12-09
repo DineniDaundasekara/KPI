@@ -1,6 +1,110 @@
 :host {
-  display: inline-block;
+  display: inline-flex;
   flex-shrink: 0;
   white-space: nowrap;
 }
 
+/* Wrapper */
+.dropdown {
+  position: relative;
+}
+
+/* Let your global .nav-btn styles handle base button look */
+/* If you want “Admin” to look like other nav buttons, just keep class="nav-btn" as you already did */
+
+/* Dropdown menu */
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;                  /* aligns to right edge of button; use left:0 if you prefer */
+  min-width: 220px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 0.4rem 0;
+  margin: 0;
+  list-style: none;          /* ✅ remove bullets */
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.18),
+              0 2px 8px rgba(15, 23, 42, 0.12);
+  border: 1px solid rgba(15, 23, 42, 0.06);
+  z-index: 200;
+
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease,
+    visibility 0.2s ease;
+}
+
+/* When open */
+.dropdown-menu.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+/* Reset list items */
+.dropdown-menu li {
+  margin: 0;
+  padding: 0;
+}
+
+/* Menu option buttons */
+.dropdown-menu li button {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0.6rem 1rem;
+  font-size: 0.9rem;
+  text-align: left;
+  color: #111827;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  transition: background 0.15s ease, padding-left 0.15s ease, color 0.15s ease;
+}
+
+/* Small dot bullet-style indicator (optional) */
+.dropdown-menu li button::before {
+  content: '•';
+  font-size: 0.9rem;
+  color: #0057A6;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+/* Hover state */
+.dropdown-menu li button:hover,
+.dropdown-menu li button:focus-visible {
+  background: rgba(0, 87, 166, 0.08);
+  padding-left: 1.25rem;
+  color: #0057A6;
+}
+
+.dropdown-menu li button:hover::before,
+.dropdown-menu li button:focus-visible::before {
+  opacity: 1;
+}
+
+/* Chevron animation */
+.chevron {
+  font-size: 0.75rem;
+  opacity: 0.85;
+  margin-left: 0.35rem;
+  transition: transform 0.2s ease;
+}
+
+.dropdown.open .chevron {
+  transform: rotate(180deg);
+}
+
+@import '../../styles/nav-buttons';
+
+/* ensure Admin trigger uses same nav button tokens */
+.nav-btn {
+  @include nav-btn();
+}
