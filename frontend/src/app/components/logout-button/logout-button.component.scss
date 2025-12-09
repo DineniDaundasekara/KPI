@@ -4,3 +4,9 @@
   white-space: nowrap;
 }
 
+@import '../../styles/nav-buttons';
+
+button.nav-btn.logout {
+  @include nav-btn-danger();
+}
+

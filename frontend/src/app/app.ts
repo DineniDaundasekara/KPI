@@ -26,7 +26,7 @@ import { LogoutButtonComponent } from './components/logout-button/logout-button.
   styleUrls: ['./app.css']
 })
 export class App {
-  protected readonly title = signal('Network KPI Monitoring');
+  protected readonly title = signal('Network Key Performance Indicator (KPI)');
   protected readonly openMenu = signal<string | null>(null);
   protected readonly overallOptions = overallNavOptions;
   protected readonly platformOptions = platformNavOptions;
