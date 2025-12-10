@@ -1,14 +1,199 @@
-<div class="page-container">
-  <div class="page-header">
-    <h1>{{ pageTitle }}</h1>
-    <p class="page-subtitle">View previous month KPI metrics and performance indicators</p>
-  </div>
-  <div class="page-content">
-    <div class="content-placeholder">
-      <div class="placeholder-icon">📈</div>
-      <h2>Content Coming Soon</h2>
-      <p>This page will display previous month KPI data, charts, and analytics.</p>
+<div class="final-tables-container">
+  <!-- PREVIOUS MONTHS HEADER (Region-management style) -->
+  <header class="previous-month-header">
+    <div class="header-left">
+      <p class="eyebrow">OVERALL KPI / PREVIOUS MONTHS</p>
+      <h1>
+        Previous Months KPI
+        <span *ngIf="selectedMonth && selectedYear">
+          – {{ selectedMonth }} {{ selectedYear }}
+        </span>
+      </h1>
+      <p class="subtitle">
+        View and compare KPI metrics for past months, region performance and weighted scores.
+      </p>
+    </div>
+
+    <div class="header-right">
+      <!-- Period selector (Year / Month) -->
+      <div class="period-selectors">
+        <label>
+          <span>Year</span>
+          <select
+            [(ngModel)]="selectedYear"
+            (change)="onYearChange()"
+          >
+            <option *ngFor="let y of availableYears" [ngValue]="y">
+              {{ y }}
+            </option>
+          </select>
+        </label>
+
+        <label>
+          <span>Month</span>
+          <select
+            [(ngModel)]="selectedMonth"
+            (change)="onMonthChange()"
+          >
+            <option *ngFor="let m of availableMonths" [ngValue]="m">
+              {{ m }}
+            </option>
+          </select>
+        </label>
+      </div>
+
+      <span class="count-pill">
+        {{ metroRegions.length || 0 }} Metro NEs
+      </span>
+
+      <button
+        class="primary-btn"
+        type="button"
+        (click)="exportToExcel()"
+      >
+        Export to Excel
+      </button>
+    </div>
+  </header>
+
+  <!-- Side-by-side tables (left fixed info, right KPI by Metro) -->
+  <div class="side-by-side-tables">
+    <!-- LEFT: KPI definition table -->
+    <div class="kpi-table-container">
+      <table class="kpi-table">
+        <thead>
+          <!-- R-GM / P-DGM / NW EE/RTOM AREA header rows -->
+          <tr class="colSpan-header" #leftRowRef>
+            <th colspan="7">R-GM</th>
+          </tr>
+          <tr class="colSpan-header" #leftRowRef>
+            <th colspan="7">P-DGM</th>
+          </tr>
+          <tr class="colSpan-header" #leftRowRef>
+            <th colspan="7">NW EE/RTOM AREA</th>
+          </tr>
+
+          <!-- Standard KPI headings -->
+          <tr #leftRowRef>
+            <th>#</th>
+            <th>Perspectives</th>
+            <th>Strategic Objectives (KRA)</th>
+            <th>Key Performance Indicators (KPI)</th>
+            <th>Unit</th>
+            <th>Description of KPI</th>
+            <th>Weightage</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <!-- Static left-side rows -->
+          <tr *ngFor="let row of kpiRows" #leftRowRef>
+            <td>{{ row.rowNumber }}</td>
+            <td>{{ row.perspectives }}</td>
+            <td>{{ row.strategicObjectives }}</td>
+            <td class="kpi-name-cell">
+              <b>{{ row.kpi }}</b>
+            </td>
+            <td>{{ row.unit }}</td>
+            <td>{{ row.description }}</td>
+            <td>{{ row.weightage }}%</td>
+          </tr>
+
+          <!-- Sum of weightage row -->
+          <tr class="summary-row" #leftRowRef>
+            <td colspan="6" class="text-right"><b>Weightage</b></td>
+            <td class="text-center">
+              <b>{{ weightageSum | number : '1.2-2' }}%</b>
+            </td>
+          </tr>
+
+          <!-- Total weightage = 100% row -->
+          <tr class="summary-row total-row" #leftRowRef>
+            <td colspan="6" class="text-right"><b>Total Weightage</b></td>
+            <td class="text-center"><b>100%</b></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- RIGHT: Metro performance table -->
+    <div class="final-table-container">
+      <table class="final-distribution-table">
+        <thead>
+          <!-- Row 1: Metro -->
+          <tr #rightRowRef>
+            <th [attr.colspan]="metroRegions.length * 2">
+              Metro
+            </th>
+          </tr>
+
+          <!-- Row 2: Metro 1 / Metro 2 (provinces) -->
+          <tr #rightRowRef>
+            <ng-container *ngFor="let group of metroProvinceGroups">
+              <th [attr.colspan]="group.engineers.length * 2">
+                {{ group.province }}
+              </th>
+            </ng-container>
+          </tr>
+
+          <!-- Row 3: Network engineer names -->
+          <tr class="colSpan-header" #rightRowRef>
+            <ng-container *ngFor="let group of metroProvinceGroups">
+              <th *ngFor="let eng of group.engineers" colspan="2">
+                {{ eng.networkEngineer }}
+              </th>
+            </ng-container>
+          </tr>
+
+          <!-- Row 4: Achieved / Achieved with Weightage -->
+          <tr #rightRowRef>
+            <ng-container *ngFor="let _ of metroRegions">
+              <th class="achieved-header">Achieved KPI</th>
+              <th class="weighted-header">Achieved KPI with Weightage</th>
+            </ng-container>
+          </tr>
+        </thead>
+
+        <tbody>
+          <!-- KPI data rows -->
+          <tr *ngFor="let row of kpiRows" #rightRowRef>
+            <ng-container *ngFor="let metric of row.metrics">
+              <td class="text-center achieved-cell">
+                {{ metric.achieved | number : '1.2-2' }}%
+              </td>
+              <td class="text-center weighted-cell">
+                {{ metric.weighted | number : '1.2-2' }}%
+              </td>
+            </ng-container>
+          </tr>
+
+          <!-- Σ weighted per Metro column -->
+          <tr class="summary-row" #rightRowRef>
+            <ng-container *ngFor="let total of totalWeightedByRegion">
+              <td></td>
+              <td class="text-center weighted-cell">
+                <b>{{ total | number : '1.2-2' }}%</b>
+              </td>
+            </ng-container>
+          </tr>
+
+          <!-- Final row: normalized totals per Metro column -->
+          <tr class="summary-row total-row" #rightRowRef>
+            <ng-container *ngFor="let norm of totalWeightedNormalized">
+              <td></td>
+              <td class="text-center weighted-cell">
+                <b>{{ norm | number : '1.2-2' }}%</b>
+              </td>
+            </ng-container>
+          </tr>
+        </tbody>
+      </table>
     </div>
   </div>
-</div>
 
+  <!-- Simple loader / error display -->
+  <div *ngIf="loading" class="final-tables-spinner"></div>
+  <div *ngIf="error" class="error-message">
+    {{ error }}
+  </div>
+</div>
