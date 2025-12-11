@@ -1,14 +1,263 @@
 <div class="page-container">
   <div class="page-header">
-    <h1>{{ pageTitle }}</h1>
-    <p class="page-subtitle">Register and manage system users</p>
+    <div>
+      <h1>{{ pageTitle }}</h1>
+      <p class="page-subtitle">Register and manage system users</p>
+    </div>
+    <div class="page-header-meta">
+      <span class="badge bg-primary user-count-pill">
+        {{ users.length }} user{{ users.length !== 1 ? 's' : '' }}
+      </span>
+    </div>
   </div>
-  <div class="page-content">
-    <div class="content-placeholder">
-      <div class="placeholder-icon">👤</div>
-      <h2>Content Coming Soon</h2>
-      <p>This page will contain user registration forms and management tools.</p>
+
+  <div class="row g-4">
+    <!-- Form Column -->
+    <div class="col-lg-6">
+      <div #formCard class="card shadow-sm border-0 form-card" [class.card-editing]="editingUser">
+        <div class="card-body p-4">
+          <form (submit)="handleSubmit($event)" class="needs-validation" novalidate>
+            <h3 class="card-title mb-4 text-primary">
+              {{ editingUser ? 'Edit User' : 'Create User' }}
+            </h3>
+
+            <div *ngIf="editingUser" class="editing-banner mb-4">
+              <i class="bi bi-pencil-square me-2"></i>
+              Editing {{ editingUser.name }} ({{ editingUser.username }})
+            </div>
+
+            <!-- Name Input -->
+            <div class="mb-3">
+              <label for="name" class="form-label fw-semibold">Name</label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                class="form-control"
+                [(ngModel)]="formData.name"
+                #nameField
+                placeholder="Enter full name"
+                required
+              />
+            </div>
+
+            <!-- Service Number Input -->
+            <div class="mb-3">
+              <label for="username" class="form-label fw-semibold">Service Number</label>
+              <input
+                type="text"
+                id="username"
+                name="username"
+                class="form-control"
+                [(ngModel)]="formData.username"
+                placeholder="Enter service number"
+                required
+              />
+            </div>
+
+            <!-- Assign Pages Section -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold mb-3">Assign Pages</label>
+              <div class="row g-2">
+                <div *ngFor="let page of availablePages" class="col-md-6">
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      [id]="'page-' + page"
+                      [checked]="formData.pages.includes(page)"
+                      (change)="handlePageChange(page)"
+                    />
+                    <label class="form-check-label" [for]="'page-' + page">
+                      {{ page }}
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- User Role Section -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold mb-3">User Role</label>
+              <div class="d-flex gap-4">
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="role"
+                    id="role-user"
+                    value="user"
+                    [(ngModel)]="formData.role"
+                  />
+                  <label class="form-check-label" for="role-user">
+                    User (Region)
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="role"
+                    id="role-padmin"
+                    value="padmin"
+                    [(ngModel)]="formData.role"
+                  />
+                  <label class="form-check-label" for="role-padmin">
+                    Platform Admin
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- Messages -->
+            <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
+              <i class="bi bi-exclamation-triangle me-2"></i>
+              {{ error }}
+              <button type="button" class="btn-close" (click)="error = ''"></button>
+            </div>
+
+            <div *ngIf="success" class="alert alert-success alert-dismissible fade show" role="alert">
+              <i class="bi bi-check-circle me-2"></i>
+              {{ success }}
+              <button type="button" class="btn-close" (click)="success = ''"></button>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary btn-lg">
+                <i class="bi" [ngClass]="editingUser ? 'bi-check-lg' : 'bi-person-plus'"></i>
+                {{ editingUser ? 'Update User' : 'Create User' }}
+              </button>
+              
+              <button *ngIf="editingUser"
+                type="button"
+                (click)="cancelEdit()"
+                class="btn btn-outline-secondary btn-lg">
+                <i class="bi bi-x-circle me-1"></i>Cancel
+              </button>
+            </div>
+            
+            <!-- Quick Form Fill for Testing -->
+            <div class="mt-4 pt-3 border-top">
+              <small class="text-muted d-block mb-2">Quick Test Data:</small>
+              <div class="d-flex flex-wrap gap-2">
+                <button 
+                  type="button" 
+                  class="btn btn-outline-info btn-sm"
+                  (click)="fillBasicTestData()">
+                  Fill Basic
+                </button>
+                <button 
+                  type="button" 
+                  class="btn btn-outline-info btn-sm"
+                  (click)="selectAllPages()">
+                  Select All Pages
+                </button>
+                <button 
+                  type="button" 
+                  class="btn btn-outline-info btn-sm"
+                  (click)="clearPages()">
+                  Clear Pages
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- User List Column -->
+    <div class="col-lg-6">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body p-4">
+          <div class="d-flex justify-content-between align-items-center mb-4">
+            <h3 class="card-title text-primary mb-0">User List</h3>
+          </div>
+          
+          <div *ngIf="users.length === 0" class="text-center py-5">
+            <div class="text-muted mb-3">
+              <i class="bi bi-people fs-1 opacity-50"></i>
+            </div>
+            <p class="text-muted">No users found. Create your first user.</p>
+            <button 
+              type="button" 
+              class="btn btn-outline-primary"
+              (click)="addDummyUser()">
+              <i class="bi bi-plus-circle me-1"></i>Add Test User
+            </button>
+          </div>
+
+          <div class="user-list" *ngIf="users.length > 0">
+            <div *ngFor="let user of users" class="user-item card border mb-3" [class.editing]="editingUser?.id === user.id">
+              <div class="card-body">
+                <div class="row align-items-center">
+                  <div class="col-md-8">
+                    <div class="user-heading mb-2">
+                      <i class="bi bi-person"></i>
+                      <span class="user-name">{{ user.name }}</span>
+                      <span *ngIf="editingUser?.id === user.id" class="badge bg-warning text-dark ms-2">
+                        Editing
+                      </span>
+                    </div>
+                    <p class="card-text mb-1">
+                      <small class="text-muted">
+                        <i class="bi bi-card-text me-1"></i>
+                        Service No: {{ user.username }}
+                      </small>
+                    </p>
+                    <p class="card-text mb-1">
+                      <small class="text-muted">
+                        <i class="bi bi-shield me-1"></i>
+                        Role: 
+                        <span class="badge" 
+                              [ngClass]="user.role === 'padmin' ? 'bg-info text-dark' : 'bg-light text-dark border'">
+                          {{ user.role === 'user' ? 'User (Region)' : 'Platform Admin' }}
+                        </span>
+                      </small>
+                    </p>
+                    <div class="mt-2">
+                      <small class="text-muted d-block mb-1">
+                        <i class="bi bi-file-text me-1"></i>
+                        Assigned Pages:
+                      </small>
+                      <div class="d-flex flex-wrap gap-1">
+                        <span *ngFor="let page of user.pages" 
+                              class="badge bg-light text-dark border">
+                          {{ page }}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-4 text-end mt-3 mt-md-0">
+                    <div class="d-flex flex-column gap-2">
+                      <button
+                        (click)="handleEdit(user)"
+                        class="btn btn-warning btn-sm"
+                        [disabled]="editingUser?.id === user.id">
+                        <i class="bi bi-pencil me-1"></i>
+                        {{ editingUser?.id === user.id ? 'Editing...' : 'Edit' }}
+                      </button>
+                      <button
+                        (click)="handleDelete(user.id)"
+                        class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-trash me-1"></i>Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Pagination/Info -->
+          <div class="mt-4 pt-3 border-top text-center">
+            <small class="text-muted">
+              <i class="bi bi-database me-1"></i>
+              Using dummy data. Replace HTTP calls with real backend API later.
+            </small>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
-
