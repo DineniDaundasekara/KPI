@@ -2,13 +2,254 @@
   <div class="page-header">
     <h1>{{ pageTitle }}</h1>
     <p class="page-subtitle">Monitor service fulfilment metrics and performance</p>
+    
+    <div class="mt-3">
+      <small class="text-muted">
+        <i class="bi bi-info-circle me-1"></i>
+        {{ data.length }} KPIs loaded • 
+        <span [class.text-success]="isEditingAllowed" [class.text-warning]="!isEditingAllowed">
+          <i class="bi" [ngClass]="isEditingAllowed ? 'bi-check-circle' : 'bi-exclamation-circle'"></i>
+          {{ isEditingAllowed ? 'Edit mode enabled (Platform Admin)' : 'View only mode (User)' }}
+        </span>
+      </small>
+    </div>
   </div>
-  <div class="page-content">
-    <div class="content-placeholder">
-      <div class="placeholder-icon">✅</div>
-      <h2>Content Coming Soon</h2>
-      <p>This page will display service fulfilment data, metrics, and analytics.</p>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loader text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="text-muted mt-3">Loading service fulfilment data...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error-message alert alert-danger text-center">
+    {{ error }}
+    <button type="button" class="btn btn-outline-danger btn-sm ms-3" (click)="loadData()">
+      Retry
+    </button>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!loading && !error">
+    <!-- Filter Form (styled like React version) -->
+    <form (submit)="$event.preventDefault()" class="filters-form mb-4">
+      <div class="row g-3">
+        <!-- R-GM Dropdown -->
+        <div class="col-md-3">
+          <label for="dropdown1" class="form-label">R-GM:</label>
+          <select
+            id="dropdown1"
+            class="form-select"
+            [(ngModel)]="formValues.dropdown1"
+            name="dropdown1"
+            (change)="onDropdownChange('dropdown1', $any($event.target)?.value || '')">
+            <option value="">Select an option</option>
+            <option *ngFor="let region of getUniqueRegions()" [value]="region">
+              {{ region }}
+            </option>
+          </select>
+        </div>
+
+        <!-- P-DGM Dropdown -->
+        <div class="col-md-3">
+          <label for="dropdown2" class="form-label">P-DGM:</label>
+          <select
+            id="dropdown2"
+            class="form-select"
+            [(ngModel)]="formValues.dropdown2"
+            name="dropdown2"
+            [disabled]="!formValues.dropdown1"
+            (change)="onDropdownChange('dropdown2', $any($event.target)?.value || '')">
+            <option value="">Select an option</option>
+            <option *ngFor="let province of dropdown2Options" [value]="province">
+              {{ province }}
+            </option>
+          </select>
+        </div>
+
+        <!-- NW EE Dropdown -->
+        <div class="col-md-3">
+          <label for="dropdown3" class="form-label">NW EE:</label>
+          <select
+            id="dropdown3"
+            class="form-select"
+            [(ngModel)]="formValues.dropdown3"
+            name="dropdown3"
+            [disabled]="!formValues.dropdown2"
+            (change)="onDropdownChange('dropdown3', $any($event.target)?.value || '')">
+            <option value="">Select an option</option>
+            <option *ngFor="let engineer of dropdown3Options" [value]="engineer">
+              {{ engineer }}
+            </option>
+          </select>
+        </div>
+
+        <!-- RTOM AREA Dropdown -->
+        <div class="col-md-3">
+          <label for="dropdown4" class="form-label">RTOM AREA:</label>
+          <select
+            id="dropdown4"
+            class="form-select"
+            [(ngModel)]="formValues.dropdown4"
+            name="dropdown4"
+            [disabled]="!formValues.dropdown3"
+            (change)="onDropdownChange('dropdown4', $any($event.target)?.value || '')">
+            <option value="">Select an option</option>
+            <option *ngFor="let area of dropdown4Options" [value]="area">
+              {{ optionMapping[area] || area }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </form>
+
+    <!-- Selected Filters Summary -->
+    <div class="selected-filters mb-4">
+      <div class="filter-chip">
+        <span class="filter-label">R-GM:</span>
+        <span class="filter-value">{{ formValues.dropdown1 || 'All Regions' }}</span>
+      </div>
+      <div class="filter-chip">
+        <span class="filter-label">P-DGM:</span>
+        <span class="filter-value">{{ formValues.dropdown2 || 'All P-DGM' }}</span>
+      </div>
+      <div class="filter-chip">
+        <span class="filter-label">NW EE:</span>
+        <span class="filter-value">{{ formValues.dropdown3 || 'All Engineers' }}</span>
+      </div>
+      <div class="filter-chip">
+        <span class="filter-label">RTOM AREA:</span>
+        <span class="filter-value">
+          {{ formValues.dropdown4 ? (optionMapping[formValues.dropdown4] || formValues.dropdown4) : 'All Areas' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Main Table -->
+    <div class="card shadow-sm border-0">
+      <div class="card-body p-0">
+        <div class="card-header bg-primary text-white">
+          <h5 class="mb-0">
+            <i class="bi bi-table me-2"></i>
+            KPI (Enterprise/ SME and Whole Sales Service Delivery - Fiber)
+          </h5>
+        </div>
+        
+        <div class="table-responsive">
+          <table class="table table-hover table-bordered mb-0 data-table">
+            <thead class="table-dark">
+              <tr>
+                <th *ngFor="let col of getColumnsToRender()" 
+                    [ngClass]="{'non-editable': nonEditableColumns.includes(col)}">
+                  {{ optionMapping[col] || headerMapping[col] || col }}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of data; let i = index">
+                <td *ngFor="let col of getColumnsToRender()">
+                  <div *ngIf="editingCell.rowId === getRowId(item) && editingCell.key === col && !nonEditableColumns.includes(col)"
+                       class="d-flex align-items-center gap-2">
+                    <input 
+                      type="text"
+                      class="form-control form-control-sm"
+                      [value]="getCellValue(item, col)"
+                      (input)="handleFieldChange($event, getRowId(item), col)"
+                      autofocus
+                      style="width: 80px;"
+                    >
+                    <button 
+                      class="btn btn-success btn-sm table-button"
+                      (click)="saveEdit(item, col)">
+                      Done
+                    </button>
+                    <button 
+                      class="btn btn-secondary btn-sm table-button"
+                      (click)="cancelEdit()">
+                      Cancel
+                    </button>
+                  </div>
+                  
+                  <div *ngIf="!(editingCell.rowId === getRowId(item) && editingCell.key === col)"
+                       class="d-flex justify-content-between align-items-center">
+                    <span [class.text-muted]="!getCellValue(item, col)">
+                      {{ nonEditableColumns.includes(col) 
+                         ? (getCellValue(item, col) || '-') 
+                         : formatPercent(getCellValue(item, col)) }}
+                    </span>
+                    
+                    <button *ngIf="!nonEditableColumns.includes(col) && isEditingAllowed"
+                            class="btn btn-outline-warning btn-sm table-button"
+                            (click)="startEdit(item, col)">
+                      Edit
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div *ngIf="data.length === 0" class="text-center py-5">
+          <div class="text-muted mb-3">
+            <i class="bi bi-table fs-1 opacity-50"></i>
+          </div>
+          <p class="text-muted">No KPI data found. Try changing filters.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="mt-4 text-center">
+      <button 
+        type="button" 
+        class="btn btn-primary me-3"
+        (click)="saveAllChanges()"
+        [disabled]="!isEditingAllowed || loading">
+        <i class="bi bi-save me-1"></i>Save All Changes
+      </button>
+      
+      <button 
+        type="button" 
+        class="btn btn-success"
+        (click)="generateExcelReport()"
+        [disabled]="loading">
+        <i class="bi bi-file-earmark-excel me-1"></i>Generate Excel Report
+      </button>
+    </div>
+
+    <!-- Information Panel -->
+    <div class="card border-info mt-4">
+      <div class="card-header bg-info text-white">
+        <i class="bi bi-info-circle me-2"></i>Information
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h6><i class="bi bi-shield-check me-2"></i>Permissions:</h6>
+            <ul class="mb-0">
+              <li>Platform Admin (padmin): Can edit all KPI values</li>
+              <li>User: View only mode</li>
+            </ul>
+          </div>
+          <div class="col-md-6">
+            <h6><i class="bi bi-calendar-check me-2"></i>Last Updated:</h6>
+            <ul class="mb-0">
+              <li *ngFor="let item of data.slice(0, 3)">
+                KPI {{item.no}}: {{getLastUpdated(item)}}
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="mt-3">
+          <small class="text-muted">
+            <i class="bi bi-database me-1"></i>
+            Showing {{ data.length }} KPIs with {{ getAreaKeys().length }} different areas
+          </small>
+        </div>
+      </div>
     </div>
   </div>
 </div>
-
