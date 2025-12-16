@@ -1,24 +1,35 @@
+using backend.Data;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
+// Add services
 builder.Services.AddControllers();
-
-// Swagger / OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// Database
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
+);
+
+// CORS for Angular
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAngular",
+        policy => policy.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod());
+});
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+app.UseCors("AllowAngular");
+
+// Dev tools
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
 
 app.MapControllers();
 
