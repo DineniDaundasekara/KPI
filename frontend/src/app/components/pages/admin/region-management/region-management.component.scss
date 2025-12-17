@@ -339,6 +339,7 @@
       color: #1f2937;
       border-bottom: 1px solid #e5e7eb;
       cursor: pointer;
+      -webkit-user-select: none;
       user-select: none;
       white-space: nowrap;
     }
