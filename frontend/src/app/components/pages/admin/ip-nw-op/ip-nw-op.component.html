@@ -2,13 +2,155 @@
   <div class="page-header">
     <h1>{{ pageTitle }}</h1>
     <p class="page-subtitle">Manage IP Network Operations settings</p>
+
+    <div class="meta-line">
+      <small>
+        {{ data.length }} records •
+        <span class="meta-badge" [class.editing]="editingId">
+          {{ editingId ? 'Editing mode' : 'Add mode' }}
+        </span>
+      </small>
+    </div>
   </div>
-  <div class="page-content">
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="page-content">
     <div class="content-placeholder">
-      <div class="placeholder-icon">🌐</div>
-      <h2>Content Coming Soon</h2>
-      <p>This page will contain IP NW OP management tools and configurations.</p>
+      <div class="placeholder-icon">⏳</div>
+      <h2>Loading...</h2>
+      <p>Fetching IP NW OP data.</p>
+    </div>
+  </div>
+
+  <!-- Error -->
+  <div *ngIf="!loading && error" class="page-content">
+    <div class="content-placeholder error-box">
+      <div class="placeholder-icon">⚠️</div>
+      <h2>Something went wrong</h2>
+      <p>{{ error }}</p>
+
+      <button type="button" class="action-btn" (click)="loadData()">
+        Retry
+      </button>
+    </div>
+  </div>
+
+  <!-- Main -->
+  <div *ngIf="!loading && !error" class="admin-grid">
+    <!-- Form Card -->
+    <div class="admin-card">
+      <div class="card-title">
+        <h3>{{ editingId ? 'Update KPI Row' : 'Add KPI Row' }}</h3>
+        <p>Fill details and save.</p>
+      </div>
+
+      <form (ngSubmit)="save()" class="form-grid">
+        <div class="field">
+          <label>No</label>
+          <input type="number" required [(ngModel)]="form.no" name="no" placeholder="No" />
+        </div>
+
+        <div class="field">
+          <label>KPI</label>
+          <input
+            type="text"
+            required
+            [ngModel]="form.network_engineer_kpi"
+            (ngModelChange)="handleInputChange('kpi', $event)"
+            name="kpi"
+            placeholder="Network Engineer KPI"
+          />
+        </div>
+
+        <div class="field">
+          <label>Division</label>
+          <input
+            type="text"
+            required
+            [ngModel]="form.division"
+            (ngModelChange)="handleInputChange('target', $event)"
+            name="target"
+            placeholder="Division"
+          />
+        </div>
+
+        <div class="field">
+          <label>Section</label>
+          <input
+            type="text"
+            required
+            [ngModel]="form.section"
+            (ngModelChange)="handleInputChange('calculation', $event)"
+            name="calculation"
+            placeholder="Section"
+          />
+        </div>
+
+        <div class="field">
+          <label>KPI (%)</label>
+          <input
+            type="text"
+            required
+            [ngModel]="form.kpi_percent"
+            (ngModelChange)="handleInputChange('platform', $event)"
+            name="platform"
+            placeholder="KPI (%)"
+          />
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="action-btn primary">
+            {{ editingId ? 'Update' : 'Add' }}
+          </button>
+
+          <button *ngIf="editingId" type="button" class="action-btn" (click)="cancelEdit()">
+            Cancel
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Table Card -->
+    <div class="admin-card">
+      <div class="card-title">
+        <h3>IP NW OP Table</h3>
+        <p>View, edit, and delete KPI rows.</p>
+      </div>
+
+      <div class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Network Engineer KPI</th>
+              <th>Division</th>
+              <th>Section</th>
+              <th>KPI (%)</th>
+              <th class="actions-col">Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr *ngFor="let item of data">
+              <td>{{ item.no }}</td>
+              <td>{{ item.network_engineer_kpi }}</td>
+              <td>{{ item.division }}</td>
+              <td>{{ item.section }}</td>
+              <td>{{ item.kpi_percent }}</td>
+              <td class="row-actions">
+                <button type="button" class="mini-btn edit" (click)="editRow(item)">Edit</button>
+                <button type="button" class="mini-btn delete" (click)="deleteRow(item._id)">Delete</button>
+              </td>
+            </tr>
+
+            <tr *ngIf="data.length === 0">
+              <td colspan="6" class="empty">
+                No records found.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
-
