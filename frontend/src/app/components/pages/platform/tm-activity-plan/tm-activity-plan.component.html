@@ -1,14 +1,116 @@
-<div class="page-container">
-  <div class="page-header">
-    <h1>{{ pageTitle }}</h1>
-    <p class="page-subtitle">TM Activity Plan metrics and performance</p>
-  </div>
-  <div class="page-content">
-    <div class="content-placeholder">
-      <div class="placeholder-icon">📋</div>
-      <h2>Content Coming Soon</h2>
-      <p>This page will display TM Activity Plan data and analytics.</p>
+<div class="kpi-page">
+  <div class="kpi-overlay"></div>
+
+  <section class="hero-panel">
+    <div class="hero-content">
+      <h1>{{ pageTitle }}</h1>
+      <p class="hero-subtitle">Tower maintenance KPIs, regional execution, and compliance planning.</p>
     </div>
-  </div>
+    <div class="hero-actions">
+      <button type="button" (click)="exportToExcel()" [disabled]="!headers.length || loading">
+        Export to Excel
+      </button>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="state" *ngIf="loading">Loading tower maintenance plan...</div>
+    <ng-container *ngIf="!loading">
+      <div class="state error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+      <article class="data-card">
+        <header>
+          <div>
+            <h2>1. Strategic KPI Overview</h2>
+            <p>Definitions retrieved from TM Activity Plan (hardcoded) dataset.</p>
+          </div>
+        </header>
+
+        <ng-container *ngIf="hardcodedTableData.length; else noKpiRows">
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>KPI</th>
+                  <th>Target</th>
+                  <th>Calculation</th>
+                  <th>Platform</th>
+                  <th>Responsible DGM</th>
+                  <th>Defined OLA Details</th>
+                  <th>Data Sources</th>
+                  <th *ngFor="let header of headers; trackBy: trackByHeader">{{ header }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of hardcodedTableData">
+                  <td>{{ row.no || '-' }}</td>
+                  <td>{{ row.kpi || '-' }}</td>
+                  <td>{{ row.target || '-' }}</td>
+                  <td>{{ row.calculation || '-' }}</td>
+                  <td>{{ row.platform || '-' }}</td>
+                  <td>{{ row.responsibleDGM || '-' }}</td>
+                  <td>{{ row.definedOLADetails || '-' }}</td>
+                  <td>{{ row.dataSources || '-' }}</td>
+                  <td *ngFor="let value of calculatedValues">
+                    {{ value || '0.00' }}%
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </ng-container>
+        <ng-template #noKpiRows>
+          <div class="state">No KPI definitions available.</div>
+        </ng-template>
+      </article>
+
+      <ng-container *ngIf="headers.length; else noDynamicData">
+        <article class="data-card" *ngFor="let title of tableTitles; let i = index">
+          <header>
+            <div>
+              <h2>{{ title }}</h2>
+              <p>Distribution vs achievement per region.</p>
+            </div>
+          </header>
+
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th rowspan="2">Month</th>
+                  <th *ngFor="let header of headers; trackBy: trackByHeader" colspan="2">{{ header }}</th>
+                </tr>
+                <tr>
+                  <ng-container *ngFor="let header of headers; trackBy: trackByHeader">
+                    <th>Distribution</th>
+                    <th>Achievement</th>
+                  </ng-container>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td># Towers</td>
+                  <ng-container *ngFor="let header of headers; trackBy: trackByHeader">
+                    <td colspan="2"><strong>{{ towerSums[header] ?? 0 }}</strong></td>
+                  </ng-container>
+                </tr>
+                <tr *ngFor="let entry of tableData; trackBy: trackByMonth">
+                  <td>{{ entry.month }}</td>
+                  <ng-container *ngFor="let header of headers; trackBy: trackByHeader">
+                    <td>{{ getDetailValue(entry, header, 'Column2') }}</td>
+                    <td>{{ getDetailValue(entry, header, 'Column3') }}</td>
+                  </ng-container>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+      </ng-container>
+      <ng-template #noDynamicData>
+        <div class="state">No monthly tower activity data available.</div>
+      </ng-template>
+    </ng-container>
+  </section>
 </div>
 
