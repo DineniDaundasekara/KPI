@@ -1,3 +1,5 @@
+@use '../../styles/nav-buttons' as navButtons;
+
 :host {
   display: inline-flex;
   flex-shrink: 0;
@@ -102,9 +104,7 @@
   transform: rotate(180deg);
 }
 
-@import '../../styles/nav-buttons';
-
 /* ensure Admin trigger uses same nav button tokens */
 .nav-btn {
-  @include nav-btn();
+  @include navButtons.nav-btn();
 }
