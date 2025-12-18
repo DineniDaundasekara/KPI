@@ -309,7 +309,7 @@
 
 /* Animated multi-color gradient footer */
 .app-footer {
-  background: linear-gradient(270deg, #28A745, #218838, #1b8a5f, #0057A6, #28A745);
+  background: linear-gradient(270deg, #28A745, #218838, #1b8a5f, #0057A6,#79bcfa, #28A745);
   background-size: 1000% 1000%;
   animation: footerGradient 16s ease-in-out infinite;
   padding: 1.25rem 0;
