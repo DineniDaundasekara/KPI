@@ -1,14 +1,640 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { catchError, finalize } from 'rxjs/operators';
+import { forkJoin, of } from 'rxjs';
+import * as ExcelJS from 'exceljs';
+
+type ProcessedDetail = {
+  Column1: string;
+  Column2: number | string;
+  Column3: number | string;
+  Column4?: number | string;
+};
+
+type ProcessedRecord = {
+  month: string;
+  details: ProcessedDetail[];
+};
+
+type HardcodedRecord = {
+  _id?: string;
+  no: number | string;
+  kpi: string;
+  target: string;
+  calculation: string;
+  platform: string;
+  responsibleDGM: string;
+  definedOLADetails: string;
+  dataSources: string;
+};
+
+type TowerSums = Partial<Record<string, number>>;
+
+const MONTH_ORDER = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December'
+];
+
+const MOCK_PROCESSED_DATA: ProcessedRecord[] = [
+  {
+    month: 'January',
+    details: [
+      { Column1: 'NW/CPN', Column2: '8', Column3: 8, Column4: '8' },
+      { Column1: 'NW/CPS', Column2: '8', Column3: 14, Column4: '8' },
+      { Column1: 'NW/EP', Column2: '5', Column3: 5, Column4: '5' },
+      { Column1: 'NW/NCP', Column2: '9', Column3: 9, Column4: '9' },
+      { Column1: 'NW/NP-1', Column2: '4', Column3: 4, Column4: '4' },
+      { Column1: 'NW/NP-2', Column2: '9', Column3: 4, Column4: '9' },
+      { Column1: 'NW/NWPE', Column2: '4', Column3: 4, Column4: '4' },
+      { Column1: 'NW/NWPW', Column2: '3', Column3: 0, Column4: '3' },
+      { Column1: 'NW/SAB', Column2: '4', Column3: 4, Column4: '4' },
+      { Column1: 'NW/SPE', Column2: '9', Column3: 0, Column4: '9' },
+      { Column1: 'NW/SPW', Column2: '5', Column3: 0, Column4: '5' },
+      { Column1: 'NW/UVA', Column2: '7', Column3: 0, Column4: '7' },
+      { Column1: 'NW/WPE', Column2: '2', Column3: 1, Column4: '2' },
+      { Column1: 'NW/WPN', Column2: '4', Column3: 1, Column4: '4' },
+      { Column1: 'NW/WPNE', Column2: '4', Column3: 0, Column4: '4' },
+      { Column1: 'NW/WPS', Column2: '2', Column3: 1, Column4: '2' },
+      { Column1: 'NW/WPSE', Column2: '2', Column3: 0, Column4: '2' },
+      { Column1: 'NW/WPSW', Column2: '2', Column3: 0, Column4: '2' }
+    ]
+  },
+  {
+    month: 'February',
+    details: [
+      { Column1: 'NW/CPN', Column2: '8', Column3: 8, Column4: '16' },
+      { Column1: 'NW/CPS', Column2: '8', Column3: 8, Column4: '16' },
+      { Column1: 'NW/EP', Column2: '5', Column3: 4, Column4: '10' },
+      { Column1: 'NW/NCP', Column2: '9', Column3: 9, Column4: '18' },
+      { Column1: 'NW/NP-1', Column2: '4', Column3: 4, Column4: '8' },
+      { Column1: 'NW/NP-2', Column2: '9', Column3: 9, Column4: '18' },
+      { Column1: 'NW/NWPE', Column2: '4', Column3: 4, Column4: '8' },
+      { Column1: 'NW/NWPW', Column2: '3', Column3: 6, Column4: '6' },
+      { Column1: 'NW/SAB', Column2: '4', Column3: 4, Column4: '8' },
+      { Column1: 'NW/SPE', Column2: '10', Column3: 18, Column4: '19' },
+      { Column1: 'NW/SPW', Column2: '5', Column3: 10, Column4: '10' },
+      { Column1: 'NW/UVA', Column2: '7', Column3: 9, Column4: '14' },
+      { Column1: 'NW/WPE', Column2: '1', Column3: 1, Column4: '3' },
+      { Column1: 'NW/WPN', Column2: '3', Column3: 4, Column4: '7' },
+      { Column1: 'NW/WPNE', Column2: '3', Column3: 9, Column4: '7' },
+      { Column1: 'NW/WPS', Column2: '2', Column3: 2, Column4: '4' },
+      { Column1: 'NW/WPSE', Column2: '2', Column3: 0, Column4: '4' },
+      { Column1: 'NW/WPSW', Column2: '1', Column3: 1, Column4: '3' }
+    ]
+  },
+  {
+    month: 'March',
+    details: [
+      { Column1: 'NW/CPN', Column2: '8', Column3: 8, Column4: '24' },
+      { Column1: 'NW/CPS', Column2: '8', Column3: 6, Column4: '24' },
+      { Column1: 'NW/EP', Column2: '5', Column3: 6, Column4: '15' },
+      { Column1: 'NW/NCP', Column2: '9', Column3: 10, Column4: '27' },
+      { Column1: 'NW/NP-1', Column2: '2', Column3: 2, Column4: '10' },
+      { Column1: 'NW/NP-2', Column2: '9', Column3: 14, Column4: '27' },
+      { Column1: 'NW/NWPE', Column2: '3', Column3: 3, Column4: '11' },
+      { Column1: 'NW/NWPW', Column2: '3', Column3: 3, Column4: '9' },
+      { Column1: 'NW/SAB', Column2: '5', Column3: 3, Column4: '13' },
+      { Column1: 'NW/SPE', Column2: '9', Column3: 8, Column4: '28' },
+      { Column1: 'NW/SPW', Column2: '6', Column3: 6, Column4: '16' },
+      { Column1: 'NW/UVA', Column2: '8', Column3: 6, Column4: '22' },
+      { Column1: 'NW/WPE', Column2: '1', Column3: 2, Column4: '4' },
+      { Column1: 'NW/WPN', Column2: '3', Column3: 5, Column4: '10' },
+      { Column1: 'NW/WPNE', Column2: '3', Column3: 2, Column4: '10' },
+      { Column1: 'NW/WPS', Column2: '1', Column3: 2, Column4: '5' },
+      { Column1: 'NW/WPSE', Column2: '2', Column3: 0, Column4: '6' },
+      { Column1: 'NW/WPSW', Column2: '1', Column3: 2, Column4: '4' }
+    ]
+  },
+  {
+    month: 'April',
+    details: [
+      { Column1: 'NW/CPN', Column2: '8', Column3: 8, Column4: '8' },
+      { Column1: 'NW/CPS', Column2: '8', Column3: 14, Column4: '8' },
+      { Column1: 'NW/EP', Column2: '5', Column3: 6, Column4: '5' },
+      { Column1: 'NW/NCP', Column2: '9', Column3: 8, Column4: '9' },
+      { Column1: 'NW/NP-1', Column2: '4', Column3: 4, Column4: '4' },
+      { Column1: 'NW/NP-2', Column2: '9', Column3: 5, Column4: '9' },
+      { Column1: 'NW/NWPE', Column2: '4', Column3: 4, Column4: '4' },
+      { Column1: 'NW/NWPW', Column2: '3', Column3: 2, Column4: '3' },
+      { Column1: 'NW/SAB', Column2: '4', Column3: 4, Column4: '4' },
+      { Column1: 'NW/SPE', Column2: '9', Column3: 9, Column4: '9' },
+      { Column1: 'NW/SPW', Column2: '5', Column3: 5, Column4: '5' },
+      { Column1: 'NW/UVA', Column2: '7', Column3: 6, Column4: '7' },
+      { Column1: 'NW/WPE', Column2: '2', Column3: 1, Column4: '2' },
+      { Column1: 'NW/WPN', Column2: '4', Column3: 2, Column4: '4' },
+      { Column1: 'NW/WPNE', Column2: '4', Column3: 7, Column4: '4' },
+      { Column1: 'NW/WPS', Column2: '2', Column3: 2, Column4: '2' },
+      { Column1: 'NW/WPSE', Column2: '2', Column3: 0, Column4: '2' },
+      { Column1: 'NW/WPSW', Column2: '2', Column3: 0, Column4: '2' }
+    ]
+  },
+  {
+    month: 'May',
+    details: [
+      { Column1: 'NW/CPN', Column2: '8', Column3: 0, Column4: '16' },
+      { Column1: 'NW/CPS', Column2: '8', Column3: 3, Column4: '16' },
+      { Column1: 'NW/EP', Column2: '5', Column3: 0, Column4: '10' },
+      { Column1: 'NW/NCP', Column2: '9', Column3: 0, Column4: '18' },
+      { Column1: 'NW/NP-1', Column2: '4', Column3: 0, Column4: '8' },
+      { Column1: 'NW/NP-2', Column2: '9', Column3: 0, Column4: '18' },
+      { Column1: 'NW/NWPE', Column2: '4', Column3: 0, Column4: '8' },
+      { Column1: 'NW/NWPW', Column2: '3', Column3: 1, Column4: '6' },
+      { Column1: 'NW/SAB', Column2: '4', Column3: 0, Column4: '8' },
+      { Column1: 'NW/SPE', Column2: '10', Column3: 0, Column4: '19' },
+      { Column1: 'NW/SPW', Column2: '5', Column3: 0, Column4: '10' },
+      { Column1: 'NW/UVA', Column2: '7', Column3: 1, Column4: '14' },
+      { Column1: 'NW/WPE', Column2: '1', Column3: 0, Column4: '3' },
+      { Column1: 'NW/WPN', Column2: '3', Column3: 0, Column4: '7' },
+      { Column1: 'NW/WPNE', Column2: '3', Column3: 0, Column4: '7' },
+      { Column1: 'NW/WPS', Column2: '2', Column3: 0, Column4: '4' },
+      { Column1: 'NW/WPSE', Column2: '2', Column3: 0, Column4: '4' },
+      { Column1: 'NW/WPSW', Column2: '1', Column3: 0, Column4: '3' }
+    ]
+  },
+  {
+    month: 'June',
+    details: [
+      { Column1: 'NW/CPN', Column2: '8', Column3: 0, Column4: '24' },
+      { Column1: 'NW/CPS', Column2: '8', Column3: 0, Column4: '24' },
+      { Column1: 'NW/EP', Column2: '5', Column3: 0, Column4: '15' },
+      { Column1: 'NW/NCP', Column2: '9', Column3: 0, Column4: '27' },
+      { Column1: 'NW/NP-1', Column2: '2', Column3: 0, Column4: '10' },
+      { Column1: 'NW/NP-2', Column2: '9', Column3: 0, Column4: '27' },
+      { Column1: 'NW/NWPE', Column2: '3', Column3: 0, Column4: '11' },
+      { Column1: 'NW/NWPW', Column2: '3', Column3: 0, Column4: '9' },
+      { Column1: 'NW/SAB', Column2: '3', Column3: 0, Column4: '11' },
+      { Column1: 'NW/SPE', Column2: '9', Column3: 0, Column4: '28' },
+      { Column1: 'NW/SPW', Column2: '6', Column3: 0, Column4: '16' },
+      { Column1: 'NW/UVA', Column2: '8', Column3: 0, Column4: '22' },
+      { Column1: 'NW/WPE', Column2: '1', Column3: 0, Column4: '4' },
+      { Column1: 'NW/WPN', Column2: '3', Column3: 0, Column4: '10' },
+      { Column1: 'NW/WPNE', Column2: '3', Column3: 0, Column4: '10' },
+      { Column1: 'NW/WPS', Column2: '1', Column3: 0, Column4: '5' },
+      { Column1: 'NW/WPSE', Column2: '2', Column3: 0, Column4: '6' },
+      { Column1: 'NW/WPSW', Column2: '1', Column3: 0, Column4: '4' }
+    ]
+  },
+  {
+    month: 'July',
+    details: [
+      { Column1: 'NW/CPN', Column2: '8', Column3: 0, Column4: '8' },
+      { Column1: 'NW/CPS', Column2: '8', Column3: 0, Column4: '8' },
+      { Column1: 'NW/EP', Column2: '5', Column3: 0, Column4: '5' },
+      { Column1: 'NW/NCP', Column2: '9', Column3: 0, Column4: '9' },
+      { Column1: 'NW/NP-1', Column2: '4', Column3: 0, Column4: '4' },
+      { Column1: 'NW/NP-2', Column2: '9', Column3: 0, Column4: '9' },
+      { Column1: 'NW/NWPE', Column2: '4', Column3: 0, Column4: '4' },
+      { Column1: 'NW/NWPW', Column2: '3', Column3: 0, Column4: '3' },
+      { Column1: 'NW/SAB', Column2: '4', Column3: 0, Column4: '4' },
+      { Column1: 'NW/SPE', Column2: '9', Column3: 0, Column4: '9' },
+      { Column1: 'NW/SPW', Column2: '5', Column3: 0, Column4: '5' },
+      { Column1: 'NW/UVA', Column2: '7', Column3: 0, Column4: '7' },
+      { Column1: 'NW/WPE', Column2: '2', Column3: 0, Column4: '2' },
+      { Column1: 'NW/WPN', Column2: '4', Column3: 0, Column4: '4' },
+      { Column1: 'NW/WPNE', Column2: '4', Column3: 0, Column4: '4' },
+      { Column1: 'NW/WPS', Column2: '2', Column3: 0, Column4: '2' },
+      { Column1: 'NW/WPSE', Column2: '2', Column3: 0, Column4: '2' },
+      { Column1: 'NW/WPSW', Column2: '2', Column3: 0, Column4: '2' }
+    ]
+  },
+  {
+    month: 'August',
+    details: [
+      { Column1: 'NW/CPN', Column2: '8', Column3: 0, Column4: '16' },
+      { Column1: 'NW/CPS', Column2: '8', Column3: 0, Column4: '16' },
+      { Column1: 'NW/EP', Column2: '5', Column3: 0, Column4: '10' },
+      { Column1: 'NW/NCP', Column2: '9', Column3: 0, Column4: '18' },
+      { Column1: 'NW/NP-1', Column2: '4', Column3: 0, Column4: '8' },
+      { Column1: 'NW/NP-2', Column2: '9', Column3: 0, Column4: '18' },
+      { Column1: 'NW/NWPE', Column2: '4', Column3: 0, Column4: '8' },
+      { Column1: 'NW/NWPW', Column2: '3', Column3: 0, Column4: '6' },
+      { Column1: 'NW/SAB', Column2: '4', Column3: 0, Column4: '8' },
+      { Column1: 'NW/SPE', Column2: '10', Column3: 0, Column4: '19' },
+      { Column1: 'NW/SPW', Column2: '5', Column3: 0, Column4: '10' },
+      { Column1: 'NW/UVA', Column2: '7', Column3: 0, Column4: '14' },
+      { Column1: 'NW/WPE', Column2: '1', Column3: 0, Column4: '3' },
+      { Column1: 'NW/WPN', Column2: '3', Column3: 0, Column4: '7' },
+      { Column1: 'NW/WPNE', Column2: '3', Column3: 0, Column4: '7' },
+      { Column1: 'NW/WPS', Column2: '2', Column3: 0, Column4: '4' },
+      { Column1: 'NW/WPSE', Column2: '2', Column3: 0, Column4: '4' },
+      { Column1: 'NW/WPSW', Column2: '1', Column3: 0, Column4: '3' }
+    ]
+  },
+  {
+    month: 'September',
+    details: [
+      { Column1: 'NW/CPN', Column2: '8', Column3: 0, Column4: '24' },
+      { Column1: 'NW/CPS', Column2: '8', Column3: 0, Column4: '24' },
+      { Column1: 'NW/EP', Column2: '5', Column3: 0, Column4: '15' },
+      { Column1: 'NW/NCP', Column2: '9', Column3: 0, Column4: '27' },
+      { Column1: 'NW/NP-1', Column2: '2', Column3: 0, Column4: '10' },
+      { Column1: 'NW/NP-2', Column2: '9', Column3: 0, Column4: '27' },
+      { Column1: 'NW/NWPE', Column2: '3', Column3: 0, Column4: '11' },
+      { Column1: 'NW/NWPW', Column2: '3', Column3: 0, Column4: '9' },
+      { Column1: 'NW/SAB', Column2: '3', Column3: 0, Column4: '11' },
+      { Column1: 'NW/SPE', Column2: '9', Column3: 0, Column4: '28' },
+      { Column1: 'NW/SPW', Column2: '6', Column3: 0, Column4: '16' },
+      { Column1: 'NW/UVA', Column2: '8', Column3: 0, Column4: '22' },
+      { Column1: 'NW/WPE', Column2: '1', Column3: 0, Column4: '4' },
+      { Column1: 'NW/WPN', Column2: '3', Column3: 0, Column4: '10' },
+      { Column1: 'NW/WPNE', Column2: '3', Column3: 0, Column4: '10' },
+      { Column1: 'NW/WPS', Column2: '1', Column3: 0, Column4: '5' },
+      { Column1: 'NW/WPSE', Column2: '2', Column3: 0, Column4: '6' },
+      { Column1: 'NW/WPSW', Column2: '1', Column3: 0, Column4: '4' }
+    ]
+  },
+  {
+    month: 'October',
+    details: [
+      { Column1: 'NW/CPN', Column2: '8', Column3: 0, Column4: '8' },
+      { Column1: 'NW/CPS', Column2: '8', Column3: 0, Column4: '8' },
+      { Column1: 'NW/EP', Column2: '5', Column3: 0, Column4: '5' },
+      { Column1: 'NW/NCP', Column2: '9', Column3: 0, Column4: '9' },
+      { Column1: 'NW/NP-1', Column2: '4', Column3: 0, Column4: '4' },
+      { Column1: 'NW/NP-2', Column2: '9', Column3: 0, Column4: '9' },
+      { Column1: 'NW/NWPE', Column2: '4', Column3: 0, Column4: '4' },
+      { Column1: 'NW/NWPW', Column2: '3', Column3: 0, Column4: '3' },
+      { Column1: 'NW/SAB', Column2: '4', Column3: 0, Column4: '4' },
+      { Column1: 'NW/SPE', Column2: '9', Column3: 0, Column4: '9' },
+      { Column1: 'NW/SPW', Column2: '5', Column3: 0, Column4: '5' },
+      { Column1: 'NW/UVA', Column2: '7', Column3: 0, Column4: '7' },
+      { Column1: 'NW/WPE', Column2: '2', Column3: 0, Column4: '2' },
+      { Column1: 'NW/WPN', Column2: '4', Column3: 0, Column4: '4' },
+      { Column1: 'NW/WPNE', Column2: '4', Column3: 0, Column4: '4' },
+      { Column1: 'NW/WPS', Column2: '2', Column3: 0, Column4: '2' },
+      { Column1: 'NW/WPSE', Column2: '2', Column3: 0, Column4: '2' },
+      { Column1: 'NW/WPSW', Column2: '2', Column3: 0, Column4: '2' }
+    ]
+  },
+  {
+    month: 'November',
+    details: [
+      { Column1: 'NW/CPN', Column2: '8', Column3: 0, Column4: '16' },
+      { Column1: 'NW/CPS', Column2: '8', Column3: 0, Column4: '16' },
+      { Column1: 'NW/EP', Column2: '5', Column3: 0, Column4: '10' },
+      { Column1: 'NW/NCP', Column2: '9', Column3: 0, Column4: '18' },
+      { Column1: 'NW/NP-1', Column2: '4', Column3: 0, Column4: '8' },
+      { Column1: 'NW/NP-2', Column2: '9', Column3: 0, Column4: '18' },
+      { Column1: 'NW/NWPE', Column2: '4', Column3: 0, Column4: '8' },
+      { Column1: 'NW/NWPW', Column2: '3', Column3: 0, Column4: '6' },
+      { Column1: 'NW/SAB', Column2: '4', Column3: 0, Column4: '8' },
+      { Column1: 'NW/SPE', Column2: '10', Column3: 0, Column4: '19' },
+      { Column1: 'NW/SPW', Column2: '5', Column3: 0, Column4: '10' },
+      { Column1: 'NW/UVA', Column2: '7', Column3: 1, Column4: '14' },
+      { Column1: 'NW/WPE', Column2: '1', Column3: 0, Column4: '3' },
+      { Column1: 'NW/WPN', Column2: '3', Column3: 0, Column4: '7' },
+      { Column1: 'NW/WPNE', Column2: '3', Column3: 0, Column4: '7' },
+      { Column1: 'NW/WPS', Column2: '2', Column3: 0, Column4: '4' },
+      { Column1: 'NW/WPSE', Column2: '2', Column3: 0, Column4: '4' },
+      { Column1: 'NW/WPSW', Column2: '1', Column3: 0, Column4: '3' }
+    ]
+  },
+  {
+    month: 'December',
+    details: [
+      { Column1: 'NW/CPN', Column2: '8', Column3: 0, Column4: '24' },
+      { Column1: 'NW/CPS', Column2: '8', Column3: 0, Column4: '24' },
+      { Column1: 'NW/EP', Column2: '5', Column3: 0, Column4: '15' },
+      { Column1: 'NW/NCP', Column2: '9', Column3: 0, Column4: '27' },
+      { Column1: 'NW/NP-1', Column2: '2', Column3: 0, Column4: '10' },
+      { Column1: 'NW/NP-2', Column2: '9', Column3: 0, Column4: '27' },
+      { Column1: 'NW/NWPE', Column2: '3', Column3: 0, Column4: '11' },
+      { Column1: 'NW/NWPW', Column2: '3', Column3: 0, Column4: '9' },
+      { Column1: 'NW/SAB', Column2: '3', Column3: 0, Column4: '11' },
+      { Column1: 'NW/SPE', Column2: '9', Column3: 0, Column4: '28' },
+      { Column1: 'NW/SPW', Column2: '6', Column3: 0, Column4: '16' },
+      { Column1: 'NW/UVA', Column2: '8', Column3: 0, Column4: '22' },
+      { Column1: 'NW/WPE', Column2: '1', Column3: 0, Column4: '4' },
+      { Column1: 'NW/WPN', Column2: '3', Column3: 0, Column4: '10' },
+      { Column1: 'NW/WPNE', Column2: '3', Column3: 0, Column4: '10' },
+      { Column1: 'NW/WPS', Column2: '1', Column3: 0, Column4: '5' },
+      { Column1: 'NW/WPSE', Column2: '2', Column3: 0, Column4: '6' },
+      { Column1: 'NW/WPSW', Column2: '1', Column3: 0, Column4: '4' }
+    ]
+  }
+];
+
+const MOCK_HARDCODED_DATA: HardcodedRecord[] = [
+  {
+    no: 1,
+    kpi: 'Proper maintaining and cleaning of tower sites',
+    target: '100% adherence',
+    calculation: 'Completed visits / Planned visits',
+    platform: 'Tower Maintenance',
+    responsibleDGM: 'DGM - TM',
+    definedOLADetails: 'Visits completed within 30 days',
+    dataSources: 'FieldOps Tracker'
+  },
+  {
+    no: 2,
+    kpi: 'Visual inspection of aviation lighting systems',
+    target: '95% compliance',
+    calculation: 'Sites with compliant lighting / Total inspected',
+    platform: 'Tower Maintenance',
+    responsibleDGM: 'DGM - O&M',
+    definedOLADetails: 'Inspection cycle 14 days',
+    dataSources: 'Inspection Mobile App'
+  },
+  {
+    no: 3,
+    kpi: 'Earthing resistance measurement',
+    target: '< 2 Ohms',
+    calculation: 'Sites within threshold / Total measured',
+    platform: 'Tower Maintenance',
+    responsibleDGM: 'DGM - Infra Reliability',
+    definedOLADetails: 'Quarterly measurement schedule',
+    dataSources: 'Power & Infra Tracker'
+  }
+];
+
+const TABLE_TITLES = [
+  '2. Proper maintaining and cleaning of tower sites, access roads, tower leg bases, and guy bases.',
+  '3. Visual inspection of tower condition, aviation lighting system, etc.',
+  '4. Measure earth readings and inspect Earthing system.'
+];
 
 @Component({
   selector: 'app-tm-activity-plan',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HttpClientModule],
   templateUrl: './tm-activity-plan.component.html',
   styleUrls: ['./tm-activity-plan.component.scss']
 })
-export class TmActivityPlanComponent {
+export class TmActivityPlanComponent implements OnInit {
+  private readonly http = inject(HttpClient);
+
   pageTitle = 'Platform KPI — TM Activity Plan';
+  headers: string[] = [];
+  towerSums: TowerSums = {};
+  calculatedValues: string[] = [];
+  tableData: ProcessedRecord[] = [...MOCK_PROCESSED_DATA];
+  hardcodedTableData: HardcodedRecord[] = [...MOCK_HARDCODED_DATA];
+  loading = false;
+  errorMessage = '';
+  readonly tableTitles = TABLE_TITLES;
+
+  ngOnInit(): void {
+    this.processDerivedData(this.tableData);
+    this.fetchData();
+  }
+
+  fetchData(): void {
+    this.loading = true;
+    this.errorMessage = '';
+
+    forkJoin({
+      processed: this.http.get<ProcessedRecord[]>('/api/ProcessedDataFetch1').pipe(
+        catchError(err => {
+          console.error('Failed to fetch processed TM data', err);
+          this.setError('Unable to load tower activity feeds. Showing cached snapshot.');
+          return of([...MOCK_PROCESSED_DATA]);
+        })
+      ),
+      hardcoded: this.http.get<HardcodedRecord[]>('/api/repeated-hardcode-tab1').pipe(
+        catchError(err => {
+          console.error('Failed to fetch TM KPI definitions', err);
+          this.setError('Unable to load TM KPI definitions. Showing cached snapshot.');
+          return of([...MOCK_HARDCODED_DATA]);
+        })
+      )
+    })
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe(({ processed, hardcoded }) => {
+        this.tableData = processed?.length ? this.sortByMonth(processed) : [...MOCK_PROCESSED_DATA];
+        this.hardcodedTableData = hardcoded?.length ? hardcoded : [...MOCK_HARDCODED_DATA];
+        this.processDerivedData(this.tableData);
+      });
+  }
+
+  exportToExcel(): void {
+    if (!this.headers.length) {
+      return;
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Tower Maintenance Plan');
+
+    const baseColumns = [
+      'No',
+      'KPI',
+      'Target',
+      'Calculation',
+      'Platform',
+      'Responsible DGM',
+      'Defined OLA Details',
+      'Data Sources'
+    ];
+    const totalColumnsFirstTable = baseColumns.length + this.headers.length;
+
+    worksheet.mergeCells(1, 1, 1, totalColumnsFirstTable);
+    worksheet.getCell(1, 1).value = 'Tower Maintenance Activity Plan';
+    worksheet.getCell(1, 1).font = { bold: true, size: 14 };
+    worksheet.getCell(1, 1).alignment = { horizontal: 'center' };
+
+    worksheet.addRow([]);
+
+    const headerRow = worksheet.addRow([...baseColumns, ...this.headers]);
+    this.styleHeaderRow(headerRow);
+
+    this.hardcodedTableData.forEach(record => {
+      const row = worksheet.addRow([
+        record.no ?? '-',
+        record.kpi ?? '-',
+        record.target ?? '-',
+        record.calculation ?? '-',
+        record.platform ?? '-',
+        record.responsibleDGM ?? '-',
+        record.definedOLADetails ?? '-',
+        record.dataSources ?? '-',
+        ...this.calculatedValues.map(v => `${v}%`)
+      ]);
+      this.addBorder(row);
+    });
+
+    worksheet.addRow([]);
+    worksheet.addRow([]);
+
+    this.tableTitles.forEach(title => {
+      const totalColumns = 1 + this.headers.length * 2;
+      const titleRow = worksheet.addRow([title]);
+      worksheet.mergeCells(titleRow.number, 1, titleRow.number, totalColumns);
+      titleRow.font = { bold: true, size: 12 };
+      titleRow.alignment = { horizontal: 'center' };
+
+      const dynamicHeaders = ['Month', ...this.headers.flatMap(h => [`${h} Distribution`, `${h} Achievement`])];
+      const dynamicHeaderRow = worksheet.addRow(dynamicHeaders);
+      this.styleHeaderRow(dynamicHeaderRow);
+
+      const towersRow = worksheet.addRow([
+        '# Towers',
+        ...this.headers.flatMap(h => [this.towerSums[h] ?? 0, ''])
+      ]);
+      this.addBorder(towersRow);
+
+      this.tableData.forEach(entry => {
+        const row = worksheet.addRow([
+          entry.month,
+          ...this.headers.flatMap(header => [
+            this.getDetailValue(entry, header, 'Column2'),
+            this.getDetailValue(entry, header, 'Column3')
+          ])
+        ]);
+        this.addBorder(row);
+      });
+
+      worksheet.addRow([]);
+    });
+
+    worksheet.columns.forEach(column => {
+      column.width = 18;
+    });
+
+    workbook.xlsx.writeBuffer().then(buffer => {
+      const blob = new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'Tower_Maintenance_Plan.xlsx';
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  getDetailValue(entry: ProcessedRecord, header: string, column: 'Column2' | 'Column3'): string {
+    const detail = entry.details.find(item => item.Column1 === header);
+    const raw = detail ? (detail[column] ?? '') : '';
+    return raw === '' ? '-' : String(raw);
+  }
+
+  trackByHeader = (_: number, header: string) => header;
+  trackByMonth = (_: number, record: ProcessedRecord) => record.month;
+
+  private processDerivedData(data: ProcessedRecord[]): void {
+    const sorted = this.sortByMonth(data);
+    this.headers = this.buildHeaders(sorted);
+    this.towerSums = this.calculateTowerSums(sorted);
+    this.calculatedValues = this.calculateFirstTableValues(sorted, this.headers);
+  }
+
+  private sortByMonth(data: ProcessedRecord[]): ProcessedRecord[] {
+    return [...data].sort(
+      (a, b) => MONTH_ORDER.indexOf(a.month) - MONTH_ORDER.indexOf(b.month)
+    );
+  }
+
+  private buildHeaders(data: ProcessedRecord[]): string[] {
+    const unique = new Set<string>();
+    data.forEach(entry => {
+      entry.details.forEach(detail => {
+        if (detail.Column1) {
+          unique.add(detail.Column1);
+        }
+      });
+    });
+    return Array.from(unique);
+  }
+
+  private calculateTowerSums(data: ProcessedRecord[]): TowerSums {
+    const sums: TowerSums = {};
+    const firstThree = data.slice(0, 3);
+    firstThree.forEach(entry => {
+      entry.details.forEach(detail => {
+        const current = sums[detail.Column1] ?? 0;
+        const value = Number(detail.Column2) || 0;
+        sums[detail.Column1] = Number((current + value).toFixed(2));
+      });
+    });
+    return sums;
+  }
+
+  private calculateFirstTableValues(data: ProcessedRecord[], headers: string[]): string[] {
+    if (!headers.length) {
+      return [];
+    }
+
+    const currentMonth = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(new Date());
+    const specialMonths = ['March', 'June', 'September', 'December'];
+    let selectedMonths: string[] | undefined;
+
+    if (currentMonth === 'March') {
+      selectedMonths = ['January', 'February', 'March'];
+    } else if (currentMonth === 'June') {
+      selectedMonths = ['April', 'May', 'June'];
+    } else if (currentMonth === 'September') {
+      selectedMonths = ['July', 'August', 'September'];
+    } else if (currentMonth === 'December') {
+      selectedMonths = ['October', 'November', 'December'];
+    }
+
+    if (!specialMonths.includes(currentMonth)) {
+      return headers.map(() => '100.00');
+    }
+
+    return headers.map(header => {
+      let totalAchievement = 0;
+      let totalDistribution = 0;
+
+      data.forEach(monthEntry => {
+        if (selectedMonths?.includes(monthEntry.month)) {
+          const detail = monthEntry.details.find(item => item.Column1 === header);
+          if (detail) {
+            totalAchievement += Number(detail.Column3) || 0;
+            totalDistribution += Number(detail.Column2) || 0;
+          }
+        }
+      });
+
+      if (totalDistribution === 0) {
+        return '0.00';
+      }
+
+      return ((totalAchievement / totalDistribution) * 100).toFixed(2);
+    });
+  }
+
+  private styleHeaderRow(row: ExcelJS.Row): void {
+    row.eachCell(cell => {
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: '0070C0' }
+      };
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      this.addBorderToCell(cell);
+    });
+  }
+
+  private addBorder(row: ExcelJS.Row): void {
+    row.eachCell(cell => this.addBorderToCell(cell));
+  }
+
+  private addBorderToCell(cell: ExcelJS.Cell): void {
+    cell.border = {
+      top: { style: 'thin' },
+      left: { style: 'thin' },
+      bottom: { style: 'thin' },
+      right: { style: 'thin' }
+    };
+  }
+
+  private setError(message: string): void {
+    if (!this.errorMessage) {
+      this.errorMessage = message;
+    }
+  }
 }
 

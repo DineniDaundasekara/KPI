@@ -1,14 +1,112 @@
-<div class="page-container">
-  <div class="page-header">
-    <h1>{{ pageTitle }}</h1>
-    <p class="page-subtitle">Routine Maintenance metrics and performance</p>
-  </div>
-  <div class="page-content">
-    <div class="content-placeholder">
-      <div class="placeholder-icon">🔧</div>
-      <h2>Content Coming Soon</h2>
-      <p>This page will display Routine MTNC data and analytics.</p>
+<div class="kpi-page">
+  <div class="kpi-overlay"></div>
+
+  <section class="hero-panel">
+    <div class="hero-content">
+      <h1>{{ pageTitle }}</h1>
+      <p class="hero-subtitle">{{ heroSubtitle }}</p>
     </div>
-  </div>
+    <div class="hero-actions">
+      <button type="button" (click)="exportToExcel()" [disabled]="loading">
+        Export snapshot
+      </button>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="state" *ngIf="loading">Loading routine maintenance insights...</div>
+    <ng-container *ngIf="!loading">
+      <div class="state error" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+      <article class="data-card">
+        <header>
+          <div>
+            <h2>Multi-Platform Maintenance Tables</h2>
+            <p>Routine KPI definitions aligned with current placeholder compliance snapshots.</p>
+          </div>
+        </header>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>KPI</th>
+                <th>Target</th>
+                <th>Calculation</th>
+                <th>Platform</th>
+                <th>Responsible DGM</th>
+                <th>Defined OLA Details</th>
+                <th>Data Sources</th>
+                <th>E/Fiber</th>
+                <th *ngFor="let column of columns; trackBy: trackByColumn">{{ column }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngIf="!maintenanceRows.length">
+                <td [attr.colspan]="combinedTableColspan">No KPI definitions available.</td>
+              </tr>
+              <tr *ngFor="let row of maintenanceRows; trackBy: trackByMaintenanceRow">
+                <td>{{ row.routine.no ?? '-' }}</td>
+                <td>{{ formatRoutineValue(row.routine.kpi) }}</td>
+                <td>{{ formatRoutineValue(row.routine.target) }}</td>
+                <td>{{ formatRoutineValue(row.routine.calculation) }}</td>
+                <td>{{ formatRoutineValue(row.routine.platform) }}</td>
+                <td>{{ formatRoutineValue(row.routine.responsibleDGM) }}</td>
+                <td>{{ formatRoutineValue(row.routine.definedOLADetails) }}</td>
+                <td>{{ formatRoutineValue(row.routine.dataSources) }}</td>
+                <td>{{ formatPlaceholderValue(row.platformKey, efiberSourceColumn) }}</td>
+                <td *ngFor="let column of columns; trackBy: trackByColumn">
+                  {{ formatPlaceholderValue(row.platformKey, column) }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="data-card" *ngFor="let config of platformConfigs">
+        <header>
+          <div>
+            <h2>{{ config.title }}</h2>
+            <p>Distribution vs achievement for each NW region.</p>
+          </div>
+        </header>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th rowspan="2">Month</th>
+                <th *ngFor="let column of columns; trackBy: trackByColumn" colspan="2">{{ column }}</th>
+              </tr>
+              <tr>
+                <ng-container *ngFor="let column of columns; trackBy: trackByColumn">
+                  <th>Distribution</th>
+                  <th>Achievement</th>
+                </ng-container>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td># Towers</td>
+                <ng-container *ngFor="let column of columns; trackBy: trackByColumn">
+                  <td colspan="2"><strong>{{ getTowerSum(config.key, column) }}</strong></td>
+                </ng-container>
+              </tr>
+              <tr *ngFor="let record of getPlatformRecords(config.key); trackBy: trackByMonth">
+                <td>{{ record.month }}</td>
+                <ng-container *ngFor="let column of columns; trackBy: trackByColumn">
+                  <td>{{ getDetailValue(record, column, 'Column2') }}</td>
+                  <td>{{ getDetailValue(record, column, 'Column3') }}</td>
+                </ng-container>
+              </tr>
+              <tr *ngIf="!getPlatformRecords(config.key).length">
+                <td [attr.colspan]="columns.length * 2 + 1">No data available.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </ng-container>
+  </section>
 </div>
 
