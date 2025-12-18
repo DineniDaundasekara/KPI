@@ -1,14 +1,64 @@
-<div class="page-container">
-  <div class="page-header">
-    <h1>{{ pageTitle }}</h1>
-    <p class="page-subtitle">Tower Maintenance Achievement metrics and performance</p>
-  </div>
-  <div class="page-content">
-    <div class="content-placeholder">
-      <div class="placeholder-icon">🗼</div>
-      <h2>Content Coming Soon</h2>
-      <p>This page will display Tower MTCE Achievement data and analytics.</p>
+<div class="kpi-page">
+  <div class="kpi-overlay"></div>
+
+  <section class="hero-panel">
+    <div class="hero-content">
+      <h1>{{ pageTitle }}</h1>
+      <p class="hero-subtitle">{{ heroSubtitle }}</p>
     </div>
+    <div class="hero-actions">
+      <button type="button" (click)="exportToExcel()" [disabled]="loading || !kpiTowerData.length">
+        Export snapshot
+      </button>
+    </div>
+  </section>
+
+  <section class="table-section">
+    <div class="state" *ngIf="loading">Loading tower maintenance insights...</div>
+    <div class="state error" *ngIf="!loading && errorMessage">{{ errorMessage }}</div>
+
+    <article class="data-card" *ngIf="!loading">
+      <header>
+        <div>
+          <h2>Network Engineer Achievement Table</h2>
+          <p>Weighted quarterly achievements computed from distribution feeds.</p>
+        </div>
+      </header>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>No</th>
+              <th>Network Engineers Responsibility</th>
+              <th>Frequency</th>
+              <th>Weightage</th>
+              <th>KPI (%)</th>
+              <th *ngFor="let header of headers; trackBy: trackByHeader">{{ header }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="!kpiTowerData.length">
+              <td [attr.colspan]="totalTableColumns">No KPI data available.</td>
+            </tr>
+            <tr *ngFor="let row of kpiTowerData; let rowIndex = index; trackBy: trackByKpiRow">
+              <td>{{ row.no ?? '-' }}</td>
+              <td>{{ formatText(row.responsibility) }}</td>
+              <td>{{ formatText(row.frequency) }}</td>
+              <td>{{ formatText(row.weightage) }}</td>
+              <td>{{ formatText(row.kpi) }}</td>
+              <td *ngFor="let header of headers; let colIndex = index; trackBy: trackByHeader">
+                {{ formatWeightedValue(rowIndex, colIndex) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+  </section>
+
+  <div class="loading-overlay" *ngIf="loading">
+    <div class="spinner"></div>
   </div>
 </div>
 

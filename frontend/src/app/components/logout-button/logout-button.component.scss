@@ -1,3 +1,5 @@
+@use '../../styles/nav-buttons' as navButtons;
+
 /* Ensures the button behaves well inside navbars */
 :host {
   display: inline-flex;
@@ -7,12 +9,9 @@
   white-space: nowrap;
 }
 
-/* Import your shared nav button mixins */
-@import '../../styles/nav-buttons';
-
 /* Base logout button */
 button.nav-btn.logout {
-  @include nav-btn-danger();
+  @include navButtons.nav-btn-danger();
 
   display: inline-flex;
   align-items: center;
