@@ -55,20 +55,6 @@
       </div>
     </article>
 
-    <article class="data-card summary-card" *ngIf="!loading && headers.length">
-      <header>
-        <div>
-          <h2>Quarterly Base Achievement</h2>
-          <p>Raw achievement percentages per NW region before weightages.</p>
-        </div>
-      </header>
-      <div class="chip-grid">
-        <div class="chip" *ngFor="let header of headers; let idx = index; trackBy: trackByHeader">
-          <span>{{ header }}</span>
-          <strong>{{ getCalculatedValue(idx) }}%</strong>
-        </div>
-      </div>
-    </article>
   </section>
 
   <div class="loading-overlay" *ngIf="loading">
