@@ -1,4 +1,68 @@
 /* Add these styles to your existing CSS */
+:host {
+  display: block;
+  min-height: 100vh;
+  background-image: url('/assets/admin/SLT-Mobitel.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  position: relative;
+}
+
+:host::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(248, 250, 252, 0.88);
+  backdrop-filter: blur(6px);
+  z-index: 0;
+}
+
+.page-container {
+  padding: 1.75rem 2rem 2.5rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
+.page-header {
+  padding: 1.5rem 0 1.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  position: relative;
+  margin-bottom: 2.5rem;
+}
+
+.page-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #0057a6, #02b28c);
+  box-shadow: 0 6px 18px rgba(2, 178, 140, 0.25);
+}
+
+.page-header h1 {
+  color: #0057a6;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+.page-subtitle {
+  color: #6b7280;
+  font-size: 1rem;
+  margin: 0;
+  font-weight: 500;
+}
+
 .dashboard-container {
   width: 100%;
   max-width: 1200px;
