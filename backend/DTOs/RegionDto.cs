@@ -7,8 +7,10 @@
         public string Province { get; set; } = string.Empty;
         public string NetworkEngineer { get; set; } = string.Empty;
         public string Lea { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
+
+        // Change to nullable DateTime
+        public DateTime? CreatedAt { get; set; }  // Nullable DateTime to match the model
+        public DateTime? UpdatedAt { get; set; }  // Nullable DateTime to match the model
     }
 
     public class CreateRegionDto

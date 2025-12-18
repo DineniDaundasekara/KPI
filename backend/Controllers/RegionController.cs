@@ -30,8 +30,8 @@ namespace backend.Controllers
                     Province = x.Province,
                     NetworkEngineer = x.NetworkEngineer,
                     Lea = x.Lea,
-                    CreatedAt = x.CreatedAt,
-                    UpdatedAt = x.UpdatedAt
+                    CreatedAt = x.CreatedAt ?? DateTime.MinValue,  // Handle nullable DateTime
+                    UpdatedAt = x.UpdatedAt ?? DateTime.MinValue   // Handle nullable DateTime
                 })
                 .ToListAsync();
 
@@ -52,8 +52,8 @@ namespace backend.Controllers
                 Province = x.Province,
                 NetworkEngineer = x.NetworkEngineer,
                 Lea = x.Lea,
-                CreatedAt = x.CreatedAt,
-                UpdatedAt = x.UpdatedAt
+                CreatedAt = x.CreatedAt ?? DateTime.MinValue,  // Handle nullable DateTime
+                UpdatedAt = x.UpdatedAt ?? DateTime.MinValue   // Handle nullable DateTime
             });
         }
 
@@ -112,8 +112,10 @@ namespace backend.Controllers
             var existing = await _context.Regions.FirstOrDefaultAsync(r => r.Id == id);
             if (existing == null) return NotFound();
 
+            // Accessing and removing the region
             _context.Regions.Remove(existing);
             await _context.SaveChangesAsync();
+
             return NoContent();
         }
     }
