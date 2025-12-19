@@ -1,7 +1,10 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
+import { RegionService, RegionDto } from '../../../../services/region.service';  // Import the service
+import { HttpErrorResponse } from '@angular/common/http';  // Import HttpErrorResponse
 
+// Define the Region interface for type safety
 export interface Region {
   id: string | number;
   region: string;
@@ -10,6 +13,7 @@ export interface Region {
   lea: string;
 }
 
+// Define the key names of the Region
 type RegionKey = 'region' | 'province' | 'networkEngineer' | 'lea';
 
 @Component({
@@ -21,70 +25,59 @@ type RegionKey = 'region' | 'province' | 'networkEngineer' | 'lea';
 })
 export class RegionManagementComponent {
   pageTitle = 'Region Management';
-
-  /* ---------- Form / header state ---------- */
-
   showForm = false;
   isSubmitting = false;
   error = '';
   success = '';
 
-  formData: Region = {
+  formData: RegionDto = {
     id: '',
     region: '',
     province: '',
     networkEngineer: '',
     lea: '',
+    createdAt: '',
+    updatedAt: '',
   };
 
-  regions: Region[] = [
-  { id: 1,  region: 'Region 3', province: 'NP',         networkEngineer: 'NW/NP-2',          lea: 'KO / MLT / MB / VA' },
-  { id: 2,  region: 'Region 3', province: 'NP',         networkEngineer: 'NW/NP-1',          lea: 'JA' },
-  { id: 3,  region: 'Region 3', province: 'EP',         networkEngineer: 'NW/EP',            lea: 'BC / AP / KL / TC' },
+  regions: RegionDto[] = [];  // Initialize an empty regions array
 
-  { id: 4,  region: 'Region 2', province: 'WPS & SP',   networkEngineer: 'NW/WPS',           lea: 'HR / KT / PH' },
-  { id: 5,  region: 'Region 2', province: 'WPS & SP',   networkEngineer: 'NW/SPW',           lea: 'AG / GL' },
-  { id: 6,  region: 'Region 2', province: 'WPS & SP',   networkEngineer: 'NW/SPE',           lea: 'EMB / HB / MH' },
-
-  { id: 7,  region: 'Region 2', province: 'SAB & UVA',  networkEngineer: 'NW/SAB',           lea: 'KE / RN' },
-  { id: 8,  region: 'Region 2', province: 'SAB & UVA',  networkEngineer: 'NW/UVA',           lea: 'BD / BW / MRG' },
-
-  { id: 9,  region: 'Region 1', province: 'CP & NCP',   networkEngineer: 'NW/NCP',           lea: 'AD / PR' },
-  { id: 10, region: 'Region 1', province: 'CP & NCP',   networkEngineer: 'NW/CPS',           lea: 'GP / HT / NW' },
-  { id: 11, region: 'Region 1', province: 'CP & NCP',   networkEngineer: 'NW/CPN',           lea: 'DB / KY / MT' },
-
-  { id: 12, region: 'Region 1', province: 'WPN & NWP',  networkEngineer: 'NW/NWPW',          lea: 'CW / PX' },
-  { id: 13, region: 'Region 1', province: 'WPN & NWP',  networkEngineer: 'NW/NWPE',          lea: 'KG / KLY' },
-  { id: 14, region: 'Region 1', province: 'WPN & NWP',  networkEngineer: 'NW/WPN',           lea: 'NG / WT' },
-
-  { id: 15, region: 'Metro',    province: 'Metro 2',    networkEngineer: 'NWWPE',            lea: 'KON / KK' },
-  { id: 16, region: 'Metro',    province: 'Metro 2',    networkEngineer: 'NWWPSE',           lea: 'AW / HO' },
-  { id: 17, region: 'Metro',    province: 'Metro 2',    networkEngineer: 'NWWPSW',           lea: 'ND / RM' },
-
-  { id: 18, region: 'Metro',    province: 'Metro 1',    networkEngineer: 'NWWPNE',           lea: 'GQ / KI / NTB' },
-  { id: 19, region: 'Metro',    province: 'Metro 1',    networkEngineer: 'NWWPC-2 (CEN/HKMD)', lea: 'CEN / MD' },
-  { id: 20, region: 'Metro',    province: 'Metro 1',    networkEngineer: 'NWWPC-1 (CEN/HK/MD)', lea: 'HK' }
-];
-
-  /* ---------- Sorting state ---------- */
-
+  // Sorting state
   sortKey: RegionKey | null = null;
   sortDirection: 'asc' | 'desc' = 'asc';
 
-  /* ---------- Inline cell edit state ---------- */
-
+  // Inline edit state
   editingRowId: Region['id'] | null = null;
   editingField: RegionKey | null = null;
   editingValue = '';
 
-  /* ================= HEADER / FORM HELPERS ================= */
+  constructor(private regionService: RegionService) {}
 
+  // Fetch all regions from the backend
+  ngOnInit(): void {
+    this.loadRegions();
+  }
+
+  loadRegions(): void {
+    this.regionService.getAllRegions().subscribe(
+      (data) => {
+        this.regions = data;
+      },
+      (error: HttpErrorResponse) => {
+        console.error('Error loading regions:', error);
+        this.error = 'Failed to load regions.';
+      }
+    );
+  }
+
+  // Open the form
   openForm(): void {
     this.showForm = true;
     this.error = '';
     this.success = '';
   }
 
+  // Close the form and reset it
   closeForm(form?: NgForm): void {
     this.showForm = false;
     this.error = '';
@@ -99,6 +92,8 @@ export class RegionManagementComponent {
       province: '',
       networkEngineer: '',
       lea: '',
+      createdAt: '',
+      updatedAt: '',
     };
 
     if (form) {
@@ -106,8 +101,7 @@ export class RegionManagementComponent {
     }
   }
 
-  /* ================= ADD REGION (SUBMIT) ================= */
-
+  // Submit form data to the backend API
   onSubmit(form: NgForm): void {
     this.error = '';
     this.success = '';
@@ -118,7 +112,7 @@ export class RegionManagementComponent {
       return;
     }
 
-    const trimmed: Record<RegionKey, string> = {
+    const trimmed = {
       region: this.formData.region.trim(),
       province: this.formData.province.trim(),
       networkEngineer: this.formData.networkEngineer.trim(),
@@ -137,28 +131,43 @@ export class RegionManagementComponent {
 
     this.isSubmitting = true;
 
-    // Simulate async – replace with API call later
-    setTimeout(() => {
-      const newRegion: Region = {
-        id: Date.now(),
-        region: trimmed.region,
-        province: trimmed.province,
-        networkEngineer: trimmed.networkEngineer,
-        lea: trimmed.lea,
-      };
-
-      // Add to top of the list
-      this.regions = [newRegion, ...this.regions];
-
-      this.isSubmitting = false;
-      this.success = 'Region added successfully.';
-      this.resetForm(form);
-      this.showForm = false;
-    }, 400);
+    // Create region and send to the backend API
+    this.regionService.createRegion(trimmed as RegionDto).subscribe(
+      (newRegion) => {
+        this.regions = [newRegion, ...this.regions];
+        this.isSubmitting = false;
+        this.success = 'Region added successfully.';
+        this.resetForm(form);
+        this.showForm = false;
+      },
+      (error: HttpErrorResponse) => {
+        this.isSubmitting = false;
+        console.error('Error adding region:', error);
+        this.error = 'Failed to add region.';
+      }
+    );
   }
 
-  /* ================= SORTING ================= */
+  // Delete region from the list
+  handleDelete(id: string): void {
+    const confirmDelete = confirm('Are you sure you want to delete this region?');
+    if (!confirmDelete) return;
 
+    const idString = id.toString();
+
+    this.regionService.deleteRegion(id).subscribe(
+      () => {
+        this.regions = this.regions.filter((region) => region.id !== idString);  // Remove region from the list after deletion
+        this.success = 'Region deleted successfully.';
+      },
+      (error: HttpErrorResponse) => {
+        console.error('Error deleting region:', error);
+        this.error = 'Failed to delete region.';
+      }
+    );
+  }
+
+  // Sorting logic: request sorting for a specific column
   requestSort(key: RegionKey): void {
     if (this.sortKey === key) {
       this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
@@ -168,11 +177,13 @@ export class RegionManagementComponent {
     }
   }
 
+  // Get sort indicator (▲ for ascending, ▼ for descending)
   getSortIndicator(key: RegionKey): string {
     if (this.sortKey !== key) return '';
     return this.sortDirection === 'asc' ? '▲' : '▼';
   }
 
+  // Sorted regions based on sorting criteria
   get sortedRegions(): Region[] {
     const data = [...this.regions];
     if (!this.sortKey) return data;
@@ -190,8 +201,7 @@ export class RegionManagementComponent {
     });
   }
 
-  /* ================= INLINE CELL EDITING ================= */
-
+  // Inline editing logic
   isEditingCell(row: Region, field: RegionKey): boolean {
     return this.editingRowId === row.id && this.editingField === field;
   }
@@ -202,11 +212,7 @@ export class RegionManagementComponent {
     this.editingValue = (row[field] ?? '').toString();
   }
 
-  onCellKeydown(
-    event: KeyboardEvent,
-    row: Region,
-    field: RegionKey
-  ): void {
+  onCellKeydown(event: KeyboardEvent, row: Region, field: RegionKey): void {
     if (event.key === 'Enter') {
       event.preventDefault();
       this.saveCell(row, field);
@@ -218,10 +224,7 @@ export class RegionManagementComponent {
 
   saveCell(row: Region, field: RegionKey): void {
     const value = this.editingValue.trim();
-    if (!value) {
-      // optional: show validation message
-      return;
-    }
+    if (!value) return;
 
     const index = this.regions.findIndex((r) => r.id === row.id);
     if (index !== -1) {
@@ -238,20 +241,5 @@ export class RegionManagementComponent {
     this.editingRowId = null;
     this.editingField = null;
     this.editingValue = '';
-  }
-
-  /* ================= DELETE ROW ================= */
-
-  handleDelete(id: string | number): void {
-    const confirmDelete = confirm(
-      'Are you sure you want to delete this region entry?'
-    );
-    if (!confirmDelete) return;
-
-    this.regions = this.regions.filter((r) => r.id !== id);
-
-    if (this.editingRowId === id) {
-      this.cancelCellEdit();
-    }
   }
 }
