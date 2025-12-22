@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using System.Text.RegularExpressions;
 using backend.Data;
-using backend.Models;
 using backend.DTOs;
+using backend.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace backend.Controllers
 {
@@ -12,100 +13,117 @@ namespace backend.Controllers
     {
         private readonly AppDbContext _db;
 
-        public UsersController(AppDbContext db)
+        public UsersController(AppDbContext db) => _db = db;
+
+        [HttpGet("admins")]
+        public async Task<ActionResult<List<AdminUserDto>>> GetAdmins()
         {
-            _db = db;
+            var admins = await _db.Users
+                .Where(u => u.Role == "admin" || u.Role == "padmin")
+                .OrderByDescending(u => u.LastLogin)
+                .ToListAsync();
+
+            return Ok(admins.Select(ToAdminDto).ToList());
         }
 
-        // ✔ GET ALL USERS
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
+        [HttpPost("admins")]
+        public async Task<ActionResult<AdminUserDto>> CreateAdmin([FromBody] CreateAdminDto dto)
         {
-            var users = await _db.Users.Include(u => u.Pages).ToListAsync();
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                return BadRequest("Name is required.");
 
-            var result = users.Select(u => new UserDto
-            {
-                Id = u.Id,
-                Name = u.Name,
-                Username = u.Username,
-                Role = u.Role,
-                Pages = u.Pages.Select(p => p.PageName).ToList()
-            });
+            var service = (dto.ServiceNumber ?? "").Trim();
 
-            return Ok(result);
-        }
+            // ✅ must be exactly 6 digits
+            if (!Regex.IsMatch(service, @"^\d{6}$"))
+                return BadRequest("ServiceNumber must be exactly 6 digits (example: 010399).");
 
-        // ✔ GET USER BY ID
-        [HttpGet("{id}")]
-        public async Task<ActionResult<UserDto>> GetUser(int id)
-        {
-            var user = await _db.Users.Include(u => u.Pages).FirstOrDefaultAsync(x => x.Id == id);
+            var exists = await _db.Users.AnyAsync(u => u.Username == service);
+            if (exists)
+                return Conflict($"Service Number {service} already exists.");
 
-            if (user == null) return NotFound();
+            var nowIso = DateTime.UtcNow.ToString("o");
 
-            return new UserDto
-            {
-                Id = user.Id,
-                Name = user.Name,
-                Username = user.Username,
-                Role = user.Role,
-                Pages = user.Pages.Select(p => p.PageName).ToList()
-            };
-        }
-
-        // ✔ CREATE USER
-        [HttpPost]
-        public async Task<ActionResult> CreateUser(CreateUserDto dto)
-        {
             var user = new User
             {
-                Name = dto.Name,
-                Username = dto.Username,
-                Role = dto.Role,
-                Pages = dto.Pages.Select(p => new UserPage { PageName = p }).ToList()
+                Id = Guid.NewGuid().ToString("N"),
+                Username = service,                 // ✅ store as string "010399"
+                Name = dto.Name.Trim(),
+                Role = string.IsNullOrWhiteSpace(dto.Role) ? "admin" : dto.Role.Trim(),
+                IsActive = true,
+                V = false,
+                LastLogin = DateTime.UtcNow,
+                CreatedAt = nowIso,
+                UpdatedAt = nowIso
             };
+
+            ApplyPages(user, dto.Pages);
 
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
 
-            return Ok("User created successfully");
+            return Ok(ToAdminDto(user));
         }
 
-        // ✔ UPDATE USER
-        [HttpPut("{id}")]
-        public async Task<ActionResult> UpdateUser(int id, CreateUserDto dto)
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> ToggleStatus(string id)
         {
-            var user = await _db.Users
-                .Include(u => u.Pages)
-                .FirstOrDefaultAsync(x => x.Id == id);
-
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
             if (user == null) return NotFound();
 
-            user.Name = dto.Name;
-            user.Username = dto.Username;
-            user.Role = dto.Role;
-
-            _db.UserPages.RemoveRange(user.Pages);
-
-            user.Pages = dto.Pages.Select(p => new UserPage { PageName = p }).ToList();
+            user.IsActive = !user.IsActive;
+            user.UpdatedAt = DateTime.UtcNow.ToString("o");
 
             await _db.SaveChangesAsync();
-            return Ok("User updated successfully");
+            return NoContent();
         }
 
-        // ✔ DELETE USER
         [HttpDelete("{id}")]
-        public async Task<ActionResult> DeleteUser(int id)
+        public async Task<IActionResult> Delete(string id)
         {
-            var user = await _db.Users.Include(u => u.Pages).FirstOrDefaultAsync(x => x.Id == id);
-
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
             if (user == null) return NotFound();
 
-            _db.UserPages.RemoveRange(user.Pages);
             _db.Users.Remove(user);
-
             await _db.SaveChangesAsync();
-            return Ok("User deleted successfully");
+            return NoContent();
+        }
+
+        private static AdminUserDto ToAdminDto(User u) => new AdminUserDto
+        {
+            Id = u.Id,
+            Name = u.Name,
+            Role = u.Role,
+            IsActive = u.IsActive,
+            LastLogin = u.LastLogin,
+            CreatedAt = u.CreatedAt,
+            ServiceNumber = u.Username,
+            Pages = ExtractPages(u)
+        };
+
+        private static List<string> ExtractPages(User u)
+        {
+            var pages = new[] { u.Pages_0, u.Pages_1, u.Pages_2, u.Pages_3, u.Pages_4, u.Pages_5, u.Pages_6, u.Pages_7, u.Pages_8 };
+            return pages.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p!.Trim()).ToList();
+        }
+
+        private static void ApplyPages(User u, List<string>? pages)
+        {
+            var clean = (pages ?? new List<string>())
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .Select(p => p.Trim())
+                .Take(9)
+                .ToList();
+
+            u.Pages_0 = clean.ElementAtOrDefault(0);
+            u.Pages_1 = clean.ElementAtOrDefault(1);
+            u.Pages_2 = clean.ElementAtOrDefault(2);
+            u.Pages_3 = clean.ElementAtOrDefault(3);
+            u.Pages_4 = clean.ElementAtOrDefault(4);
+            u.Pages_5 = clean.ElementAtOrDefault(5);
+            u.Pages_6 = clean.ElementAtOrDefault(6);
+            u.Pages_7 = clean.ElementAtOrDefault(7);
+            u.Pages_8 = clean.ElementAtOrDefault(8);
         }
     }
 }

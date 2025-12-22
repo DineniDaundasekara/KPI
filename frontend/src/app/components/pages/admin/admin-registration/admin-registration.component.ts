@@ -7,90 +7,83 @@ import {
   Validators,
 } from '@angular/forms';
 import { FormsModule } from '@angular/forms';
+import { HttpClient, HttpClientModule, HttpErrorResponse } from '@angular/common/http';
 
 interface AdminUser {
   id: string;
   name: string;
   serviceNumber: string;
+  role?: string;
   isActive: boolean;
   createdAt: string;
   lastLogin?: string;
+  pages?: string[];
+}
+
+interface CreateAdminRequest {
+  name: string;
+  serviceNumber: string;
+  role?: string;
+  pages?: string[];
 }
 
 @Component({
   selector: 'app-admin-registration',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, FormsModule],
+  imports: [CommonModule, ReactiveFormsModule, FormsModule, HttpClientModule],
   templateUrl: './admin-registration.component.html',
-  styleUrls: ['./admin-registration.component.scss']
+  styleUrls: ['./admin-registration.component.scss'],
 })
 export class AdminRegistrationComponent implements OnInit {
   pageTitle = 'Network KPI Monitoring';
   sectionTitle = 'Admin Management';
-  
+
   adminForm!: FormGroup;
+
   admins: AdminUser[] = [];
   filteredAdmins: AdminUser[] = [];
-  
+
   successMessage = '';
   errorMessage = '';
   searchTerm = '';
   isSubmitting = false;
   isFormVisible = false;
   statusFilter: 'all' | 'active' | 'inactive' = 'all';
-  
-  // Sample data from your document
-  private sampleAdmins: AdminUser[] = [
-    {
-      id: '1',
-      name: 'Hasangi',
-      serviceNumber: '010399',
-      isActive: true,
-      createdAt: '2024-01-15T08:30:00Z',
-      lastLogin: new Date().toISOString()
-    },
-    {
-      id: '2',
-      name: 'Yamuna',
-      serviceNumber: '012264',
-      isActive: true,
-      createdAt: '2024-01-20T10:15:00Z',
-      lastLogin: '2024-03-10T14:30:00Z'
-    },
-    {
-      id: '3',
-      name: 'test',
-      serviceNumber: 'status',
-      isActive: true,
-      createdAt: '2024-02-01T14:45:00Z',
-      lastLogin: '2024-02-01T14:45:00Z'
-    },
-  ];
 
-  constructor(private fb: FormBuilder) {}
+  // ✅ Change this if your backend port changes
+  private readonly apiBase = 'http://localhost:5043/api/users';
+
+  constructor(private fb: FormBuilder, private http: HttpClient) {}
 
   ngOnInit(): void {
     this.buildForm();
-    this.loadAdmins();
+    this.loadAdminsFromApi();
   }
 
   private buildForm(): void {
     this.adminForm = this.fb.group({
       name: ['', [Validators.required, Validators.minLength(2)]],
-      serviceNumber: [
-        '',
-        [
-          Validators.required,
-          Validators.pattern(/^[0-9]{6}$/),
-        ],
-      ],
+      serviceNumber: ['', [
+        Validators.required,
+        Validators.pattern(/^[0-9]{6}$/)
+      ]],
+      // Optional: if you later want role selection from UI
+      role: ['admin'],
     });
   }
 
-  loadAdmins(): void {
-    // Load sample data
-    this.admins = [...this.sampleAdmins];
-    this.applyFilters();
+  // ✅ Load from backend
+  loadAdminsFromApi(): void {
+    this.errorMessage = '';
+    this.http.get<AdminUser[]>(`${this.apiBase}/admins`).subscribe({
+      next: (data) => {
+        this.admins = data ?? [];
+        this.applyFilters();
+      },
+      error: (err) => {
+        this.errorMessage = this.getApiError(err, 'Failed to load admins.');
+      },
+    });
   }
 
   toggleFormVisibility(): void {
@@ -106,61 +99,93 @@ export class AdminRegistrationComponent implements OnInit {
   }
 
   getActiveCount(): number {
-    return this.admins.filter(a => a.isActive).length;
+    return this.admins.filter((a) => a.isActive).length;
   }
 
   getInactiveCount(): number {
-    return this.admins.filter(a => !a.isActive).length;
+    return this.admins.filter((a) => !a.isActive).length;
   }
 
+  // ✅ CREATE ADMIN (POST)
   onSubmit(): void {
     if (this.adminForm.invalid || this.isSubmitting) return;
-    
+
     this.errorMessage = '';
     this.successMessage = '';
     this.isSubmitting = true;
 
-    const formData = {
-      name: this.adminForm.get('name')?.value.trim(),
-      serviceNumber: this.adminForm.get('serviceNumber')?.value.trim()
+    const payload: CreateAdminRequest = {
+      name: (this.adminForm.get('name')?.value ?? '').trim(),
+      serviceNumber: (this.adminForm.get('serviceNumber')?.value ?? '').trim(),
+      role: (this.adminForm.get('role')?.value ?? 'admin')?.trim() || 'admin',
+      pages: [], // your UI currently doesn’t collect pages, so keep empty
     };
 
-    // Simulate API call with delay
-    setTimeout(() => {
-      // Check for duplicate service number
-      const alreadyExists = this.admins.some(
-        admin => admin.serviceNumber === formData.serviceNumber
-      );
-      
-      if (alreadyExists) {
-        this.errorMessage = `Service Number ${formData.serviceNumber} already exists.`;
+    this.http.post<AdminUser>(`${this.apiBase}/admins`, payload).subscribe({
+      next: (created) => {
+        // add to top
+        this.admins = [created, ...this.admins];
+        this.applyFilters();
+
+        this.successMessage = `Admin "${created.name}" created successfully.`;
+        this.adminForm.reset({ role: 'admin' });
         this.isSubmitting = false;
-        return;
-      }
 
-      // Create new admin
-      const newAdmin: AdminUser = {
-        id: (Date.now()).toString(),
-        name: formData.name,
-        serviceNumber: formData.serviceNumber,
-        isActive: true,
-        createdAt: new Date().toISOString(),
-        lastLogin: new Date().toISOString()
-      };
+        setTimeout(() => (this.successMessage = ''), 3000);
+      },
+      error: (err) => {
+        this.errorMessage = this.getApiError(err, 'Failed to create admin.');
+        this.isSubmitting = false;
+      },
+    });
+  }
 
-      // Add to the list
-      this.admins = [newAdmin, ...this.admins];
-      this.applyFilters();
-      
-      this.successMessage = `Admin "${newAdmin.name}" created successfully.`;
-      this.adminForm.reset();
-      this.isSubmitting = false;
-      
-      // Clear success message after 3 seconds
-      setTimeout(() => {
-        this.successMessage = '';
-      }, 3000);
-    }, 500);
+  // ✅ DELETE (DELETE)
+  deleteAdmin(id: string): void {
+    const admin = this.admins.find((a) => a.id === id);
+    if (!admin) return;
+
+    if (!window.confirm(`Delete admin "${admin.name}" (${admin.serviceNumber})?`)) return;
+
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.http.delete(`${this.apiBase}/${id}`).subscribe({
+      next: () => {
+        this.admins = this.admins.filter((a) => a.id !== id);
+        this.applyFilters();
+
+        this.successMessage = `Admin "${admin.name}" deleted successfully.`;
+        setTimeout(() => (this.successMessage = ''), 3000);
+      },
+      error: (err) => {
+        this.errorMessage = this.getApiError(err, 'Failed to delete admin.');
+      },
+    });
+  }
+
+  // ✅ TOGGLE ACTIVE/INACTIVE (PATCH)
+  toggleStatus(admin: AdminUser): void {
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    // optimistic update (instant UI)
+    const oldValue = admin.isActive;
+    admin.isActive = !admin.isActive;
+    this.applyFilters();
+
+    this.http.patch(`${this.apiBase}/${admin.id}/status`, {}).subscribe({
+      next: () => {
+        this.successMessage = `Admin "${admin.name}" ${admin.isActive ? 'activated' : 'deactivated'}.`;
+        setTimeout(() => (this.successMessage = ''), 2000);
+      },
+      error: (err) => {
+        // rollback if api fails
+        admin.isActive = oldValue;
+        this.applyFilters();
+        this.errorMessage = this.getApiError(err, 'Failed to update status.');
+      },
+    });
   }
 
   filterAdmins(): void {
@@ -168,39 +193,9 @@ export class AdminRegistrationComponent implements OnInit {
   }
 
   setStatusFilter(filter: 'all' | 'active' | 'inactive'): void {
-    if (this.statusFilter === filter) {
-      return;
-    }
+    if (this.statusFilter === filter) return;
     this.statusFilter = filter;
     this.applyFilters();
-  }
-
-  deleteAdmin(id: string): void {
-    const admin = this.admins.find((a) => a.id === id);
-    if (!admin) return;
-
-    if (!window.confirm(
-      `Delete admin "${admin.name}" (${admin.serviceNumber})?`
-    )) return;
-
-    this.admins = this.admins.filter((a) => a.id !== id);
-    this.applyFilters();
-    
-    this.successMessage = `Admin "${admin.name}" deleted successfully.`;
-    
-    setTimeout(() => {
-      this.successMessage = '';
-    }, 3000);
-  }
-
-  toggleStatus(admin: AdminUser): void {
-    admin.isActive = !admin.isActive;
-    this.successMessage = `Admin "${admin.name}" ${admin.isActive ? 'activated' : 'deactivated'}.`;
-    this.applyFilters();
-    
-    setTimeout(() => {
-      this.successMessage = '';
-    }, 2000);
   }
 
   private applyFilters(): void {
@@ -209,15 +204,16 @@ export class AdminRegistrationComponent implements OnInit {
     let data = [...this.admins];
 
     if (this.statusFilter === 'active') {
-      data = data.filter(admin => admin.isActive);
+      data = data.filter((admin) => admin.isActive);
     } else if (this.statusFilter === 'inactive') {
-      data = data.filter(admin => !admin.isActive);
+      data = data.filter((admin) => !admin.isActive);
     }
 
     if (normalizedSearch) {
-      data = data.filter(admin =>
-        admin.name.toLowerCase().includes(normalizedSearch) ||
-        admin.serviceNumber.includes(normalizedSearch)
+      data = data.filter(
+        (admin) =>
+          admin.name?.toLowerCase().includes(normalizedSearch) ||
+          admin.serviceNumber?.includes(normalizedSearch)
       );
     }
 
@@ -232,33 +228,39 @@ export class AdminRegistrationComponent implements OnInit {
       'linear-gradient(135deg, #ff6b35, #ff9e5c)',
       'linear-gradient(135deg, #3498db, #2ecc71)',
     ];
-    const index = name.charCodeAt(0) % colors.length;
+    const safe = name || 'A';
+    const index = safe.charCodeAt(0) % colors.length;
     return colors[index];
   }
 
   formatDate(dateString?: string): string {
     if (!dateString) return '-';
-    
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric',
-      year: 'numeric'
-    });
+    return isNaN(date.getTime())
+      ? dateString
+      : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   }
 
   formatTime(dateString?: string): string {
     if (!dateString) return '-';
-    
     const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: true
-    });
+    return isNaN(date.getTime())
+      ? dateString
+      : date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
   }
 
   trackByAdmin(_: number, admin: AdminUser): string {
     return admin.id;
+  }
+
+  private getApiError(err: any, fallback: string): string {
+    // Backend may return plain text (BadRequest/Conflict) or JSON
+    if (err instanceof HttpErrorResponse) {
+      if (typeof err.error === 'string' && err.error.trim()) return err.error;
+      if (err.error?.message) return err.error.message;
+      if (err.status === 0) return 'Backend not reachable. Is API running on http://localhost:5043 ?';
+      return `${fallback} (HTTP ${err.status})`;
+    }
+    return fallback;
   }
 }
