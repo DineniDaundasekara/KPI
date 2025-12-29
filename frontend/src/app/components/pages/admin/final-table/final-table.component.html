@@ -9,6 +9,9 @@
   <section class="form-section">
     <form class="kpi-form" [formGroup]="form" (ngSubmit)="onSubmit()">
       <h2>{{ editingId ? 'Update KPI Row' : 'Add KPI Row' }}</h2>
+      <div *ngIf="editingId" class="edit-info">
+        <span class="edit-message">You are editing Row #{{ form.value.rowNumber }}. Make changes and click Update, or Cancel to discard.</span>
+      </div>
 
       <div class="field-grid">
         <div class="field-group">
@@ -69,7 +72,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let record of records">
+        <tr *ngFor="let record of records" [class.editing-row]="editingId === record.id">
           <td>{{ record.rowNumber }}</td>
           <td>{{ record.perspectives }}</td>
           <td>{{ record.strategicObjectives }}</td>
@@ -79,7 +82,7 @@
           <td>{{ record.weightage }}</td>
           <td>
             <button type="button" class="edit" (click)="onEdit(record)" [disabled]="saving">Edit</button>
-            <button type="button" class="delete" (click)="onDelete(record._id)" [disabled]="saving">Delete</button>
+            <button type="button" class="delete" (click)="onDelete(record.id)" [disabled]="saving">Delete</button>
           </td>
         </tr>
       </tbody>

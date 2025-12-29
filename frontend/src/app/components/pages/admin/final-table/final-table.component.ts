@@ -4,8 +4,12 @@ import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
 
-type StrategicRecord = {
-  _id: string;
+/* =======================
+   TYPES
+======================= */
+
+export type KpiDefinition = {
+  id: string;
   rowNumber: number;
   perspectives: string;
   strategicObjectives: string;
@@ -13,101 +17,21 @@ type StrategicRecord = {
   unit: string;
   descriptionOfKPI: string;
   weightage: number;
+  month?: number;
+  year?: number;
 };
 
-const MOCK_STRATEGIC_RECORDS: StrategicRecord[] = [
-  {
-    _id: '6751fea8cb6fec660214976e',
-    rowNumber: 2,
-    perspectives: 'Customer',
-    strategicObjectives: 'Service Assurance',
-    keyPerformanceIndicators: 'Fiber Failures Restoration (Large scale: Pole damages etc): < 8 Hrs',
-    unit: '%',
-    descriptionOfKPI: 'Above 80%',
-    weightage: 8
-  },
-  {
-    _id: '6751fea8cb6fec660214976f',
-    rowNumber: 3,
-    perspectives: 'Customer',
-    strategicObjectives: 'Service Assurance',
-    keyPerformanceIndicators: 'MSAN Power Failures Restoration: < 4 Hrs',
-    unit: '%',
-    descriptionOfKPI: 'Above 85%',
-    weightage: 8
-  },
-  {
-    _id: '6751ffc7cb6fec6602149776',
-    rowNumber: 6,
-    perspectives: 'Customer',
-    strategicObjectives: 'Service Assurance',
-    keyPerformanceIndicators: 'Routing maintenance',
-    unit: '%',
-    descriptionOfKPI: '100%',
-    weightage: 3
-  },
-  {
-    _id: '6751ffc7cb6fec6602149775',
-    rowNumber: 5,
-    perspectives: 'Customer',
-    strategicObjectives: 'Service Assurance',
-    keyPerformanceIndicators:
-      'Network Availability (MSAN, OLT, SLBN, SDH, Fiber NW, IP Core, Tellabs, Service Edge (CEA+PE))',
-    unit: 'Rs. Mn',
-    descriptionOfKPI: 'Above 99.899%',
-    weightage: 7
-  },
-  {
-    _id: '6751ffc7cb6fec6602149777',
-    rowNumber: 7,
-    perspectives: 'Customer',
-    strategicObjectives: 'Service Fulfillment',
-    keyPerformanceIndicators: 'Enterprise/SME and Whole Sales Service Delivery - Fiber',
-    unit: '%',
-    descriptionOfKPI: 'Above 90%',
-    weightage: 35
-  },
-  {
-    _id: '6751ffc7cb6fec6602149778',
-    rowNumber: 8,
-    perspectives: 'Financial',
-    strategicObjectives: 'Project Delivery',
-    keyPerformanceIndicators: 'FTTH Project delivery - Based on Provincial Target',
-    unit: 'Ports',
-    descriptionOfKPI: '100%',
-    weightage: 8
-  },
-  {
-    _id: '6751ffc7cb6fec6602149779',
-    rowNumber: 9,
-    perspectives: 'Customer',
-    strategicObjectives: 'Service Assurance',
-    keyPerformanceIndicators: 'O&M of Power & Aircondition',
-    unit: '%',
-    descriptionOfKPI: 'Above 90%',
-    weightage: 5
-  },
-  {
-    _id: '6751ffc7cb6fec660214977a',
-    rowNumber: 10,
-    perspectives: 'Customer',
-    strategicObjectives: 'Service Assurance',
-    keyPerformanceIndicators: 'Operation & Maintenance of SLT towers and tower premises',
-    unit: '%',
-    descriptionOfKPI: 'Above 95%',
-    weightage: 10
-  },
-  {
-    _id: '6751fea8cb6fec660214976d',
-    rowNumber: 1,
-    perspectives: 'Customer',
-    strategicObjectives: 'Service Assurance',
-    keyPerformanceIndicators: 'Fiber Failures Restoration (General): < 4 Hrs',
-    unit: '%',
-    descriptionOfKPI: 'Above 85%',
-    weightage: 8
-  }
-];
+export type CreateKpiDefinitionRequest = {
+  rowNumber: number;
+  perspectives: string;
+  strategicObjectives: string;
+  keyPerformanceIndicators: string;
+  unit: string;
+  descriptionOfKPI: string;
+  weightage: number;
+  month: number;
+  year: number;
+};
 
 @Component({
   selector: 'app-final-table',
@@ -121,20 +45,26 @@ export class FinalTableComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   pageTitle = 'Strategic KPI Management';
-  records: StrategicRecord[] = [...MOCK_STRATEGIC_RECORDS];
+
+  records: KpiDefinition[] = [];
   editingId: string | null = null;
+
   loading = false;
   saving = false;
   errorMessage = '';
 
-  form = this.fb.group({
-    rowNumber: ['', [Validators.required, Validators.min(1)]],
-    perspectives: ['', Validators.required],
-    strategicObjectives: ['', Validators.required],
-    keyPerformanceIndicators: ['', Validators.required],
-    unit: ['', Validators.required],
-    descriptionOfKPI: ['', Validators.required],
-    weightage: ['', [Validators.required, Validators.min(0)]]
+  // ✅ backend API
+  private readonly apiBase = 'http://localhost:5043/api/kpi-definitions';
+
+  // ✅ Typed form: number controls are number, not string
+  form = this.fb.nonNullable.group({
+    rowNumber: [0, [Validators.required, Validators.min(1)]],
+    perspectives: ['', [Validators.required]],
+    strategicObjectives: ['', [Validators.required]],
+    keyPerformanceIndicators: ['', [Validators.required]],
+    unit: ['', [Validators.required]],
+    descriptionOfKPI: ['', [Validators.required]],
+    weightage: [0, [Validators.required, Validators.min(0)]]
   });
 
   ngOnInit(): void {
@@ -144,17 +74,18 @@ export class FinalTableComponent implements OnInit {
   fetchData(): void {
     this.loading = true;
     this.errorMessage = '';
+
     this.http
-      .get<StrategicRecord[]>('/api/final-data')
+      .get<KpiDefinition[]>(this.apiBase)
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
-        next: response => {
-          this.records = response?.length ? response : [...MOCK_STRATEGIC_RECORDS];
+        next: (res) => {
+          this.records = (res ?? []).sort((a, b) => a.rowNumber - b.rowNumber);
         },
-        error: err => {
-          console.error('Failed to fetch data', err);
-          this.errorMessage = 'Unable to load strategic KPIs. Showing sample snapshot.';
-          this.records = [...MOCK_STRATEGIC_RECORDS];
+        error: (err) => {
+          console.error('GET /api/kpi-definitions failed:', err);
+          this.errorMessage = 'Unable to load KPI definitions.';
+          this.records = [];
         }
       });
   }
@@ -166,11 +97,14 @@ export class FinalTableComponent implements OnInit {
     }
 
     const payload = this.buildPayload();
+
     const request$ = this.editingId
-      ? this.http.put(`/api/final-data/update/${this.editingId}`, payload)
-      : this.http.post('/api/final-data/add', payload);
+      ? this.http.put(`${this.apiBase}/${this.editingId}`, payload)
+      : this.http.post(this.apiBase, payload);
 
     this.saving = true;
+    this.errorMessage = '';
+
     request$
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
@@ -178,40 +112,49 @@ export class FinalTableComponent implements OnInit {
           this.resetForm();
           this.fetchData();
         },
-        error: err => {
-          console.error('Failed to save data', err);
-          this.errorMessage = 'Save failed. Please try again.';
+        error: (err) => {
+          console.error('Save failed:', err);
+          this.errorMessage = 'Save failed. Check backend validation / API errors.';
         }
       });
   }
 
-  onEdit(record: StrategicRecord): void {
-    this.editingId = record._id;
-    this.form.patchValue({
-      rowNumber: record.rowNumber.toString(),
-      perspectives: record.perspectives,
-      strategicObjectives: record.strategicObjectives,
-      keyPerformanceIndicators: record.keyPerformanceIndicators,
-      unit: record.unit,
-      descriptionOfKPI: record.descriptionOfKPI,
-      weightage: record.weightage.toString()
+  onEdit(record: KpiDefinition): void {
+    this.editingId = record.id;
+
+    this.form.setValue({
+      rowNumber: record.rowNumber ?? 0,
+      perspectives: record.perspectives ?? '',
+      strategicObjectives: record.strategicObjectives ?? '',
+      keyPerformanceIndicators: record.keyPerformanceIndicators ?? '',
+      unit: record.unit ?? '',
+      descriptionOfKPI: record.descriptionOfKPI ?? '',
+      weightage: record.weightage ?? 0
     });
+
+    // Scroll to the form section for user-friendly editing
+    setTimeout(() => {
+      const formSection = document.querySelector('.form-section');
+      if (formSection) {
+        formSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 0);
   }
 
   onDelete(id: string): void {
-    if (!window.confirm('Delete this KPI row?')) {
-      return;
-    }
+    if (!window.confirm('Delete this KPI row?')) return;
 
     this.saving = true;
+    this.errorMessage = '';
+
     this.http
-      .delete(`/api/final-data/delete/${id}`)
+      .delete(`${this.apiBase}/${id}`)
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
         next: () => this.fetchData(),
-        error: err => {
-          console.error('Failed to delete data', err);
-          this.errorMessage = 'Deletion failed. Please try again.';
+        error: (err) => {
+          console.error('Delete failed:', err);
+          this.errorMessage = 'Delete failed.';
         }
       });
   }
@@ -220,30 +163,36 @@ export class FinalTableComponent implements OnInit {
     this.resetForm();
   }
 
-  private buildPayload() {
+  // ✅ always include month/year (backend expects them)
+  private buildPayload(): CreateKpiDefinitionRequest {
     const raw = this.form.getRawValue();
+    const now = new Date();
+
     return {
       rowNumber: Number(raw.rowNumber),
-      perspectives: raw.perspectives?.trim(),
-      strategicObjectives: raw.strategicObjectives?.trim(),
-      keyPerformanceIndicators: raw.keyPerformanceIndicators?.trim(),
-      unit: raw.unit?.trim(),
-      descriptionOfKPI: raw.descriptionOfKPI?.trim(),
-      weightage: Number(raw.weightage)
-    } as const;
+      perspectives: raw.perspectives.trim(),
+      strategicObjectives: raw.strategicObjectives.trim(),
+      keyPerformanceIndicators: raw.keyPerformanceIndicators.trim(),
+      unit: raw.unit.trim(),
+      descriptionOfKPI: raw.descriptionOfKPI.trim(),
+      weightage: Number(raw.weightage),
+      month: now.getMonth() + 1,
+      year: now.getFullYear()
+    };
   }
 
   private resetForm(): void {
     this.form.reset({
-      rowNumber: '',
+      rowNumber: 0,
       perspectives: '',
       strategicObjectives: '',
       keyPerformanceIndicators: '',
       unit: '',
       descriptionOfKPI: '',
-      weightage: ''
+      weightage: 0
     });
+
     this.editingId = null;
+    this.errorMessage = '';
   }
 }
-
