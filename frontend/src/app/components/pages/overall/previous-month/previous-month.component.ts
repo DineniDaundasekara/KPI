@@ -6,10 +6,12 @@ import {
   OnInit,
   QueryList,
   ViewChildren,
+  inject,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Subscription, finalize } from 'rxjs';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import * as XLSX from 'xlsx';
 
 interface KpiMetric {
@@ -40,16 +42,30 @@ interface MetroProvinceGroup {
   engineers: Region[];
 }
 
+// Same shape as your Final Table API returns
+type KpiDefinition = {
+  id: string;
+  rowNumber: number;
+  perspectives: string;
+  strategicObjectives: string;
+  keyPerformanceIndicators: string;
+  unit: string;
+  descriptionOfKPI: string;
+  weightage: number;
+  month?: number;
+  year?: number;
+};
+
 @Component({
   selector: 'app-previous-month',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, HttpClientModule],
   templateUrl: './previous-month.component.html',
   styleUrls: ['./previous-month.component.scss'],
 })
-export class PreviousMonthComponent
-  implements OnInit, AfterViewInit, OnDestroy
-{
+export class PreviousMonthComponent implements OnInit, AfterViewInit, OnDestroy {
+  private readonly http = inject(HttpClient);
+
   /* Template row refs for left/right table height sync */
   @ViewChildren('leftRowRef') leftRows!: QueryList<ElementRef<HTMLTableRowElement>>;
   @ViewChildren('rightRowRef') rightRows!: QueryList<ElementRef<HTMLTableRowElement>>;
@@ -63,6 +79,9 @@ export class PreviousMonthComponent
   totalWeightedByRegion: number[] = [];
   totalWeightedNormalized: number[] = [];
 
+  // For dynamic right table: store metrics by [row][region]
+  kpiMetrics: (KpiMetric | null)[][] = [];
+
   /* Period selection */
   availableYears: number[] = [];
   availableMonths: string[] = [];
@@ -75,6 +94,9 @@ export class PreviousMonthComponent
 
   private rowChangeSub?: Subscription;
 
+  // ✅ Final-table API
+  private readonly apiBase = 'http://localhost:5043/api/kpi-definitions';
+
   private readonly allRegions: Region[] = [
     { id: 15, region: 'Metro', province: 'Metro 2', networkEngineer: 'NW/WPE' },
     { id: 16, region: 'Metro', province: 'Metro 2', networkEngineer: 'NW/WPS' },
@@ -84,81 +106,20 @@ export class PreviousMonthComponent
     { id: 20, region: 'Metro', province: 'Metro 1', networkEngineer: 'NW/WPC-1 (CEN/HK/MD)' },
   ];
 
-  private readonly baseKpiRows: Omit<KpiRow, 'metrics'>[] = [
-    {
-      rowNumber: 1,
-      perspectives: 'Customer',
-      strategicObjectives: 'Service Assurance',
-      kpi: 'Fiber Failures Restoration (General): < 4 Hrs',
-      unit: '%',
-      description: 'Above 85%',
-      weightage: 8,
-    },
-    {
-      rowNumber: 2,
-      perspectives: 'Customer',
-      strategicObjectives: 'Service Assurance',
-      kpi: 'Fiber Failures Restoration (Large scale: Pole damages etc): < 8 Hrs',
-      unit: '%',
-      description: 'Above 80%',
-      weightage: 8,
-    },
-    {
-      rowNumber: 3,
-      perspectives: 'Customer',
-      strategicObjectives: 'Service Assurance',
-      kpi: 'MSAN Power Failures Restoration: < 4 Hrs',
-      unit: '%',
-      description: 'Above 85%',
-      weightage: 8,
-    },
-    {
-      rowNumber: 5,
-      perspectives: 'Customer',
-      strategicObjectives: 'Service Assurance',
-      kpi: 'Network Availability (MSAN, OLT, SLBN, SDH, Fiber NW, IP Core, Tellabs, Service Edge (CEA+PE))',
-      unit: 'Rs. Mn',
-      description: 'Above 99.899%',
-      weightage: 7,
-    },
-    {
-      rowNumber: 6,
-      perspectives: 'Customer',
-      strategicObjectives: 'Service Assurance',
-      kpi: 'Routing maintenance',
-      unit: '%',
-      description: '100%',
-      weightage: 3,
-    },
-    {
-      rowNumber: 7,
-      perspectives: 'Customer',
-      strategicObjectives: 'Service Fulfillment',
-      kpi: 'Enterprise/SME and Whole Sales Service Delivery - Fiber',
-      unit: '%',
-      description: 'Above 90%',
-      weightage: 35,
-    },
-    {
-      rowNumber: 10,
-      perspectives: 'Customer',
-      strategicObjectives: 'Service Assurance',
-      kpi: 'Operation & Maintenance of SLT towers and tower premises',
-      unit: '%',
-      description: 'Above 95%',
-      weightage: 10,
-    },
-  ];
-
   private readonly availableMonthsByYear: Record<number, string[]> = {
-    2024: ['January', 'February', 'March', 'April', 'May', 'June'],
-    2025: ['January', 'February', 'March', 'April', 'May', 'June'],
+    2024: [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ],
+    2025: [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ],
   };
 
   ngOnInit(): void {
     this.metroRegions = this.allRegions.filter(r => r.region === 'Metro');
     this.metroProvinceGroups = this.buildProvinceGroups(this.metroRegions);
-    this.weightageSum = this.baseKpiRows.reduce((sum, row) => sum + row.weightage, 0);
 
     this.availableYears = Object.keys(this.availableMonthsByYear)
       .map(year => +year)
@@ -166,30 +127,24 @@ export class PreviousMonthComponent
 
     this.selectedYear = this.availableYears[this.availableYears.length - 1];
     this.setMonthsForYear(this.selectedYear);
+
+    // ✅ Fetch real left-table rows from API
     this.loadKpiForSelectedPeriod();
   }
 
   ngAfterViewInit(): void {
-    // When rows change (after data load), sync heights
     this.rowChangeSub = this.leftRows.changes.subscribe(() => {
-      // small timeout to wait for DOM layout
       setTimeout(() => this.syncRowHeights(), 0);
     });
-    // Also watch right side in case it changes independently
+
     this.rightRows.changes.subscribe(() => {
       setTimeout(() => this.syncRowHeights(), 0);
     });
   }
 
   ngOnDestroy(): void {
-    if (this.rowChangeSub) {
-      this.rowChangeSub.unsubscribe();
-    }
+    this.rowChangeSub?.unsubscribe();
   }
-
-  /* ==========================
-   * PERIOD SELECTION
-   * ========================== */
 
   onYearChange(): void {
     if (!this.selectedYear) return;
@@ -202,13 +157,10 @@ export class PreviousMonthComponent
   }
 
   /* ==========================
-   * LOAD KPI DATA FOR PERIOD
+   * LOAD KPI DATA (REAL LEFT TABLE)
    * ========================== */
-
   private loadKpiForSelectedPeriod(): void {
-    if (!this.selectedYear || !this.selectedMonth) {
-      return;
-    }
+    if (!this.selectedYear || !this.selectedMonth) return;
 
     this.loading = true;
     this.error = null;
@@ -218,6 +170,7 @@ export class PreviousMonthComponent
       this.loading = false;
       this.error = 'No months configured for this year.';
       this.kpiRows = [];
+      this.kpiMetrics = [];
       return;
     }
 
@@ -225,17 +178,66 @@ export class PreviousMonthComponent
       this.selectedMonth = months[0];
     }
 
-    this.kpiRows = this.buildRowsForPeriod(this.selectedYear, this.selectedMonth);
-    this.computeTotals();
-    this.loading = false;
+    const monthNo = this.getMonthNumber(this.selectedMonth);
+    const yearNo = this.selectedYear;
 
-    setTimeout(() => this.syncRowHeights(), 0);
+    this.http
+      .get<KpiDefinition[]>(`${this.apiBase}?month=${monthNo}&year=${yearNo}`)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (res) => {
+          const defs = (res ?? []).slice().sort((a, b) => a.rowNumber - b.rowNumber);
+
+          // Build left table rows dynamically from API
+          this.kpiRows = defs.map((d) => {
+            const weight = Number(d.weightage ?? 0);
+            return {
+              rowNumber: Number(d.rowNumber),
+              perspectives: d.perspectives ?? '',
+              strategicObjectives: d.strategicObjectives ?? '',
+              kpi: d.keyPerformanceIndicators ?? '',
+              unit: d.unit ?? '',
+              description: d.descriptionOfKPI ?? '',
+              weightage: weight,
+              metrics: [], // not used for right table anymore
+            };
+          });
+
+          // Build right table metrics: [row][region] (simulate or fetch real data if available)
+          this.kpiMetrics = this.kpiRows.map((row, rowIndex) =>
+            this.metroRegions.map((_, colIndex) => {
+              // Simulate: if rowIndex+colIndex is even, show data, else null (for demo)
+              // Replace this logic with real data lookup if available
+              if ((rowIndex + colIndex) % 2 === 0) {
+                const achieved = this.clamp(0, 100, 96 - rowIndex * 2 - colIndex);
+                const weighted = +(row.weightage * achieved / 100).toFixed(2);
+                return { achieved: +achieved.toFixed(2), weighted };
+              } else {
+                return null; // No data for this cell
+              }
+            })
+          );
+
+          this.weightageSum = this.kpiRows.reduce((sum, r) => sum + (r.weightage ?? 0), 0);
+          this.computeTotals();
+
+          setTimeout(() => this.syncRowHeights(), 0);
+        },
+        error: (err) => {
+          console.error('GET kpi-definitions failed:', err);
+          this.error = 'Unable to load KPI definitions for selected month/year.';
+          this.kpiRows = [];
+          this.kpiMetrics = [];
+          this.weightageSum = 0;
+          this.totalWeightedByRegion = [];
+          this.totalWeightedNormalized = [];
+        },
+      });
   }
 
   /* ==========================
-   * SYNC ROW HEIGHTS (LEFT/RIGHT TABLE)
+   * SYNC ROW HEIGHTS
    * ========================== */
-
   private syncRowHeights(): void {
     const left = this.leftRows?.toArray() || [];
     const right = this.rightRows?.toArray() || [];
@@ -245,7 +247,6 @@ export class PreviousMonthComponent
       const leftEl = left[i].nativeElement;
       const rightEl = right[i].nativeElement;
 
-      // reset first
       leftEl.style.height = 'auto';
       rightEl.style.height = 'auto';
 
@@ -259,23 +260,17 @@ export class PreviousMonthComponent
   }
 
   /* ==========================
-   * EXPORT TO EXCEL (BASIC)
+   * EXPORT
    * ========================== */
-
   exportToExcel(): void {
     if (!this.kpiRows.length || !this.metroRegions.length) {
       alert('No data to export for this period.');
       return;
     }
 
-    // Basic export: one sheet with left table data.
-    // You can extend this later to match the complex ExcelJS layout from React.
     const dataForSheet: any[] = [];
-
-    dataForSheet.push([
-      `Previous Months KPI – ${this.selectedMonth} ${this.selectedYear}`,
-    ]);
-    dataForSheet.push([]); // empty row
+    dataForSheet.push([`Previous Months KPI – ${this.selectedMonth} ${this.selectedYear}`]);
+    dataForSheet.push([]);
 
     dataForSheet.push([
       '#',
@@ -330,29 +325,6 @@ export class PreviousMonthComponent
     return Array.from(provinceMap.entries()).map(([province, engineers]) => ({ province, engineers }));
   }
 
-  private buildRowsForPeriod(year: number, month: string): KpiRow[] {
-    const monthIndex = this.getMonthIndex(month);
-    const yearOffset = year % 10;
-
-    return this.baseKpiRows.map((baseRow, rowIndex) => {
-      const metrics = this.metroRegions.map((_, colIndex) => {
-        const variance = (monthIndex + 1) * 0.6 + yearOffset * 0.3 + colIndex * 0.5;
-        const rawAchieved = 96 - rowIndex * 2 - colIndex + variance;
-        const achieved = this.clamp(65, 100, rawAchieved);
-        const weighted = +(baseRow.weightage * achieved / 100).toFixed(2);
-        return {
-          achieved: +achieved.toFixed(2),
-          weighted,
-        };
-      });
-
-      return {
-        ...baseRow,
-        metrics,
-      };
-    });
-  }
-
   private computeTotals(): void {
     this.totalWeightedByRegion = this.metroRegions.map((_, colIndex) =>
       this.kpiRows.reduce((sum, row) => sum + (row.metrics[colIndex]?.weighted ?? 0), 0)
@@ -363,23 +335,13 @@ export class PreviousMonthComponent
     );
   }
 
-  private getMonthIndex(month: string): number {
+  private getMonthNumber(monthName: string): number {
     const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
+      'January','February','March','April','May','June',
+      'July','August','September','October','November','December',
     ];
-    const index = months.findIndex(name => name.toLowerCase() === month.toLowerCase());
-    return index >= 0 ? index : 0;
+    const idx = months.findIndex(m => m.toLowerCase() === monthName.toLowerCase());
+    return idx >= 0 ? idx + 1 : 1;
   }
 
   private clamp(min: number, max: number, value: number): number {
