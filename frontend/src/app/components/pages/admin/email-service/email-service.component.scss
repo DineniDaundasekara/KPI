@@ -1,3 +1,26 @@
+// Highlight form in edit mode
+.kpi-form.edit-mode {
+  border: 2px solid #007ad3;
+  box-shadow: 0 0 0 2px #b3e0ff;
+  background: #f6fbff;
+  transition: box-shadow 0.2s, border 0.2s;
+}
+
+// Highlight input when editing
+input.editing {
+  border-color: #007ad3;
+  background: #eaf6ff;
+}
+
+.edit-hint {
+  margin-top: 0.5rem;
+  color: #007ad3;
+  font-size: 0.97rem;
+  background: #eaf6ff;
+  border-left: 3px solid #007ad3;
+  padding: 0.5rem 1rem;
+  border-radius: 0 4px 4px 0;
+}
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap');
 
 :host {

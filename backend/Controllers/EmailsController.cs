@@ -1,0 +1,110 @@
+﻿using backend.Data;
+using backend.DTOs;
+using backend.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace backend.Controllers
+{
+    [ApiController]
+    [Route("api/emails")]
+    public class EmailsController : ControllerBase
+    {
+        private readonly AppDbContext _db;
+
+        public EmailsController(AppDbContext db)
+        {
+            _db = db;
+        }
+
+        // GET: /api/emails/recipients
+        [HttpGet("recipients")]
+        public async Task<ActionResult<IEnumerable<object>>> GetRecipients()
+        {
+            var list = await _db.EmailRecipients
+                .AsNoTracking()
+                .OrderBy(x => x.Email)
+                .Select(x => new { id = x.Id, email = x.Email }) // ✅ id (NOT _id)
+                .ToListAsync();
+
+            return Ok(list);
+        }
+
+        // POST: /api/emails/add-recipient
+        [HttpPost("add-recipient")]
+        public async Task<ActionResult> AddRecipient([FromBody] EmailRecipientDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var email = (dto.Email ?? "").Trim().ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(email))
+                return BadRequest(new { message = "Email is required." });
+
+            var exists = await _db.EmailRecipients.AnyAsync(x => x.Email.ToLower() == email);
+            if (exists)
+                return Conflict(new { message = "Email already exists." });
+
+            var entity = new EmailRecipient
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                Email = email,
+                V = 0
+            };
+
+            _db.EmailRecipients.Add(entity);
+            await _db.SaveChangesAsync();
+
+            return Ok(new { id = entity.Id, email = entity.Email }); // ✅ id
+        }
+
+        // PUT: /api/emails/update-recipient/{id}
+        [HttpPut("update-recipient/{id}")]
+        public async Task<ActionResult> UpdateRecipient(string id, [FromBody] EmailRecipientDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { message = "Invalid recipient id." });
+
+            var entity = await _db.EmailRecipients.FirstOrDefaultAsync(x => x.Id == id);
+            if (entity == null)
+                return NotFound(new { message = "Recipient not found." });
+
+            var email = (dto.Email ?? "").Trim().ToLowerInvariant();
+            if (string.IsNullOrWhiteSpace(email))
+                return BadRequest(new { message = "Email is required." });
+
+            var existsOther = await _db.EmailRecipients.AnyAsync(x => x.Id != id && x.Email.ToLower() == email);
+            if (existsOther)
+                return Conflict(new { message = "Email already exists." });
+
+            entity.Email = email;
+
+            // ✅ avoid overflow for byte
+            entity.V = (byte)Math.Min(255, entity.V + 1);
+
+            await _db.SaveChangesAsync();
+
+            return Ok(new { id = entity.Id, email = entity.Email }); // ✅ id
+        }
+
+        // DELETE: /api/emails/delete-recipient/{id}
+        [HttpDelete("delete-recipient/{id}")]
+        public async Task<IActionResult> DeleteRecipient(string id)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+                return BadRequest(new { message = "Invalid recipient for deletion." });
+
+            var entity = await _db.EmailRecipients.FirstOrDefaultAsync(x => x.Id == id);
+            if (entity == null)
+                return NotFound(new { message = "Recipient not found." });
+
+            _db.EmailRecipients.Remove(entity);
+            await _db.SaveChangesAsync();
+
+            return NoContent();
+        }
+    }
+}

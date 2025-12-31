@@ -11,6 +11,9 @@ namespace backend.Data
         public DbSet<ServiceFulfilmentKpi> ServiceFulfilmentKpis { get; set; }
         public DbSet<KpiDefinition> KpiDefinitions { get; set; }
 
+        // ✅ NEW
+        public DbSet<EmailRecipient> EmailRecipients { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // =========================
@@ -57,7 +60,6 @@ namespace backend.Data
                       .HasColumnName("id")
                       .HasMaxLength(50);
 
-                // ✅ DB tinyint => C# byte
                 entity.Property(x => x.RowNumber)
                       .HasColumnName("rowNumber")
                       .HasColumnType("tinyint");
@@ -74,7 +76,6 @@ namespace backend.Data
                       .HasColumnName("month")
                       .HasColumnType("tinyint");
 
-                // ✅ DB smallint => C# short
                 entity.Property(x => x.Year)
                       .HasColumnName("year")
                       .HasColumnType("smallint");
@@ -99,7 +100,6 @@ namespace backend.Data
                       .HasColumnName("descriptionOfKPI")
                       .HasMaxLength(200);
 
-                // ✅ DB nvarchar
                 entity.Property(x => x.CreatedAt)
                       .HasColumnName("createdAt")
                       .HasColumnType("nvarchar(50)");
@@ -107,6 +107,31 @@ namespace backend.Data
                 entity.Property(x => x.UpdatedAt)
                       .HasColumnName("updatedAt")
                       .HasColumnType("nvarchar(50)");
+            });
+
+            // =========================
+            // ✅ emailrecipients mapping
+            // =========================
+            modelBuilder.Entity<EmailRecipient>(entity =>
+            {
+                entity.ToTable("emailrecipients", "dbo");
+
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("id")
+                      .HasMaxLength(50);
+
+                entity.Property(x => x.Email)
+                      .HasColumnName("email")
+                      .HasMaxLength(255);
+
+                entity.Property(x => x.V)
+                      .HasColumnName("v")
+                      .HasColumnType("tinyint");
+
+                // ✅ optional but recommended (avoid duplicates)
+                entity.HasIndex(x => x.Email).IsUnique();
             });
 
             base.OnModelCreating(modelBuilder);
