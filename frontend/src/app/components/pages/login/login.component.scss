@@ -1,0 +1,114 @@
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  background-color: #dbe2e6; /* Light greyish background */
+  position: relative;
+  overflow: hidden;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Abstract Background Shapes (Simplified approximation) */
+.shape {
+  position: absolute;
+  border-radius: 50px;
+  opacity: 0.4;
+  z-index: 0;
+}
+
+.shape-1 {
+  width: 300px;
+  height: 60px;
+  background-color: #79a888; /* Greenish */
+  transform: rotate(-30deg);
+  top: 10%;
+  left: 10%;
+}
+
+.shape-2 {
+  width: 250px;
+  height: 50px;
+  background-color: #6c92b4; /* Blueish */
+  transform: rotate(-30deg);
+  top: 30%;
+  left: 20%;
+}
+
+.shape-3 {
+  width: 400px;
+  height: 80px;
+  background-color: #6c92b4;
+  transform: rotate(-30deg);
+  bottom: 20%;
+  right: 10%;
+}
+
+.login-card {
+  background: white;
+  width: 450px;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  z-index: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.card-header {
+  background-color: #005696; /* SLT Blue */
+  padding: 2.5rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.5rem;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  border-right: 1px solid rgba(255,255,255,0.3);
+  padding-right: 1.5rem;
+}
+
+.logo {
+  height: 45px;
+  /* If the SVG is dark text, we might need a filter to make it white, 
+     but looking at the screenshot, the logo has a white background part or is white text.
+     Assuming standard colored logo, we'll see how it looks on blue. */
+  filter: brightness(0) invert(1); /* Make logo white if it's black/colored */
+}
+
+.title-container h1 {
+  color: white;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1.2;
+  margin: 0;
+  text-align: left;
+}
+
+.card-body {
+  padding: 3rem 2rem;
+  background: white;
+  display: flex;
+  justify-content: center;
+}
+
+.login-btn {
+  width: 100%;
+  background-color: #4da64d; /* Green color */
+  color: white;
+  border: none;
+  padding: 12px 0;
+  font-size: 1rem;
+  font-weight: 500;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.login-btn:hover {
+  background-color: #3d8b3d;
+}

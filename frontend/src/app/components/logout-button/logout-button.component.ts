@@ -1,4 +1,5 @@
 import { Component, Output, EventEmitter } from '@angular/core';
+import { MsalService } from '@azure/msal-angular';
 
 @Component({
   selector: 'app-logout-button',
@@ -10,7 +11,10 @@ import { Component, Output, EventEmitter } from '@angular/core';
 export class LogoutButtonComponent {
   @Output() logout = new EventEmitter<void>();
 
+  constructor(private msalService: MsalService) {}
+
   onLogout(): void {
+    this.msalService.logoutRedirect();
     this.logout.emit();
   }
 }

@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { MsalGuard } from '@azure/msal-angular';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 // Overall KPI Components
 import { CurrentMonthComponent } from './components/pages/overall/current-month/current-month.component';
@@ -27,32 +28,33 @@ import { EmailServiceComponent } from './components/pages/admin/email-service/em
 import { FinalTableComponent } from './components/pages/admin/final-table/final-table.component';
 
 export const routes: Routes = [
-  { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
-  { path: 'dashboard', component: DashboardComponent },
+  { path: '', redirectTo: 'login', pathMatch: 'full' },
+  { path: 'login', loadComponent: () => import('./components/login/login.component').then(m => m.LoginComponent) },
+  { path: 'dashboard', component: DashboardComponent, canActivate: [MsalGuard] },
   // Overall KPI Routes
-  { path: 'overall/current-month', component: CurrentMonthComponent },
-  { path: 'overall/previous-month', component: PreviousMonthComponent },
+  { path: 'overall/current-month', component: CurrentMonthComponent, canActivate: [MsalGuard] },
+  { path: 'overall/previous-month', component: PreviousMonthComponent, canActivate: [MsalGuard] },
   // Platform KPI Routes
-  { path: 'platform/service-fulfilment', component: ServiceFulfilmentComponent },
-  { path: 'platform/ip-nw-op', component: IpNwOpComponent },
-  { path: 'platform/bb-anw', component: BbAnwComponent },
-  { path: 'platform/otn-op', component: OtnOpComponent },
-  { path: 'platform/tm-activity-plan', component: TmActivityPlanComponent },
-  { path: 'platform/routine-mtnc', component: RoutineMtncComponent },
-  { path: 'platform/tower-mtce-achievement', component: TowerMtceAchievementComponent },
+  { path: 'platform/service-fulfilment', component: ServiceFulfilmentComponent, canActivate: [MsalGuard] },
+  { path: 'platform/ip-nw-op', component: IpNwOpComponent, canActivate: [MsalGuard] },
+  { path: 'platform/bb-anw', component: BbAnwComponent, canActivate: [MsalGuard] },
+  { path: 'platform/otn-op', component: OtnOpComponent, canActivate: [MsalGuard] },
+  { path: 'platform/tm-activity-plan', component: TmActivityPlanComponent, canActivate: [MsalGuard] },
+  { path: 'platform/routine-mtnc', component: RoutineMtncComponent, canActivate: [MsalGuard] },
+  { path: 'platform/tower-mtce-achievement', component: TowerMtceAchievementComponent, canActivate: [MsalGuard] },
   // Admin Routes
-  { path: 'admin/admin-registration', component: AdminRegistrationComponent },
-  { path: 'admin/user-registration', component: UserRegistrationComponent },
-  { path: 'admin/service-fulfilment', component: AdminServiceFulfilmentComponent },
-  { path: 'admin/region-management', component: RegionManagementComponent },
-  { path: 'admin/ip-nw-op', component: AdminIpNwOpComponent },
-  { path: 'admin/bb-anw', component: AdminBbAnwComponent },
-  { path: 'admin/otn-op-1', component: OtnOp1Component },
-  { path: 'admin/otn-op-2', component: OtnOp2Component },
-  { path: 'admin/tower-mtce-achievement', component: AdminTowerMtceAchievementComponent },
-  { path: 'admin/tm-activity-plan', component: AdminTmActivityPlanComponent },
-  { path: 'admin/routine-mtnc', component: AdminRoutineMtncComponent },
-  { path: 'admin/email-service', component: EmailServiceComponent },
-  { path: 'admin/final-table', component: FinalTableComponent },
+  { path: 'admin/admin-registration', component: AdminRegistrationComponent, canActivate: [MsalGuard] },
+  { path: 'admin/user-registration', component: UserRegistrationComponent, canActivate: [MsalGuard] },
+  { path: 'admin/service-fulfilment', component: AdminServiceFulfilmentComponent, canActivate: [MsalGuard] },
+  { path: 'admin/region-management', component: RegionManagementComponent, canActivate: [MsalGuard] },
+  { path: 'admin/ip-nw-op', component: AdminIpNwOpComponent, canActivate: [MsalGuard] },
+  { path: 'admin/bb-anw', component: AdminBbAnwComponent, canActivate: [MsalGuard] },
+  { path: 'admin/otn-op-1', component: OtnOp1Component, canActivate: [MsalGuard] },
+  { path: 'admin/otn-op-2', component: OtnOp2Component, canActivate: [MsalGuard] },
+  { path: 'admin/tower-mtce-achievement', component: AdminTowerMtceAchievementComponent, canActivate: [MsalGuard] },
+  { path: 'admin/tm-activity-plan', component: AdminTmActivityPlanComponent, canActivate: [MsalGuard] },
+  { path: 'admin/routine-mtnc', component: AdminRoutineMtncComponent, canActivate: [MsalGuard] },
+  { path: 'admin/email-service', component: EmailServiceComponent, canActivate: [MsalGuard] },
+  { path: 'admin/final-table', component: FinalTableComponent, canActivate: [MsalGuard] },
   { path: '**', redirectTo: 'dashboard' }
 ];

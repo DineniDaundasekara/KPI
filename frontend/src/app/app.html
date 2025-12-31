@@ -1,56 +1,47 @@
 <main class="app-container">
-  <header class="app-header">
+  <header class="app-header" *ngIf="!isLoginPage">
     <div class="header-content">
       <div class="header-left">
         <div class="logo-section">
           <div class="logo">
-            <img
-              src="assets/slt-logo.svg"
-              alt="SLT Mobitel logo"
-              class="logo-img"
-            />
+            <img src="assets/slt-logo.svg" alt="SLT Mobitel logo" class="logo-img" />
           </div>
         </div>
         <app-header-title [title]="title()"></app-header-title>
       </div>
       <nav class="main-nav">
         <app-dashboard-button></app-dashboard-button>
-        
-        <app-overall-kpi-dropdown
-          [options]="overallOptions"
-          [isOpen]="openMenu() === 'overall'"
-          (toggleMenu)="toggleMenu('overall')"
-          (closeMenu)="closeMenus()"
-          (selection)="handleSelection($event)"
-        ></app-overall-kpi-dropdown>
 
-        <app-platform-kpi-dropdown
-          [options]="platformOptions"
-          [isOpen]="openMenu() === 'platform'"
-          (toggleMenu)="toggleMenu('platform')"
-          (closeMenu)="closeMenus()"
-          (selection)="handleSelection($event)"
-        ></app-platform-kpi-dropdown>
+        <app-overall-kpi-dropdown [options]="overallOptions" [isOpen]="openMenu() === 'overall'"
+          (toggleMenu)="toggleMenu('overall')" (closeMenu)="closeMenus()"
+          (selection)="handleSelection($event)"></app-overall-kpi-dropdown>
 
-        <app-admin-dropdown
-          [options]="adminOptions"
-          [isOpen]="openMenu() === 'admin'"
-          (toggleMenu)="toggleMenu('admin')"
-          (closeMenu)="closeMenus()"
-          (selection)="handleSelection($event)"
-        ></app-admin-dropdown>
+        <app-platform-kpi-dropdown [options]="platformOptions" [isOpen]="openMenu() === 'platform'"
+          (toggleMenu)="toggleMenu('platform')" (closeMenu)="closeMenus()"
+          (selection)="handleSelection($event)"></app-platform-kpi-dropdown>
+
+        <app-admin-dropdown [options]="adminOptions" [isOpen]="openMenu() === 'admin'"
+          (toggleMenu)="toggleMenu('admin')" (closeMenu)="closeMenus()"
+          (selection)="handleSelection($event)"></app-admin-dropdown>
 
         <span class="welcome-text">Welcome, test</span>
         <app-logout-button (logout)="logout()"></app-logout-button>
       </nav>
     </div>
   </header>
-  
+
   <section class="main-content">
+    <!-- <div class="debug-banner" *ngIf="true"
+      style="padding:0.5rem 1rem;border-bottom:1px solid rgba(0,0,0,0.06);font-size:0.9rem;background:linear-gradient(90deg, rgba(255,255,255,0.6), rgba(255,255,255,0.3));">
+      <strong>DEBUG:</strong>
+      <span style="margin-left:0.5rem">url={{currentUrl}}</span>
+      <span *ngIf="navError" style="color:#c00;margin-left:1rem">navError={{navError}}</span>
+      <span *ngIf="lastError" style="color:#c00;margin-left:1rem">error={{lastError}}</span>
+    </div> -->
     <router-outlet></router-outlet>
   </section>
-  
-  <footer class="app-footer">
+
+  <footer class="app-footer" *ngIf="!isLoginPage">
     <div class="footer-content">
       <p>© 2025 KPI Monitor Website| SOC and SM. All rights reserved.</p>
     </div>
