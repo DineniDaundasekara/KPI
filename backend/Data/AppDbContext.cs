@@ -12,6 +12,7 @@ namespace backend.Data
         public DbSet<UserPage> UserPages { get; set; }
 
         public DbSet<ServiceFulfilmentKpi> ServiceFulfilmentKpis { get; set; }
+        public DbSet<TmActivityPlan> TmActivityPlans { get; set; }
 
     }
 }
