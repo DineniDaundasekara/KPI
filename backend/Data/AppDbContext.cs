@@ -10,6 +10,8 @@ namespace backend.Data
         public DbSet<User> Users { get; set; }
         public DbSet<ServiceFulfilmentKpi> ServiceFulfilmentKpis { get; set; }
         public DbSet<KpiDefinition> KpiDefinitions { get; set; }
+        public DbSet<RegionData> RegionData { get; set; } = null!;
+        public DbSet<RtomArea> RtomArea { get; set; } = null!;
 
         // ✅ Email Recipients
         public DbSet<EmailRecipient> EmailRecipients { get; set; }
