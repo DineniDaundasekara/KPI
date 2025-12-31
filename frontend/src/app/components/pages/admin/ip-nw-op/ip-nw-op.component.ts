@@ -4,40 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 
 interface Form6Row {
-  _id: string;
+  id: string;
   no: number;
-  network_engineer_kpi: string;
+  networkEngineerKpi: string;
   division: string;
   section: string;
-  kpi_percent: string | number;
+  kpiPercent: number;
 }
-
-const MOCK_FORM6_ROWS: Form6Row[] = [
-  {
-    _id: 'mock-1',
-    no: 8,
-    network_engineer_kpi: 'IP Core NW Availability',
-    division: 'TRANSPORT & ACCESS',
-    section: 'IP NW OP',
-    kpi_percent: 99.999,
-  },
-  {
-    _id: 'mock-2',
-    no: 9,
-    network_engineer_kpi: 'BSR NW Availability',
-    division: 'TRANSPORT & ACCESS',
-    section: 'IP NW OP',
-    kpi_percent: 99.99,
-  },
-  {
-    _id: 'mock-3',
-    no: 10,
-    network_engineer_kpi: 'Service Edge NW Availability',
-    division: 'TRANSPORT & ACCESS',
-    section: 'IP NW OP',
-    kpi_percent: 99.95,
-  },
-];
 
 @Component({
   selector: 'app-admin-ip-nw-op',
@@ -49,14 +22,17 @@ const MOCK_FORM6_ROWS: Form6Row[] = [
 export class AdminIpNwOpComponent implements OnInit {
   pageTitle = 'Admin — IP NW OP';
 
+  // ✅ change port if your backend uses different one
+  private readonly baseUrl = '/api/IpNwOp';
+
   data: Form6Row[] = [];
 
   form = {
     no: '',
-    network_engineer_kpi: '',
+    networkEngineerKpi: '',
     division: '',
     section: '',
-    kpi_percent: '',
+    kpiPercent: '',
   };
 
   editingId: string | null = null;
@@ -74,31 +50,27 @@ export class AdminIpNwOpComponent implements OnInit {
     this.loading = true;
     this.error = null;
 
-    this.http.get<Form6Row[]>('/form6/').subscribe({
+    this.http.get<Form6Row[]>(this.baseUrl).subscribe({
       next: (res) => {
-        const rows = Array.isArray(res) && res.length ? res : MOCK_FORM6_ROWS;
-        if (!res || !res.length) {
-          console.warn('Form6 API returned empty payload. Falling back to mock data.');
-        }
-        this.data = [...rows];
+        this.data = Array.isArray(res) ? res : [];
         this.loading = false;
       },
       error: (err) => {
-        console.error(err);
-        this.data = [...MOCK_FORM6_ROWS];
-        this.error = null;
+        console.error('Load error:', err);
+        this.data = [];
+        this.error = 'Failed to load data from backend.';
         this.loading = false;
       },
     });
   }
 
-  // Keep the old React mapping support (kpi/target/calculation/platform)
+  // ✅ required because your HTML uses handleInputChange(...)
   handleInputChange(name: string, value: string): void {
     const fieldMapping: Record<string, keyof typeof this.form> = {
-      kpi: 'network_engineer_kpi',
+      kpi: 'networkEngineerKpi',
       target: 'division',
       calculation: 'section',
-      platform: 'kpi_percent',
+      platform: 'kpiPercent',
     };
 
     const fieldName = fieldMapping[name] || (name as keyof typeof this.form);
@@ -109,24 +81,25 @@ export class AdminIpNwOpComponent implements OnInit {
     this.error = null;
 
     const payload = {
-      no: this.form.no,
-      network_engineer_kpi: this.form.network_engineer_kpi,
+      id: this.editingId ?? undefined,
+      no: this.form.no ? Number(this.form.no) : 0,
+      networkEngineerKpi: this.form.networkEngineerKpi,
       division: this.form.division,
       section: this.form.section,
-      kpi_percent: this.form.kpi_percent,
+      kpiPercent: this.form.kpiPercent ? Number(this.form.kpiPercent) : 0,
     };
 
     try {
       if (this.editingId) {
-        await this.http.put(`/form6/update/${this.editingId}`, payload).toPromise();
+        await this.http.put(`${this.baseUrl}/${this.editingId}`, payload).toPromise();
       } else {
-        await this.http.post('/form6/add', payload).toPromise();
+        await this.http.post(this.baseUrl, payload).toPromise();
       }
 
       this.resetForm();
       this.loadData();
     } catch (err) {
-      console.error(err);
+      console.error('Save error:', err);
       this.error = 'Failed to save data. Please try again.';
     }
   }
@@ -134,12 +107,12 @@ export class AdminIpNwOpComponent implements OnInit {
   editRow(item: Form6Row): void {
     this.form = {
       no: String(item.no ?? ''),
-      network_engineer_kpi: item.network_engineer_kpi ?? '',
+      networkEngineerKpi: item.networkEngineerKpi ?? '',
       division: item.division ?? '',
       section: item.section ?? '',
-      kpi_percent: String(item.kpi_percent ?? ''),
+      kpiPercent: String(item.kpiPercent ?? ''),
     };
-    this.editingId = item._id;
+    this.editingId = item.id;
   }
 
   cancelEdit(): void {
@@ -151,10 +124,10 @@ export class AdminIpNwOpComponent implements OnInit {
     if (!ok) return;
 
     try {
-      await this.http.delete(`/form6/delete/${id}`).toPromise();
+      await this.http.delete(`${this.baseUrl}/${id}`).toPromise();
       this.loadData();
     } catch (err) {
-      console.error(err);
+      console.error('Delete error:', err);
       this.error = 'Failed to delete item. Please try again.';
     }
   }
@@ -162,10 +135,10 @@ export class AdminIpNwOpComponent implements OnInit {
   resetForm(): void {
     this.form = {
       no: '',
-      network_engineer_kpi: '',
+      networkEngineerKpi: '',
       division: '',
       section: '',
-      kpi_percent: '',
+      kpiPercent: '',
     };
     this.editingId = null;
   }

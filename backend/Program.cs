@@ -1,4 +1,5 @@
 ﻿using backend.Data;
+using backend.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json;
 
@@ -16,6 +17,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
+// ✅ Register IpNwOpService as Scoped (NOT Singleton)
+builder.Services.AddScoped<IpNwOpService>();
+
 // Add Swagger for API documentation (only in Development)
 if (builder.Environment.IsDevelopment())
 {
@@ -27,7 +31,7 @@ if (builder.Environment.IsDevelopment())
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin",
-        policy => policy.WithOrigins("http://localhost:4200")  // Replace with your Angular app URL
+        policy => policy.WithOrigins("http://localhost:4200")
                         .AllowAnyHeader()
                         .AllowAnyMethod());
 });

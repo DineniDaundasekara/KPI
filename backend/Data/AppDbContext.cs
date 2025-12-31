@@ -12,5 +12,7 @@ namespace backend.Data
         public DbSet<ServiceFulfilmentKpi> ServiceFulfilmentKpis { get; set; } = null!;
 
         public DbSet<RegionData> Regions { get; set; } = null!;
+
+        public DbSet<IpNwOp> IpNwOps { get; set; }
     }
 }
