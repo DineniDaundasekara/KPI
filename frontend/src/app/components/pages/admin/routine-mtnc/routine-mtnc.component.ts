@@ -6,7 +6,7 @@ import { finalize } from 'rxjs/operators';
 
 type RoutineRecord = {
   _id: string;
-  no: number | string;
+  no: number;
   kpi: string;
   target: string;
   calculation: string;
@@ -15,42 +15,6 @@ type RoutineRecord = {
   definedOLADetails: string;
   dataSources: string;
 };
-
-const MOCK_ROUTINE_RECORDS: RoutineRecord[] = [
-  {
-    _id: '67520abfbf62c9a168f26033',
-    no: 1,
-    kpi: 'Routing maintenance - IPNW (every two months)',
-    target: '100.000%',
-    calculation: '# completed nodes / Total # Nodes',
-    platform: 'IPNW',
-    responsibleDGM: 'NW Mng',
-    definedOLADetails: 'Every 2 Months',
-    dataSources: 'NW Report'
-  },
-  {
-    _id: '67520abfbf62c9a168f26034',
-    no: 2,
-    kpi: 'Routing maintenance - SDH/SLBN (every two months)',
-    target: '100.000%',
-    calculation: '# completed nodes / Total # Nodes',
-    platform: 'Int & NT',
-    responsibleDGM: 'NW Mng',
-    definedOLADetails: 'Every 2 Months',
-    dataSources: 'NW Report'
-  },
-  {
-    _id: '67520abfbf62c9a168f26035',
-    no: 3,
-    kpi: 'Routing maintenance - MSAN/OLTE (every six months)',
-    target: '100.000%',
-    calculation: '# completed nodes / Total # Nodes',
-    platform: 'BB&ANW',
-    responsibleDGM: 'NW Mng',
-    definedOLADetails: 'Every 4 Months',
-    dataSources: 'NW Report'
-  }
-];
 
 @Component({
   selector: 'app-admin-routine-mtnc',
@@ -64,11 +28,19 @@ export class AdminRoutineMtncComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   pageTitle = 'Routine MTNC';
-  records: RoutineRecord[] = [...MOCK_ROUTINE_RECORDS];
+  formTitle = 'Add KPI';
+  submitButtonLabel = 'Add KPI';
+
+  // ✅ from DB only
+  records: RoutineRecord[] = [];
   editingId: string | null = null;
+
   loading = false;
   saving = false;
   errorMessage = '';
+
+  // ✅ backend base url (change port if needed)
+  private readonly apiBase = 'http://localhost:5043/api/mtnc-routine';
 
   form = this.fb.group({
     no: ['', Validators.required],
@@ -88,17 +60,19 @@ export class AdminRoutineMtncComponent implements OnInit {
   fetchData(): void {
     this.loading = true;
     this.errorMessage = '';
+
     this.http
-      .get<RoutineRecord[]>('/api/mtnc-routine')
+      .get<RoutineRecord[]>(this.apiBase)
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
-        next: response => {
-          this.records = response?.length ? response : [...MOCK_ROUTINE_RECORDS];
+        next: (response) => {
+          // sort by "no"
+          this.records = (response ?? []).sort((a, b) => (a.no ?? 0) - (b.no ?? 0));
         },
-        error: err => {
+        error: (err) => {
           console.error('Failed to fetch data', err);
-          this.errorMessage = 'Unable to load routine maintenance KPIs. Showing sample data.';
-          this.records = [...MOCK_ROUTINE_RECORDS];
+          this.errorMessage = 'Unable to load routine maintenance KPIs from database.';
+          this.records = [];
         }
       });
   }
@@ -109,12 +83,25 @@ export class AdminRoutineMtncComponent implements OnInit {
       return;
     }
 
-    const payload = this.form.getRawValue();
+    // ✅ normalize payload
+    const payload = {
+      no: Number(this.form.value.no),
+      kpi: (this.form.value.kpi ?? '').trim(),
+      target: (this.form.value.target ?? '').trim(),
+      calculation: (this.form.value.calculation ?? '').trim(),
+      platform: (this.form.value.platform ?? '').trim(),
+      responsibleDGM: (this.form.value.responsibleDGM ?? '').trim(),
+      definedOLADetails: (this.form.value.definedOLADetails ?? '').trim(),
+      dataSources: (this.form.value.dataSources ?? '').trim()
+    };
+
     const request$ = this.editingId
-      ? this.http.put(`/api/mtnc-routine/update/${this.editingId}`, payload)
-      : this.http.post('/api/mtnc-routine/add', payload);
+      ? this.http.put(`${this.apiBase}/update/${this.editingId}`, payload)
+      : this.http.post(`${this.apiBase}/add`, payload);
 
     this.saving = true;
+    this.errorMessage = '';
+
     request$
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
@@ -122,9 +109,9 @@ export class AdminRoutineMtncComponent implements OnInit {
           this.resetForm();
           this.fetchData();
         },
-        error: err => {
+        error: (err) => {
           console.error('Failed to save data', err);
-          this.errorMessage = 'Saving failed. Please try again.';
+          this.errorMessage = err?.error?.message || 'Saving failed. Please try again.';
         }
       });
   }
@@ -133,36 +120,49 @@ export class AdminRoutineMtncComponent implements OnInit {
     this.editingId = record._id;
     this.form.patchValue({
       no: record.no?.toString() ?? '',
-      kpi: record.kpi,
-      target: record.target,
-      calculation: record.calculation,
-      platform: record.platform,
-      responsibleDGM: record.responsibleDGM,
-      definedOLADetails: record.definedOLADetails,
-      dataSources: record.dataSources
+      kpi: record.kpi ?? '',
+      target: record.target ?? '',
+      calculation: record.calculation ?? '',
+      platform: record.platform ?? '',
+      responsibleDGM: record.responsibleDGM ?? '',
+      definedOLADetails: record.definedOLADetails ?? '',
+      dataSources: record.dataSources ?? ''
     });
+    this.formTitle = 'Update KPI';
+    this.submitButtonLabel = 'Update KPI';
+    this.errorMessage = '';
   }
 
   onDelete(id: string): void {
-    if (!window.confirm('Are you sure you want to delete this item?')) {
+    if (!id) {
+      this.errorMessage = 'Invalid record id.';
       return;
     }
+    if (!window.confirm('Are you sure you want to delete this item?')) return;
 
     this.saving = true;
+    this.errorMessage = '';
+
     this.http
-      .delete(`/api/mtnc-routine/delete/${id}`)
+      .delete(`${this.apiBase}/delete/${id}`)
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
-        next: () => this.fetchData(),
-        error: err => {
+        next: () => {
+          if (this.editingId === id) this.resetForm();
+          this.fetchData();
+        },
+        error: (err) => {
           console.error('Failed to delete data', err);
-          this.errorMessage = 'Deletion failed. Please try again.';
+          this.errorMessage = err?.error?.message || 'Deletion failed. Please try again.';
         }
       });
   }
 
   onCancelEdit(): void {
     this.resetForm();
+    this.formTitle = 'Add KPI';
+    this.submitButtonLabel = 'Add KPI';
+    this.errorMessage = '';
   }
 
   private resetForm(): void {
@@ -177,6 +177,7 @@ export class AdminRoutineMtncComponent implements OnInit {
       dataSources: ''
     });
     this.editingId = null;
+    this.formTitle = 'Add KPI';
+    this.submitButtonLabel = 'Add KPI';
   }
 }
-

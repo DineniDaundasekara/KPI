@@ -11,8 +11,11 @@ namespace backend.Data
         public DbSet<ServiceFulfilmentKpi> ServiceFulfilmentKpis { get; set; }
         public DbSet<KpiDefinition> KpiDefinitions { get; set; }
 
-        // ✅ NEW
+        // ✅ Email Recipients
         public DbSet<EmailRecipient> EmailRecipients { get; set; }
+
+        // ✅ Routine MTNC
+        public DbSet<MtncRoutine> MtncRoutines { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -31,7 +34,7 @@ namespace backend.Data
                 entity.Property(x => x.Role).HasColumnName("role").HasMaxLength(50);
 
                 entity.Property(x => x.IsActive).HasColumnName("isActive");
-                entity.Property(x => x.V).HasColumnName("v");
+                entity.Property(x => x.V).HasColumnName("v"); // depends on your model type
                 entity.Property(x => x.LastLogin).HasColumnName("lastLogin");
 
                 entity.Property(x => x.CreatedAt).HasColumnName("createdAt");
@@ -110,7 +113,7 @@ namespace backend.Data
             });
 
             // =========================
-            // ✅ emailrecipients mapping
+            // emailrecipients mapping
             // =========================
             modelBuilder.Entity<EmailRecipient>(entity =>
             {
@@ -130,8 +133,67 @@ namespace backend.Data
                       .HasColumnName("v")
                       .HasColumnType("tinyint");
 
-                // ✅ optional but recommended (avoid duplicates)
                 entity.HasIndex(x => x.Email).IsUnique();
+            });
+
+            // =========================
+            // ✅ mtncroutinetable1 mapping (FIXED)
+            // =========================
+            modelBuilder.Entity<MtncRoutine>(entity =>
+            {
+                entity.ToTable("mtncroutinetable1", "dbo");
+
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("id")
+                      .HasMaxLength(50);
+
+                // ✅ MAIN FIX: no is tinyint
+                entity.Property(x => x.No)
+                      .HasColumnName("no")
+                      .HasColumnType("tinyint");
+
+                entity.Property(x => x.Kpi)
+                      .HasColumnName("kpi")
+                      .HasMaxLength(500);
+
+                entity.Property(x => x.Target)
+                      .HasColumnName("target")
+                      .HasMaxLength(50);
+
+                entity.Property(x => x.Calculation)
+                      .HasColumnName("calculation")
+                      .HasMaxLength(300);
+
+                entity.Property(x => x.Platform)
+                      .HasColumnName("platform")
+                      .HasMaxLength(100);
+
+                entity.Property(x => x.ResponsibleDGM)
+                      .HasColumnName("responsibleDGM")
+                      .HasMaxLength(100);
+
+                entity.Property(x => x.DefinedOLADetails)
+                      .HasColumnName("definedOLADetails")
+                      .HasMaxLength(200);
+
+                entity.Property(x => x.DataSources)
+                      .HasColumnName("dataSources")
+                      .HasMaxLength(200);
+
+                entity.Property(x => x.CreatedAt)
+                      .HasColumnName("createdAt")
+                      .HasColumnType("nvarchar(50)");
+
+                entity.Property(x => x.UpdatedAt)
+                      .HasColumnName("updatedAt")
+                      .HasColumnType("nvarchar(50)");
+
+                // ✅ v is tinyint
+                entity.Property(x => x.V)
+                      .HasColumnName("v")
+                      .HasColumnType("tinyint");
             });
 
             base.OnModelCreating(modelBuilder);
