@@ -13,8 +13,8 @@
         <span class="error" *ngIf="form.controls.no.invalid && form.controls.no.touched">Required</span>
       </div>
       <div class="field-group">
-        <input type="text" formControlName="network_engineer_kpi" placeholder="KPI" required />
-        <span class="error" *ngIf="form.controls.network_engineer_kpi.invalid && form.controls.network_engineer_kpi.touched">Required</span>
+        <input type="text" formControlName="network_Engineer_Kpi" placeholder="KPI" required />
+        <span class="error" *ngIf="form.controls.network_Engineer_Kpi.invalid && form.controls.network_Engineer_Kpi.touched">Required</span>
       </div>
       <div class="field-group">
         <input type="text" formControlName="division" placeholder="Division" required />
@@ -25,8 +25,8 @@
         <span class="error" *ngIf="form.controls.section.invalid && form.controls.section.touched">Required</span>
       </div>
       <div class="field-group">
-        <input type="text" formControlName="kpi_percent" placeholder="KPI (%)" required />
-        <span class="error" *ngIf="form.controls.kpi_percent.invalid && form.controls.kpi_percent.touched">Required</span>
+        <input type="text" formControlName="kpi_Percent" placeholder="KPI (%)" required />
+        <span class="error" *ngIf="form.controls.kpi_Percent.invalid && form.controls.kpi_Percent.touched">Required</span>
       </div>
 
       <div class="actions">
@@ -59,10 +59,10 @@
       <tbody>
         <tr *ngFor="let record of records">
           <td>{{ record.no }}</td>
-          <td>{{ record.network_engineer_kpi }}</td>
+          <td>{{ record.network_Engineer_Kpi }}</td>
           <td>{{ record.division }}</td>
           <td>{{ record.section }}</td>
-          <td>{{ record.kpi_percent }}</td>
+          <td>{{ record.kpi_Percent }}</td>
           <td>
             <button type="button" class="edit" (click)="onEdit(record)" [disabled]="saving">Edit</button>
             <button type="button" class="delete" (click)="onDelete(record._id)" [disabled]="saving">Delete</button>

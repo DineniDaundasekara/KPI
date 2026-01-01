@@ -1,3 +1,4 @@
+// app.ts
 import { Component, HostListener, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
@@ -8,6 +9,7 @@ import { OverallKpiDropdownComponent } from './components/overall-kpi-dropdown/o
 import { PlatformKpiDropdownComponent } from './components/platform-kpi-dropdown/platform-kpi-dropdown.component';
 import { AdminDropdownComponent } from './components/admin-dropdown/admin-dropdown.component';
 import { LogoutButtonComponent } from './components/logout-button/logout-button.component';
+import { UserRegistrationComponent } from './components/pages/admin/user-registration/user-registration.component';
 
 @Component({
   selector: 'app-root',
@@ -20,7 +22,8 @@ import { LogoutButtonComponent } from './components/logout-button/logout-button.
     OverallKpiDropdownComponent,
     PlatformKpiDropdownComponent,
     AdminDropdownComponent,
-    LogoutButtonComponent
+    LogoutButtonComponent,
+    UserRegistrationComponent // Add this
   ],
   templateUrl: './app.html',
   styleUrls: ['./app.css']

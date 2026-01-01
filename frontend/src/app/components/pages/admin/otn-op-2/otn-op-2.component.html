@@ -1,6 +1,6 @@
-<div class="kpi-page">
-  <div class="kpi-overlay"></div>
-  <section class="kpi-hero">
+<div class= "kpi-page" >
+  <div class="kpi-overlay" ></div>
+  <section class= "kpi-hero" > 
     <h1>{{ pageTitle }}</h1>
     <p>Fiber and transport KPI oversight for INT &amp; NT OP_02.</p>
   </section>
@@ -15,7 +15,7 @@
       <div class="field-group">
         <input type="text" formControlName="network_engineer_kpi" placeholder="KPI" required />
         <span class="error" *ngIf="form.controls.network_engineer_kpi.invalid && form.controls.network_engineer_kpi.touched">Required</span>
-      </div>
+      </div>    
       <div class="field-group">
         <input type="text" formControlName="division" placeholder="Division" required />
         <span class="error" *ngIf="form.controls.division.invalid && form.controls.division.touched">Required</span>
@@ -45,15 +45,15 @@
     <div class="state error" *ngIf="!loading && errorMessage">{{ errorMessage }}</div>
     <div class="state" *ngIf="!loading && !errorMessage && !records.length">No KPI entries yet.</div>
 
-    <table *ngIf="!loading && records.length" class="kpi-table">
+    <table *ngIf= "!loading && records.length"  class= "kpi-table" >
       <thead>
         <tr>
-          <th>No</th>
-          <th>Network Engineers KPI</th>
-          <th>DIVISION</th>
-          <th>SECTION</th>
-          <th>KPI (%)</th>
-          <th>Actions</th>
+          <th> No </th>
+          <th> Network Engineers KPI </th>
+          <th> DIVISION </th>
+          <th> SECTION </th>
+          <th> KPI(%) </th>
+          <th> Actions </th>
         </tr>
       </thead>
       <tbody>

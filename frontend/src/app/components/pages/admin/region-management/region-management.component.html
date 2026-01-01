@@ -71,7 +71,7 @@
             id="networkEngineer"
             type="text"
             name="networkEngineer"
-            [(ngModel)]="formData.networkEngineer"
+            [(ngModel)]="formData.networkengineer"
             required
             placeholder="Enter lead engineer"
           />
@@ -83,7 +83,7 @@
             id="lea"
             type="text"
             name="lea"
-            [(ngModel)]="formData.lea"
+            [(ngModel)]="formData.leacode"
             required
             placeholder="Enter LEA code"
           />
@@ -132,11 +132,11 @@
             <th (click)="requestSort('province')">
               Province {{ getSortIndicator('province') }}
             </th>
-            <th (click)="requestSort('networkEngineer')">
-              Network Engineer {{ getSortIndicator('networkEngineer') }}
+            <th (click)="requestSort('networkengineer')">
+              Network Engineer {{ getSortIndicator('networkengineer') }}
             </th>
-            <th (click)="requestSort('lea')">
-              LEA {{ getSortIndicator('lea') }}
+            <th (click)="requestSort('leacode')">
+              LEA {{ getSortIndicator('leacode') }}
             </th>
             <th class="actions-col">Actions</th>
           </tr>
@@ -231,15 +231,15 @@
             <!-- Network Engineer cell -->
             <td>
               <ng-container
-                *ngIf="isEditingCell(r, 'networkEngineer'); else neView"
+                *ngIf="isEditingCell(r, 'networkengineer'); else neView"
               >
                 <input
                   class="edit-input"
                   type="text"
                   [(ngModel)]="editingValue"
                   [ngModelOptions]="{ standalone: true }"
-                  (keydown)="onCellKeydown($event, r, 'networkEngineer')"
-                  (blur)="saveCell(r, 'networkEngineer')"
+                  (keydown)="onCellKeydown($event, r, 'networkengineer')"
+                  (blur)="saveCell(r, 'networkengineer')"
                   placeholder="Network engineer value"
                   aria-label="Edit network engineer value"
                   title="Edit network engineer value"
@@ -250,14 +250,14 @@
               <ng-template #neView>
                 <div
                   class="editable-cell"
-                  (click)="startCellEdit(r, 'networkEngineer')"
+                  (click)="startCellEdit(r, 'networkengineer')"
                   title="Click to edit"
                 >
-                  <span>{{ r.networkEngineer || '—' }}</span>
+                  <span>{{ r.networkengineer || '—' }}</span>
                   <button
                     type="button"
                     class="icon-btn edit-btn"
-                    (click)="$event.stopPropagation(); startCellEdit(r, 'networkEngineer')"
+                    (click)="$event.stopPropagation(); startCellEdit(r, 'networkengineer')"
                     aria-label="Edit network engineer"
                   >
                     <span class="material-symbols-outlined">edit_square</span>
@@ -269,14 +269,14 @@
 
             <!-- LEA cell -->
             <td>
-              <ng-container *ngIf="isEditingCell(r, 'lea'); else leaView">
+              <ng-container *ngIf="isEditingCell(r, 'leacode'); else leaView">
                 <input
                   class="edit-input"
                   type="text"
                   [(ngModel)]="editingValue"
                   [ngModelOptions]="{ standalone: true }"
-                  (keydown)="onCellKeydown($event, r, 'lea')"
-                  (blur)="saveCell(r, 'lea')"
+                  (keydown)="onCellKeydown($event, r, 'leacode')"
+                  (blur)="saveCell(r, 'leacode')"
                   placeholder="LEA value"
                   aria-label="Edit LEA value"
                   title="Edit LEA value"
@@ -287,14 +287,14 @@
               <ng-template #leaView>
                 <div
                   class="editable-cell"
-                  (click)="startCellEdit(r, 'lea')"
+                  (click)="startCellEdit(r, 'leacode')"
                   title="Click to edit"
                 >
-                  <span>{{ r.lea || '—' }}</span>
+                  <span>{{ r.leacode || '—' }}</span>
                   <button
                     type="button"
                     class="icon-btn edit-btn"
-                    (click)="$event.stopPropagation(); startCellEdit(r, 'lea')"
+                    (click)="$event.stopPropagation(); startCellEdit(r, 'leacode')"
                     aria-label="Edit LEA"
                   >
                     <span class="material-symbols-outlined">edit_square</span>
