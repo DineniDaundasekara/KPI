@@ -198,7 +198,12 @@ namespace backend.Data
                       .HasColumnType("tinyint");
             });
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
             base.OnModelCreating(modelBuilder);
+
+            // Optional: enforce table name here instead of attribute
+            // modelBuilder.Entity<ServiceFulfilmentKpi>().ToTable("YOUR_TABLE_NAME_HERE");
         }
     }
 }
