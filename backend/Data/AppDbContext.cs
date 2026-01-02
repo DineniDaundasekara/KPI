@@ -1,7 +1,6 @@
 ﻿using backend.Models;
 using Microsoft.EntityFrameworkCore;
 
-
 namespace backend.Data
 {
     public class AppDbContext : DbContext
@@ -13,5 +12,12 @@ namespace backend.Data
 
         public DbSet<ServiceFulfilmentKpi> ServiceFulfilmentKpis { get; set; }
 
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Optional: enforce table name here instead of attribute
+            // modelBuilder.Entity<ServiceFulfilmentKpi>().ToTable("YOUR_TABLE_NAME_HERE");
+        }
     }
 }
