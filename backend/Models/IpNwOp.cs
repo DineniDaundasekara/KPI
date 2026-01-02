@@ -8,7 +8,7 @@ namespace backend.Models
     {
         [Key]
         [Column("id")]
-        public string Id { get; set; } = null!;
+        public string? Id { get; set; } 
 
         [Column("no")]
         public int? No { get; set; }

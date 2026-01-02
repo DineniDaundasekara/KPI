@@ -30,6 +30,9 @@ namespace backend.Services
 
         public async Task<IpNwOp> AddAsync(IpNwOp row)
         {
+            if (string.IsNullOrWhiteSpace(row.Id))
+                row.Id = Guid.NewGuid().ToString();
+
             row.Year = DateTime.Now.Year;
 
             // FIXED: Since UnavailableMinutesId is a string, use "0" instead of 0
