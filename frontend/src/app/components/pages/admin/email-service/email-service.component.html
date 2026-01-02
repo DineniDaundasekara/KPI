@@ -7,11 +7,11 @@
   </section>
 
   <section class="form-section">
-    <form class="kpi-form" [formGroup]="form" (ngSubmit)="onSubmit()">
-      <h2>{{ editingId ? 'Update Recipient' : 'Add New Recipient' }}</h2>
+    <form class="kpi-form" [formGroup]="form" (ngSubmit)="onSubmit()" [class.edit-mode]="editingId">
+      <h2>{{ formTitle }}</h2>
 
       <div class="field-group">
-        <input type="email" formControlName="email" placeholder="Email address" autocomplete="off" />
+        <input type="email" formControlName="email" placeholder="Email address" autocomplete="off" [class.editing]="editingId" />
         <span class="error" *ngIf="form.controls.email.touched && form.controls.email.invalid">
           Please provide a valid email address.
         </span>
@@ -19,11 +19,14 @@
 
       <div class="actions">
         <button type="submit" [disabled]="form.invalid || saving">
-          {{ editingId ? 'Update' : 'Add' }} Recipient
+          {{ submitButtonLabel }}
         </button>
         <button type="button" class="secondary" *ngIf="editingId" (click)="onCancelEdit()" [disabled]="saving">
           Cancel
         </button>
+      </div>
+      <div class="edit-hint" *ngIf="editingId">
+        <span>Editing recipient. Make changes and click <b>Update Recipient</b> or <b>Cancel</b> to discard.</span>
       </div>
     </form>
   </section>
@@ -45,7 +48,7 @@
           <td>{{ recipient.email }}</td>
           <td>
             <button type="button" class="edit" (click)="onEdit(recipient)" [disabled]="saving">Edit</button>
-            <button type="button" class="delete" (click)="onDelete(recipient._id)" [disabled]="saving">Delete</button>
+            <button type="button" class="delete" (click)="onDelete(recipient.id)" [disabled]="saving">Delete</button>
           </td>
         </tr>
       </tbody>

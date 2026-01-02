@@ -651,10 +651,17 @@
   color: #6b7280;
 }
 
+
 .status-badge.active {
   background-color: #f0fdf4;
   border-color: #bbf7d0;
   color: #16a34a;
+}
+
+.status-badge:not(.active) {
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
 }
 
 .status-badge i {

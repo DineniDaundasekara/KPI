@@ -5,14 +5,10 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
 
 type EmailRecipient = {
-  _id: string;
-  email: string;
+  id: string;     // ✅ SQL id column
+  email: string;  // ✅ SQL email column
+  v?: number;     // optional
 };
-
-const MOCK_RECIPIENTS: EmailRecipient[] = [
-  { _id: '67bbffc4beb60321d347b2a3', email: 'yamunas@slt.com.lk' },
-  { _id: '678f1cb1e4c2f270ea853cd0', email: 'yasithasandu@gmail.com' }
-];
 
 @Component({
   selector: 'app-email-service',
@@ -26,11 +22,18 @@ export class EmailServiceComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   pageTitle = 'Email Recipients Management';
-  recipients: EmailRecipient[] = [...MOCK_RECIPIENTS];
+  formTitle = 'Add Recipient';
+  submitButtonLabel = 'Add Recipient';
+
+  recipients: EmailRecipient[] = [];
   editingId: string | null = null;
+
   loading = false;
   saving = false;
   errorMessage = '';
+
+  // ✅ IMPORTANT: use your backend base url
+  private readonly apiBase = 'http://localhost:5043/api/emails';
 
   form = this.fb.group({
     email: ['', [Validators.required, Validators.email]]
@@ -43,17 +46,21 @@ export class EmailServiceComponent implements OnInit {
   fetchData(): void {
     this.loading = true;
     this.errorMessage = '';
+
     this.http
-      .get<EmailRecipient[]>('/api/emails/recipients')
+      .get<EmailRecipient[]>(`${this.apiBase}/recipients`)
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
-        next: response => {
-          this.recipients = response?.length ? response : [...MOCK_RECIPIENTS];
+        next: (response) => {
+          // ✅ sort like your KPI tables
+          this.recipients = (response ?? []).sort((a, b) =>
+            (a.email ?? '').localeCompare(b.email ?? '')
+          );
         },
-        error: err => {
-          console.error('Failed to fetch data', err);
-          this.errorMessage = 'Unable to load email recipients. Showing sample list.';
-          this.recipients = [...MOCK_RECIPIENTS];
+        error: (err) => {
+          console.error('Failed to fetch recipients', err);
+          this.errorMessage = 'Unable to load email recipients from database.';
+          this.recipients = [];
         }
       });
   }
@@ -64,12 +71,30 @@ export class EmailServiceComponent implements OnInit {
       return;
     }
 
-    const payload = this.form.getRawValue();
-    const request$ = this.editingId
-      ? this.http.put(`/api/emails/update-recipient/${this.editingId}`, payload)
-      : this.http.post('/api/emails/add-recipient', payload);
+    const payload = {
+      email: (this.form.value.email ?? '').trim()
+    };
+
+    if (!payload.email) {
+      this.errorMessage = 'Email is required.';
+      return;
+    }
+
+    let request$;
+    if (this.editingId) {
+      // Prevent update if editingId is empty or undefined
+      if (!this.editingId) {
+        this.errorMessage = 'Invalid recipient for update.';
+        return;
+      }
+      request$ = this.http.put(`${this.apiBase}/update-recipient/${this.editingId}`, payload);
+    } else {
+      request$ = this.http.post(`${this.apiBase}/add-recipient`, payload);
+    }
 
     this.saving = true;
+    this.errorMessage = '';
+
     request$
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
@@ -77,31 +102,51 @@ export class EmailServiceComponent implements OnInit {
           this.resetForm();
           this.fetchData();
         },
-        error: err => {
-          console.error('Failed to save data', err);
-          this.errorMessage = 'Saving failed. Please try again.';
+        error: (err) => {
+          console.error('Save failed', err);
+
+          // ✅ if backend returns validation msg, show it
+          const msg =
+            err?.error?.message ||
+            err?.error ||
+            'Saving failed. Please try again.';
+
+          this.errorMessage = String(msg);
         }
       });
   }
 
   onEdit(recipient: EmailRecipient): void {
-    this.editingId = recipient._id;
+    this.editingId = recipient.id; // ✅ SQL id
     this.form.patchValue({ email: recipient.email });
+    this.formTitle = 'Update Recipient';
+    this.submitButtonLabel = 'Update Recipient';
+    this.errorMessage = '';
   }
 
   onDelete(id: string): void {
-    if (!window.confirm('Are you sure you want to delete this recipient?')) {
+    if (!id) {
+      this.errorMessage = 'Invalid recipient for deletion.';
       return;
     }
+    if (!window.confirm('Are you sure you want to delete this recipient?')) return;
 
     this.saving = true;
+    this.errorMessage = '';
+
     this.http
-      .delete(`/api/emails/delete-recipient/${id}`)
+      .delete(`${this.apiBase}/delete-recipient/${id}`)
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
-        next: () => this.fetchData(),
-        error: err => {
-          console.error('Failed to delete data', err);
+        next: () => {
+          // If deleting the currently edited recipient, reset form
+          if (this.editingId === id) {
+            this.resetForm();
+          }
+          this.fetchData();
+        },
+        error: (err) => {
+          console.error('Delete failed', err);
           this.errorMessage = 'Deletion failed. Please try again.';
         }
       });
@@ -109,11 +154,15 @@ export class EmailServiceComponent implements OnInit {
 
   onCancelEdit(): void {
     this.resetForm();
+    this.formTitle = 'Add Recipient';
+    this.submitButtonLabel = 'Add Recipient';
+    this.errorMessage = '';
   }
 
   private resetForm(): void {
     this.form.reset({ email: '' });
     this.editingId = null;
+    this.formTitle = 'Add Recipient';
+    this.submitButtonLabel = 'Add Recipient';
   }
 }
-
