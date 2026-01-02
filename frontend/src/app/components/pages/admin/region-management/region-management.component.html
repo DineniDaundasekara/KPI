@@ -23,7 +23,10 @@
   <section class="card form-card" *ngIf="showForm">
     <div class="form-card-header">
       <h2>Add New Region</h2>
-      <button class="ghost-icon-btn" type="button" (click)="closeForm()">✕</button>
+      <!-- this close just hides + clears data, no form ref needed -->
+      <button class="ghost-icon-btn" type="button" (click)="closeForm()">
+        ✕
+      </button>
     </div>
 
     <p class="form-subtitle">
@@ -92,7 +95,11 @@
           {{ isSubmitting ? 'Processing...' : 'Add region' }}
         </button>
 
-        <button class="secondary-btn" type="button" (click)="closeForm(regionForm)">
+        <button
+          class="secondary-btn"
+          type="button"
+          (click)="closeForm(regionForm)"
+        >
           Cancel
         </button>
       </div>
@@ -177,6 +184,7 @@
                   >
                     <span class="material-symbols-outlined">edit_square</span>
                   </button>
+
                 </div>
               </ng-template>
             </td>
@@ -215,6 +223,7 @@
                   >
                     <span class="material-symbols-outlined">edit_square</span>
                   </button>
+
                 </div>
               </ng-template>
             </td>
@@ -253,6 +262,7 @@
                   >
                     <span class="material-symbols-outlined">edit_square</span>
                   </button>
+
                 </div>
               </ng-template>
             </td>
@@ -289,22 +299,24 @@
                   >
                     <span class="material-symbols-outlined">edit_square</span>
                   </button>
+
                 </div>
               </ng-template>
             </td>
 
             <!-- Actions -->
-            <td class="actions-col">
-              <button
-                type="button"
-                class="icon-btn danger"
-                (click)="handleDelete(r.id.toString())"
-                title="Delete this region data entry"
-                aria-label="Delete region"
-              >
-                <span class="material-symbols-outlined">delete</span>
-              </button>
-            </td>
+          <td class="actions-col">
+            <button
+              type="button"
+              class="icon-btn danger"
+              (click)="handleDelete(r.id)"
+              title="Delete this region data entry"
+              aria-label="Delete region"
+            >
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+          </td>
+
           </tr>
         </tbody>
       </table>
