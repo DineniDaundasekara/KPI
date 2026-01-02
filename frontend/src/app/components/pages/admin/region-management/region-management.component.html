@@ -1,14 +1,325 @@
-<div class="page-container">
-  <div class="page-header">
-    <h1>{{ pageTitle }}</h1>
-    <p class="page-subtitle">Manage regions and geographical configurations</p>
-  </div>
-  <div class="page-content">
-    <div class="content-placeholder">
-      <div class="placeholder-icon">🗺️</div>
-      <h2>Content Coming Soon</h2>
-      <p>This page will contain region management tools and configurations.</p>
+<div class="region-page">
+  <!-- HEADER -->
+  <header class="region-header">
+    <div class="header-left">
+      <p class="eyebrow">Admin / Region Data</p>
+      <h1>{{ pageTitle }}</h1>
+      <p class="subtitle">
+        Keep SLT region, province, NE and LEA info accurate for reporting.
+      </p>
     </div>
-  </div>
-</div>
 
+    <div class="header-right">
+      <span class="count-pill">
+        {{ regions.length }} Region Datas
+      </span>
+      <button class="primary-btn" type="button" (click)="openForm()">
+        + Add new region
+      </button>
+    </div>
+  </header>
+
+  <!-- ADD REGION FORM (TOGGLES WITH BUTTON) -->
+  <section class="card form-card" *ngIf="showForm">
+    <div class="form-card-header">
+      <h2>Add New Region</h2>
+      <!-- this close just hides + clears data, no form ref needed -->
+      <button class="ghost-icon-btn" type="button" (click)="closeForm()">
+        ✕
+      </button>
+    </div>
+
+    <p class="form-subtitle">
+      Fill in the fields below to create a new region entry.
+    </p>
+
+    <form
+      #regionForm="ngForm"
+      (ngSubmit)="onSubmit(regionForm)"
+      class="region-form"
+    >
+      <div class="form-row">
+        <div class="form-group">
+          <label for="region">Region *</label>
+          <input
+            id="region"
+            type="text"
+            name="region"
+            [(ngModel)]="formData.region"
+            required
+            placeholder="e.g. Region 5"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="province">Province *</label>
+          <input
+            id="province"
+            type="text"
+            name="province"
+            [(ngModel)]="formData.province"
+            required
+            placeholder="e.g. WP North"
+          />
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="networkEngineer">Network Engineer *</label>
+          <input
+            id="networkEngineer"
+            type="text"
+            name="networkEngineer"
+            [(ngModel)]="formData.networkEngineer"
+            required
+            placeholder="Enter lead engineer"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="lea">LEA *</label>
+          <input
+            id="lea"
+            type="text"
+            name="lea"
+            [(ngModel)]="formData.lea"
+            required
+            placeholder="Enter LEA code"
+          />
+        </div>
+      </div>
+
+      <div class="form-buttons">
+        <button class="primary-btn" type="submit" [disabled]="isSubmitting">
+          {{ isSubmitting ? 'Processing...' : 'Add region' }}
+        </button>
+
+        <button
+          class="secondary-btn"
+          type="button"
+          (click)="closeForm(regionForm)"
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
+
+    <div *ngIf="error" class="message error-message">
+      {{ error }}
+    </div>
+    <div *ngIf="success" class="message success-message">
+      {{ success }}
+    </div>
+  </section>
+
+  <!-- TABLE SECTION (ALWAYS SHOWN) -->
+  <section class="card table-card">
+    <div class="table-header-row">
+      <h2>Region Data</h2>
+      <p class="hint">
+        Click a cell or pencil to edit inline. Use trash to delete.
+      </p>
+    </div>
+
+    <div class="table-wrapper">
+      <table class="region-data-table">
+        <thead>
+          <tr>
+            <th (click)="requestSort('region')">
+              Region {{ getSortIndicator('region') }}
+            </th>
+            <th (click)="requestSort('province')">
+              Province {{ getSortIndicator('province') }}
+            </th>
+            <th (click)="requestSort('networkEngineer')">
+              Network Engineer {{ getSortIndicator('networkEngineer') }}
+            </th>
+            <th (click)="requestSort('lea')">
+              LEA {{ getSortIndicator('lea') }}
+            </th>
+            <th class="actions-col">Actions</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <!-- Empty state -->
+          <tr *ngIf="sortedRegions.length === 0">
+            <td colspan="5" class="no-data">
+              No region data available
+            </td>
+          </tr>
+
+          <!-- Data rows -->
+          <tr *ngFor="let r of sortedRegions">
+            <!-- Region cell -->
+            <td>
+              <ng-container *ngIf="isEditingCell(r, 'region'); else regionView">
+                <input
+                  class="edit-input"
+                  type="text"
+                  [(ngModel)]="editingValue"
+                  [ngModelOptions]="{ standalone: true }"
+                  (keydown)="onCellKeydown($event, r, 'region')"
+                  (blur)="saveCell(r, 'region')"
+                  placeholder="Region value"
+                  aria-label="Edit region value"
+                  title="Edit region value"
+                  autofocus
+                />
+              </ng-container>
+
+              <ng-template #regionView>
+                <div
+                  class="editable-cell"
+                  (click)="startCellEdit(r, 'region')"
+                  title="Click to edit"
+                >
+                  <span>{{ r.region || '—' }}</span>
+                  <button
+                    type="button"
+                    class="icon-btn edit-btn"
+                    (click)="$event.stopPropagation(); startCellEdit(r, 'region')"
+                    aria-label="Edit region"
+                  >
+                    <span class="material-symbols-outlined">edit_square</span>
+                  </button>
+
+                </div>
+              </ng-template>
+            </td>
+
+            <!-- Province cell -->
+            <td>
+              <ng-container
+                *ngIf="isEditingCell(r, 'province'); else provinceView"
+              >
+                <input
+                  class="edit-input"
+                  type="text"
+                  [(ngModel)]="editingValue"
+                  [ngModelOptions]="{ standalone: true }"
+                  (keydown)="onCellKeydown($event, r, 'province')"
+                  (blur)="saveCell(r, 'province')"
+                  placeholder="Province value"
+                  aria-label="Edit province value"
+                  title="Edit province value"
+                  autofocus
+                />
+              </ng-container>
+
+              <ng-template #provinceView>
+                <div
+                  class="editable-cell"
+                  (click)="startCellEdit(r, 'province')"
+                  title="Click to edit"
+                >
+                  <span>{{ r.province || '—' }}</span>
+                  <button
+                    type="button"
+                    class="icon-btn edit-btn"
+                    (click)="$event.stopPropagation(); startCellEdit(r, 'province')"
+                    aria-label="Edit province"
+                  >
+                    <span class="material-symbols-outlined">edit_square</span>
+                  </button>
+
+                </div>
+              </ng-template>
+            </td>
+
+            <!-- Network Engineer cell -->
+            <td>
+              <ng-container
+                *ngIf="isEditingCell(r, 'networkEngineer'); else neView"
+              >
+                <input
+                  class="edit-input"
+                  type="text"
+                  [(ngModel)]="editingValue"
+                  [ngModelOptions]="{ standalone: true }"
+                  (keydown)="onCellKeydown($event, r, 'networkEngineer')"
+                  (blur)="saveCell(r, 'networkEngineer')"
+                  placeholder="Network engineer value"
+                  aria-label="Edit network engineer value"
+                  title="Edit network engineer value"
+                  autofocus
+                />
+              </ng-container>
+
+              <ng-template #neView>
+                <div
+                  class="editable-cell"
+                  (click)="startCellEdit(r, 'networkEngineer')"
+                  title="Click to edit"
+                >
+                  <span>{{ r.networkEngineer || '—' }}</span>
+                  <button
+                    type="button"
+                    class="icon-btn edit-btn"
+                    (click)="$event.stopPropagation(); startCellEdit(r, 'networkEngineer')"
+                    aria-label="Edit network engineer"
+                  >
+                    <span class="material-symbols-outlined">edit_square</span>
+                  </button>
+
+                </div>
+              </ng-template>
+            </td>
+
+            <!-- LEA cell -->
+            <td>
+              <ng-container *ngIf="isEditingCell(r, 'lea'); else leaView">
+                <input
+                  class="edit-input"
+                  type="text"
+                  [(ngModel)]="editingValue"
+                  [ngModelOptions]="{ standalone: true }"
+                  (keydown)="onCellKeydown($event, r, 'lea')"
+                  (blur)="saveCell(r, 'lea')"
+                  placeholder="LEA value"
+                  aria-label="Edit LEA value"
+                  title="Edit LEA value"
+                  autofocus
+                />
+              </ng-container>
+
+              <ng-template #leaView>
+                <div
+                  class="editable-cell"
+                  (click)="startCellEdit(r, 'lea')"
+                  title="Click to edit"
+                >
+                  <span>{{ r.lea || '—' }}</span>
+                  <button
+                    type="button"
+                    class="icon-btn edit-btn"
+                    (click)="$event.stopPropagation(); startCellEdit(r, 'lea')"
+                    aria-label="Edit LEA"
+                  >
+                    <span class="material-symbols-outlined">edit_square</span>
+                  </button>
+
+                </div>
+              </ng-template>
+            </td>
+
+            <!-- Actions -->
+          <td class="actions-col">
+            <button
+              type="button"
+              class="icon-btn danger"
+              (click)="handleDelete(r.id)"
+              title="Delete this region data entry"
+              aria-label="Delete region"
+            >
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+          </td>
+
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

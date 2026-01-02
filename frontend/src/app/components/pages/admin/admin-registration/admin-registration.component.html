@@ -1,14 +1,291 @@
+<!-- Clean HTML template matching your sample -->
 <div class="page-container">
-  <div class="page-header">
-    <h1>{{ pageTitle }}</h1>
-    <p class="page-subtitle">Register and manage admin users</p>
-  </div>
-  <div class="page-content">
-    <div class="content-placeholder">
-      <div class="placeholder-icon">👨‍💼</div>
-      <h2>Content Coming Soon</h2>
-      <p>This page will contain admin registration forms and user management tools.</p>
+  <!-- HEADER -->
+  <header class="page-header">
+    <div class="header-content">
+      <h1 class="page-title">Admin Registration & Management</h1>
+      <p class="page-subtitle">Register Admin & Delete Admin</p>
     </div>
-  </div>
-</div>
 
+    <button
+      type="button"
+      class="toggle-form-btn"
+      (click)="toggleFormVisibility()"
+      [attr.aria-expanded]="isFormVisible"
+    >
+      <span class="material-symbols-outlined">{{ isFormVisible ? 'close' : 'person_add' }}</span>
+      {{ isFormVisible ? 'Hide Form' : 'Add New Administrator' }}
+    </button>
+
+    <div class="header-divider"></div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="page-content">
+    <section class="stats-row">
+      <div class="stat-card total">
+        <div class="stat-icon">
+          <span class="material-symbols-outlined">groups</span>
+        </div>
+        <div>
+          <p class="stat-label">Total Admins</p>
+          <h3>{{ admins.length }}</h3>
+        </div>
+      </div>
+      <div class="stat-card active">
+        <div class="stat-icon">
+          <span class="material-symbols-outlined">verified_user</span>
+        </div>
+        <div>
+          <p class="stat-label">Active</p>
+          <h3>{{ getActiveCount() }}</h3>
+        </div>
+      </div>
+      <div class="stat-card inactive">
+        <div class="stat-icon">
+          <span class="material-symbols-outlined">hourglass</span>
+        </div>
+        <div>
+          <p class="stat-label">Inactive</p>
+          <h3>{{ getInactiveCount() }}</h3>
+        </div>
+      </div>
+    </section>
+
+    <div class="container-fluid">
+      <div class="row">
+        <!-- LEFT SIDEBAR: FORM -->
+        <div class="col-lg-4 col-xl-3" *ngIf="isFormVisible">
+          <div class="sidebar-card">
+            <div class="sidebar-header">
+              <h2 class="sidebar-title">Create new Admin</h2>
+              <p class="sidebar-subtitle">Add new administrators</p>
+            </div>
+
+            <form [formGroup]="adminForm" (ngSubmit)="onSubmit()" class="admin-form">
+              <!-- Name Field -->
+              <div class="form-group">
+                <div class="input-group-wrapper">
+                  <div class="input-icon">
+                    <i class="bi bi-person-fill"></i>
+                  </div>
+                  <div class="form-floating flex-grow-1">
+                    <input
+                      id="name"
+                      type="text"
+                      class="form-control"
+                      formControlName="name"
+                      placeholder="Full Name"
+                      [class.is-invalid]="nameCtrl?.touched && nameCtrl?.invalid"
+                    />
+                    <label for="name">Full Name</label>
+                  </div>
+                </div>
+                <div class="invalid-feedback d-block" *ngIf="nameCtrl?.touched && nameCtrl?.invalid">
+                  <i class="bi bi-exclamation-circle me-1"></i>
+                  Please enter a valid name (minimum 2 characters)
+                </div>
+              </div>
+
+              <!-- Service Number Field -->
+              <div class="form-group">
+                <div class="input-group-wrapper">
+                  <div class="input-icon">
+                    <i class="bi bi-hash"></i>
+                  </div>
+                  <div class="form-floating flex-grow-1">
+                    <input
+                      id="serviceNumber"
+                      type="text"
+                      class="form-control"
+                      formControlName="serviceNumber"
+                      placeholder="Service Number"
+                      [class.is-invalid]="serviceNumberCtrl?.touched && serviceNumberCtrl?.invalid"
+                    />
+                    <label for="serviceNumber">Service Number</label>
+                  </div>
+                </div>
+                <div class="invalid-feedback d-block" *ngIf="serviceNumberCtrl?.touched && serviceNumberCtrl?.invalid">
+                  <i class="bi bi-exclamation-circle me-1"></i>
+                  Please enter a valid 6-digit service number
+                </div>
+                <small class="form-text text-muted"><i class="bi bi-info-circle me-1"></i>Example: 010399, 012264</small>
+              </div>
+
+              <!-- Messages -->
+              <div *ngIf="errorMessage" class="alert alert-error">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                {{ errorMessage }}
+              </div>
+              
+              <div *ngIf="successMessage" class="alert alert-success">
+                <i class="bi bi-check-circle me-2"></i>
+                {{ successMessage }}
+              </div>
+
+              <!-- Submit Button -->
+              <div class="form-actions">
+                <button 
+                  type="submit" 
+                  class="btn btn-primary btn-block"
+                  [disabled]="adminForm.invalid || isSubmitting"
+                >
+                  <i class="bi bi-plus-circle me-2"></i>
+                  {{ isSubmitting ? 'Creating...' : 'Create Admin' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+  <!-- MAIN CONTENT: ADMIN LIST -->
+  <div [ngClass]="isFormVisible ? 'col-12 col-lg-8 col-xl-9' : 'col-12'">
+          <div class="main-card">
+            <div class="card-header">
+              <div class="card-header-top">
+                <div>
+                  <h2 class="card-title">Admin List</h2>
+                  <p class="card-subtitle">
+                    {{ filteredAdmins.length }} admin{{ filteredAdmins.length === 1 ? '' : 's' }} shown
+                  </p>
+                </div>
+                <div class="card-header-actions">
+                  <div class="search-box">
+                    <i class="bi bi-search"></i>
+                    <input 
+                      type="text" 
+                      placeholder="Search by name or number" 
+                      [(ngModel)]="searchTerm"
+                      (ngModelChange)="filterAdmins()"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div class="card-toolbar">
+                <div class="status-filters">
+                  <button
+                    type="button"
+                    class="filter-chip"
+                    [class.active]="statusFilter === 'all'"
+                    [attr.aria-pressed]="statusFilter === 'all'"
+                    (click)="setStatusFilter('all')"
+                  >
+                    <span class="filter-dot all"></span>
+                    All
+                    <span class="count-chip">{{ admins.length }}</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="filter-chip"
+                    [class.active]="statusFilter === 'active'"
+                    [attr.aria-pressed]="statusFilter === 'active'"
+                    (click)="setStatusFilter('active')"
+                  >
+                    <span class="filter-dot active"></span>
+                    Active
+                    <span class="count-chip">{{ getActiveCount() }}</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="filter-chip"
+                    [class.active]="statusFilter === 'inactive'"
+                    [attr.aria-pressed]="statusFilter === 'inactive'"
+                    (click)="setStatusFilter('inactive')"
+                  >
+                    <span class="filter-dot inactive"></span>
+                    Inactive
+                    <span class="count-chip">{{ getInactiveCount() }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Empty State -->
+            <div *ngIf="filteredAdmins.length === 0" class="empty-state">
+              <div class="empty-icon">
+                <i class="bi bi-people"></i>
+              </div>
+              <h3>No Administrators Found</h3>
+              <p>Create your first admin using the form on the left</p>
+            </div>
+
+            <!-- Admin List -->
+            <div class="admin-list" *ngIf="filteredAdmins.length > 0">
+              <div class="table-responsive">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>Admin</th>
+                      <th>Service Number</th>
+                      <th>Status</th>
+                      <th>Created</th>
+                      <th>Last Login</th>
+                      <th class="text-end">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr *ngFor="let admin of filteredAdmins; trackBy: trackByAdmin" class="admin-row">
+                      <td>
+                        <div class="admin-info">
+                          <div class="admin-avatar" [style.background]="getAvatarColor(admin.name)">
+                            {{ admin.name.charAt(0) }}
+                          </div>
+                          <div>
+                            <div class="admin-name">{{ admin.name }}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <div class="service-number">
+                          {{ admin.serviceNumber }}
+                        </div>
+                      </td>
+                      <td>
+                        <span class="status-badge" [class.active]="admin.isActive">
+                          <i class="bi bi-circle-fill me-1"></i>
+                          {{ admin.isActive ? 'Active' : 'Inactive' }}
+                        </span>
+                      </td>
+                      <td>
+                        <div class="date-info">
+                          {{ formatDate(admin.createdAt) }}
+                        </div>
+                      </td>
+                      <td>
+                        <div class="date-info">
+                          {{ formatTime(admin.lastLogin) }}
+                        </div>
+                      </td>
+                      <td class="text-end">
+                        <div class="action-buttons">
+                          <button
+                            type="button"
+                            class="btn btn-sm action-btn status-toggle"
+                            (click)="toggleStatus(admin)"
+                            [title]="admin.isActive ? 'Deactivate' : 'Activate'"
+                            [class.is-active]="admin.isActive"
+                          >
+                            <span class="material-symbols-outlined">power_settings_new</span>
+                          </button>
+                          <button
+                            type="button"
+                            class="btn btn-sm action-btn danger-btn"
+                            (click)="deleteAdmin(admin.id)"
+                            title="Delete"
+                          >
+                            <span class="material-symbols-outlined">delete</span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+</div>

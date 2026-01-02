@@ -1,79 +1,455 @@
+:host {
+  display: block;
+}
+
+$page-bg: #f7f9fc;
+$card-bg: #ffffff;
+$border-color: #e3e8f1;
+$primary: #0057a6;
+$primary-dark: #003f7a;
+$text-main: #1a2234;
+$text-muted: #5d6472;
+$danger: #c62828;
+$info: #0f62fe;
+
 .page-container {
   min-height: calc(100vh - 140px);
   padding: 2rem;
-  background-color: #FFFFFF;
+  background: $page-bg;
+  color: $text-main;
 }
 
 .page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1.5rem;
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
-  border-bottom: 2px solid #E8E8E8;
+  border-bottom: 1px solid $border-color;
+}
+
+.header-left {
+  flex: 1;
+}
+
+.title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .page-header h1 {
-  color: #0057A6;
+  margin: 0;
   font-size: 2rem;
   font-weight: 600;
-  margin: 0 0 0.5rem 0;
-  font-family: Arial, sans-serif;
-  letter-spacing: 0.3px;
+  color: $primary;
+}
+
+.header-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
+  background: rgba($primary, 0.08);
+  color: $primary;
+  border: 1px solid rgba($primary, 0.2);
+
+  &.editing {
+    background: rgba(255, 170, 0, 0.15);
+    border-color: rgba(255, 170, 0, 0.4);
+    color: #a85d00;
+  }
 }
 
 .page-subtitle {
-  color: #666;
+  margin: 0 0 0.75rem;
+  color: $text-muted;
   font-size: 1rem;
-  margin: 0;
-  font-family: Arial, sans-serif;
 }
 
-.page-content {
+.header-meta {
   display: flex;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.meta-item {
+  display: inline-flex;
   align-items: center;
-  min-height: 400px;
-}
+  gap: 0.35rem;
+  font-size: 0.95rem;
+  color: $text-muted;
 
-.content-placeholder {
-  text-align: center;
-  padding: 3rem;
-  background: #F8F9FA;
-  border-radius: 12px;
-  border: 1px solid #E8E8E8;
-  max-width: 600px;
-  width: 100%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  animation: fadeIn 0.4s ease-in;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
+  i {
+    color: $primary;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+  .spin {
+    animation: spin 1.2s linear infinite;
   }
 }
 
-.placeholder-icon {
-  font-size: 4rem;
+.header-actions {
+  display: flex;
+  align-items: center;
+}
+
+.ghost-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1rem;
+  border: 1px solid $border-color;
+  border-radius: 999px;
+  background: transparent;
+  color: $primary;
+  font-weight: 500;
+  transition: all 0.2s ease;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &:not(:disabled):hover {
+    border-color: $primary;
+    background: rgba($primary, 0.08);
+  }
+}
+
+.alert {
+  display: flex;
+  gap: 0.9rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.85rem;
   margin-bottom: 1rem;
-  opacity: 0.7;
+  border: 1px solid transparent;
+  background: #eef3ff;
+  color: $text-main;
+
+  &.alert-danger {
+    background: #fff5f5;
+    border-color: rgba($danger, 0.3);
+    color: $danger;
+  }
+
+  &.alert-info {
+    background: rgba($info, 0.08);
+    border-color: rgba($info, 0.3);
+    color: $info;
+  }
+
+  i {
+    font-size: 1.4rem;
+    line-height: 1;
+  }
 }
 
-.content-placeholder h2 {
-  color: #0057A6;
-  font-size: 1.5rem;
+.alert-body {
+  flex: 1;
+}
+
+.alert-title {
   font-weight: 600;
-  margin: 0 0 1rem 0;
-  font-family: Arial, sans-serif;
+  margin-bottom: 0.2rem;
 }
 
-.content-placeholder p {
-  color: #666;
+.admin-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 420px) minmax(400px, 1fr);
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.card {
+  background: $card-bg;
+  border-radius: 1.2rem;
+  border: 1px solid $border-color;
+  box-shadow: 0 12px 30px rgba(28, 54, 90, 0.08);
+  padding: 1.5rem;
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.card-header-left {
+  h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+
+  p {
+    margin: 0.2rem 0 0;
+    color: $text-muted;
+  }
+}
+
+.status-pill {
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  background: rgba($primary, 0.08);
+  color: $primary;
+
+  &.editing {
+    background: rgba(255, 170, 0, 0.18);
+    color: #a85d00;
+  }
+}
+
+.form-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid $border-color;
+  border-radius: 0.9rem;
+  background: #fdfdfd;
+}
+
+.field-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: $text-main;
+}
+
+.form-field input {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border-radius: 0.6rem;
+  border: 1px solid transparent;
+  background: rgba($primary, 0.04);
   font-size: 1rem;
-  margin: 0;
-  font-family: Arial, sans-serif;
+  transition: border-color 0.2s ease, background 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: rgba($primary, 0.5);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba($primary, 0.12);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.hint {
+  color: $text-muted;
+  font-size: 0.85rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.65rem 1.25rem;
+  border-radius: 0.75rem;
+  border: none;
+  font-weight: 600;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  &.primary {
+    background: $primary;
+    color: #fff;
+    box-shadow: 0 8px 18px rgba($primary, 0.35);
+
+    &:not(:disabled):hover {
+      background: $primary-dark;
+      transform: translateY(-1px);
+    }
+  }
+
+  &.secondary {
+    background: rgba($primary, 0.08);
+    color: $primary;
+  }
+
+  &.text {
+    background: transparent;
+    color: $primary;
+    padding: 0.4rem 0.8rem;
+  }
+
+  &.danger {
+    background: rgba($danger, 0.08);
+    color: $danger;
+  }
+}
+
+.edit-tip {
+  margin-top: 0.5rem;
+  padding: 0.85rem 1rem;
+  border-radius: 0.75rem;
+  background: rgba(255, 170, 0, 0.15);
+  color: #633c00;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.table-card {
+  padding: 1.75rem;
+}
+
+.table-wrapper {
+  margin-top: 1rem;
+  overflow: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  padding: 0.85rem;
+  border-bottom: 1px solid $border-color;
+  text-align: left;
+}
+
+th {
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: $text-muted;
+  border-bottom-width: 2px;
+}
+
+tbody tr {
+  transition: background 0.2s ease;
+
+  &:hover {
+    background: rgba($primary, 0.04);
+  }
+
+  &.is-editing {
+    background: rgba(255, 170, 0, 0.1);
+  }
+}
+
+.mono {
+  font-family: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+  font-weight: 600;
+}
+
+.kpi-name {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.row-badge {
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: rgba($info, 0.15);
+  color: $info;
+  font-size: 0.75rem;
+}
+
+.kpi-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: rgba($primary, 0.08);
+  color: $primary;
+  font-weight: 600;
+}
+
+.table-footnote {
+  margin-top: 0.8rem;
+  font-size: 0.9rem;
+  color: $text-muted;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.table-loader,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 2rem;
+  border: 1px dashed $border-color;
+  border-radius: 1rem;
+  color: $text-muted;
+  text-align: center;
+}
+
+.empty-state i {
+  font-size: 2rem;
+  color: $primary;
+}
+
+.table-loader .spinner-border {
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 1200px) {
+  .admin-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 1.25rem;
+  }
+
+  .page-header {
+    flex-direction: column;
+  }
+
+  .ghost-button {
+    width: 100%;
+    justify-content: center;
+  }
 }
 

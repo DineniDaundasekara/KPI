@@ -1,13 +1,54 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-image: url('/assets/admin/SLT-Mobitel.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  position: relative;
+}
+
+:host::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(248, 250, 252, 0.82);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+  z-index: 0;
+}
+
 .page-container {
-  min-height: calc(100vh - 140px);
+  min-height: 100vh;
   padding: 2rem;
-  background-color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 .page-header {
   margin-bottom: 2rem;
   padding-bottom: 1.5rem;
   border-bottom: 2px solid #E8E8E8;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.page-header-meta {
+  display: flex;
+  align-items: center;
+}
+
+.user-count-pill {
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 0.35rem 1rem;
+  border-radius: 999px;
+  box-shadow: 0 10px 25px rgba(0, 87, 166, 0.2);
 }
 
 .page-header h1 {
@@ -26,25 +67,166 @@
   font-family: Arial, sans-serif;
 }
 
-.page-content {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 400px;
-}
-
-.content-placeholder {
-  text-align: center;
-  padding: 3rem;
-  background: #F8F9FA;
+// Form styling
+.card {
   border-radius: 12px;
   border: 1px solid #E8E8E8;
-  max-width: 600px;
-  width: 100%;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   animation: fadeIn 0.4s ease-in;
+  
+  .card-title {
+    color: #0057A6;
+    font-weight: 600;
+    font-family: Arial, sans-serif;
+  }
 }
 
+.form-card.card-editing {
+  border-color: rgba(0, 168, 107, 0.4);
+  box-shadow: 0 30px 60px rgba(0, 87, 166, 0.18);
+}
+
+.editing-banner {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.65rem 1rem;
+  border-radius: 10px;
+  background: rgba(0, 87, 166, 0.08);
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 0.95rem;
+  border: 1px solid rgba(0, 87, 166, 0.15);
+}
+
+.form-label {
+  color: #333;
+  font-weight: 500;
+  font-family: Arial, sans-serif;
+}
+
+.form-control {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  
+  &:focus {
+    border-color: #0057A6;
+    box-shadow: 0 0 0 0.25rem rgba(0, 87, 166, 0.25);
+  }
+}
+
+.btn {
+  border-radius: 6px;
+  font-weight: 500;
+  padding: 0.75rem 1.5rem;
+  transition: all 0.2s ease;
+  
+  &-primary {
+    background-color: #0057A6;
+    border-color: #0057A6;
+    
+    &:hover {
+      background-color: #004c8c;
+      border-color: #004c8c;
+    }
+  }
+  
+  &-outline-secondary {
+    border: 2px solid #6c757d;
+    
+    &:hover {
+      background-color: #6c757d;
+      border-color: #6c757d;
+    }
+  }
+}
+
+// User list styling
+.user-item {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 8px;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  &.editing {
+    border-color: #fbbf24;
+    box-shadow: 0 14px 30px rgba(251, 191, 36, 0.35);
+  }
+  
+  .badge {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 400;
+  }
+}
+
+.user-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.user-heading .bi-person {
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+.user-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+// Alerts
+.alert {
+  border-radius: 8px;
+  border: none;
+  
+  &-danger {
+    background-color: rgba(220, 53, 69, 0.1);
+    color: #dc3545;
+  }
+  
+  &-success {
+    background-color: rgba(25, 135, 84, 0.1);
+    color: #198754;
+  }
+}
+
+// Checkbox and radio styling
+.form-check {
+  padding-left: 2em;
+  margin-bottom: 0.5rem;
+  
+  .form-check-input {
+    width: 1.2em;
+    height: 1.2em;
+    margin-left: -2em;
+    
+    &:checked {
+      background-color: #0057A6;
+      border-color: #0057A6;
+    }
+    
+    &:focus {
+      box-shadow: 0 0 0 0.25rem rgba(0, 87, 166, 0.25);
+    }
+  }
+  
+  .form-check-label {
+    cursor: pointer;
+    color: #333;
+    font-family: Arial, sans-serif;
+  }
+}
+
+// Animation
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -56,24 +238,22 @@
   }
 }
 
-.placeholder-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-  opacity: 0.7;
+// Responsive adjustments
+@media (max-width: 768px) {
+  .page-container {
+    padding: 1rem;
+  }
+  
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .btn {
+    padding: 0.5rem 1rem;
+  }
 }
-
-.content-placeholder h2 {
-  color: #0057A6;
-  font-size: 1.5rem;
-  font-weight: 600;
-  margin: 0 0 1rem 0;
-  font-family: Arial, sans-serif;
-}
-
-.content-placeholder p {
-  color: #666;
-  font-size: 1rem;
-  margin: 0;
-  font-family: Arial, sans-serif;
-}
-
