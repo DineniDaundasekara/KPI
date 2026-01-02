@@ -1,6 +1,20 @@
 :host {
   display: block;
   min-height: 100vh;
+  background-image: url('/assets/admin/SLT-Mobitel.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  position: relative;
+}
+
+:host::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(248, 250, 252, 0.82);
+  backdrop-filter: blur(6px);
+  z-index: 0;
 }
 
 .dashboard-container {
@@ -8,7 +22,11 @@
   font-family: Arial, sans-serif;
   min-height: calc(100vh - 140px);
   /* 60% Primary - White background */
-  background-color: #FFFFFF;
+  background-color: #ffffff;
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 30px 60px rgba(15, 23, 42, 0.15);
+  border-radius: 24px;
 }
 
 .final-tables-container {

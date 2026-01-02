@@ -1,4 +1,23 @@
-﻿.app-container {
+﻿/* System Name Heading Enhancement */
+.system-name-heading {
+  font-size: 2.4rem;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+  color: #0057A6;
+  text-shadow: 0 2px 12px rgba(0, 87, 166, 0.10), 0 1px 0 #fff;
+  background: linear-gradient(90deg, #0057A6 0%, #28A745 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin: 1.5rem 0 1.25rem 0;
+  text-align: center;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  border-bottom: 3px solid #28A745;
+  padding-bottom: 0.5rem;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 4px 16px rgba(40, 167, 69, 0.08);
+}
+.app-container {
   min-height: 100vh;
   font-family: Arial, sans-serif;
   display: flex;
@@ -8,9 +27,9 @@
 }
 
 .app-header {
-  /* 30% Secondary - SLT Blue header background */
-  background: linear-gradient(135deg, #0057A6 0%, #003d7a 100%);
-  padding: 0.9rem 0;
+  /* 30% Secondary - SLT Blue-to-Green gradient background */
+  background: linear-gradient(135deg, #0057A6 10%, #28A745 100%);
+  padding: 0.5rem 0;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), 0 2px 8px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
@@ -40,7 +59,7 @@
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
-  gap: clamp(0.75rem, 2vw, 2.75rem);
+  gap: clamp(0.5rem, 1.5vw, 2rem);
 }
 
 .header-left {
@@ -288,13 +307,36 @@
   flex: 1;
 }
 
+/* Animated multi-color gradient footer */
 .app-footer {
-  /* 10% Accent - Green footer */
-  background: linear-gradient(135deg, #28A745 0%, #218838 100%);
+  background: linear-gradient(270deg, #28A745, #218838, #1b8a5f, #0057A6,#79bcfa, #28A745);
+  background-size: 1000% 1000%;
+  animation: footerGradient 16s ease-in-out infinite;
   padding: 1.25rem 0;
   margin-top: auto;
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
   border-top: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+@keyframes footerGradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  20% {
+    background-position: 25% 50%;
+  }
+  40% {
+    background-position: 50% 50%;
+  }
+  60% {
+    background-position: 75% 50%;
+  }
+  80% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
 }
 
 .footer-content {

@@ -1,14 +1,89 @@
-<div class="page-container">
-  <div class="page-header">
+<div class="kpi-page">
+  <div class="kpi-overlay"></div>
+
+  <section class="kpi-hero">
     <h1>{{ pageTitle }}</h1>
-    <p class="page-subtitle">Manage final table data and configurations</p>
-  </div>
-  <div class="page-content">
-    <div class="content-placeholder">
-      <div class="placeholder-icon">📊</div>
-      <h2>Content Coming Soon</h2>
-      <p>This page will contain final table management tools and data views.</p>
-    </div>
-  </div>
+    <p>Maintain the final consolidated KPI table across all balanced-scorecard perspectives.</p>
+  </section>
+
+  <section class="form-section">
+    <form class="kpi-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+      <h2>{{ editingId ? 'Update KPI Row' : 'Add KPI Row' }}</h2>
+
+      <div class="field-grid">
+        <div class="field-group">
+          <input type="number" formControlName="rowNumber" placeholder="Row Number" />
+          <span class="error" *ngIf="form.controls.rowNumber.touched && form.controls.rowNumber.invalid">Required</span>
+        </div>
+        <div class="field-group">
+          <input type="text" formControlName="perspectives" placeholder="Perspectives" />
+          <span class="error" *ngIf="form.controls.perspectives.touched && form.controls.perspectives.invalid">Required</span>
+        </div>
+        <div class="field-group">
+          <input type="text" formControlName="strategicObjectives" placeholder="Strategic Objectives" />
+          <span class="error" *ngIf="form.controls.strategicObjectives.touched && form.controls.strategicObjectives.invalid">Required</span>
+        </div>
+        <div class="field-group">
+          <input type="text" formControlName="keyPerformanceIndicators" placeholder="Key Performance Indicators" />
+          <span class="error" *ngIf="form.controls.keyPerformanceIndicators.touched && form.controls.keyPerformanceIndicators.invalid">Required</span>
+        </div>
+        <div class="field-group">
+          <input type="text" formControlName="unit" placeholder="Unit" />
+          <span class="error" *ngIf="form.controls.unit.touched && form.controls.unit.invalid">Required</span>
+        </div>
+        <div class="field-group field-span">
+          <textarea rows="3" formControlName="descriptionOfKPI" placeholder="Description of KPI"></textarea>
+          <span class="error" *ngIf="form.controls.descriptionOfKPI.touched && form.controls.descriptionOfKPI.invalid">Required</span>
+        </div>
+        <div class="field-group">
+          <input type="number" formControlName="weightage" placeholder="Weightage" />
+          <span class="error" *ngIf="form.controls.weightage.touched && form.controls.weightage.invalid">Required</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" [disabled]="form.invalid || saving">
+          {{ editingId ? 'Update' : 'Add' }} Record
+        </button>
+        <button type="button" class="secondary" *ngIf="editingId" (click)="onCancelEdit()" [disabled]="saving">Cancel</button>
+      </div>
+    </form>
+  </section>
+
+  <section class="table-section">
+    <div class="state" *ngIf="loading">Loading strategic KPIs...</div>
+    <div class="state error" *ngIf="!loading && errorMessage">{{ errorMessage }}</div>
+    <div class="state" *ngIf="!loading && !errorMessage && !records.length">No KPIs captured yet.</div>
+
+    <table class="kpi-table" *ngIf="!loading && records.length">
+      <thead>
+        <tr>
+          <th>Row Number</th>
+          <th>Perspectives</th>
+          <th>Strategic Objectives</th>
+          <th>Key Performance Indicators</th>
+          <th>Unit</th>
+          <th>Description of KPI</th>
+          <th>Weightage</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let record of records">
+          <td>{{ record.rowNumber }}</td>
+          <td>{{ record.perspectives }}</td>
+          <td>{{ record.strategicObjectives }}</td>
+          <td>{{ record.keyPerformanceIndicators }}</td>
+          <td>{{ record.unit }}</td>
+          <td>{{ record.descriptionOfKPI }}</td>
+          <td>{{ record.weightage }}</td>
+          <td>
+            <button type="button" class="edit" (click)="onEdit(record)" [disabled]="saving">Edit</button>
+            <button type="button" class="delete" (click)="onDelete(record._id)" [disabled]="saving">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
 </div>
 
