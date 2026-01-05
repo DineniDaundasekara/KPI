@@ -1,23 +1,45 @@
+import { CommonModule } from '@angular/common';
 import {
   AfterViewInit,
   Component,
   ElementRef,
+  HostListener,
   OnDestroy,
   OnInit,
   QueryList,
   ViewChildren,
-  inject,
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import {
+  HttpClient,
+  HttpClientModule,
+  HttpParams,
+} from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { Subscription, finalize } from 'rxjs';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { finalize } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
+import { Region as RegionApi, RegionService } from '../../../../services/region.service';
 import * as XLSX from 'xlsx';
 
-interface KpiMetric {
-  achieved: number;
-  weighted: number;
+type Region = {
+  id: number;
+  region: string;
+  province: string;
+  networkEngineer: string;
+  lea: string;
+};
+
+interface RegionGroup {
+  region: string;
+  provinces: { province: string; engineers: Region[] }[];
+  totalEngineers: number;
 }
+
+interface KpiMetric {
+  achieved: number;   // %
+  weighted: number;   // %
+}
+
+type KpiMetricCell = KpiMetric | null;
 
 interface KpiRow {
   rowNumber: number;
@@ -27,22 +49,9 @@ interface KpiRow {
   unit: string;
   description: string;
   weightage: number;
-  metrics: KpiMetric[];
+  metrics: KpiMetricCell[];
 }
 
-interface Region {
-  id: number;
-  region: string;
-  province: string;
-  networkEngineer: string;
-}
-
-interface MetroProvinceGroup {
-  province: string;
-  engineers: Region[];
-}
-
-// Same shape as your Final Table API returns
 type KpiDefinition = {
   id: string;
   rowNumber: number;
@@ -64,226 +73,118 @@ type KpiDefinition = {
   styleUrls: ['./previous-month.component.scss'],
 })
 export class PreviousMonthComponent implements OnInit, AfterViewInit, OnDestroy {
-  private readonly http = inject(HttpClient);
+  private readonly apiBase = 'http://localhost:5043/api/kpi-definitions';
+  readonly Math = Math;
 
-  /* Template row refs for left/right table height sync */
-  @ViewChildren('leftRowRef') leftRows!: QueryList<ElementRef<HTMLTableRowElement>>;
-  @ViewChildren('rightRowRef') rightRows!: QueryList<ElementRef<HTMLTableRowElement>>;
+  readonly monthNames = [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ];
 
-  /* KPI + Metro data */
+  selectedYear: number;
+  selectedMonth: number;
+  availableYears: number[] = [];
+
+  loading = false;
+  metricsLoading = false;
+  error: string | null = null;
+  hasMetricsData = true;
+
+  regions: Region[] = [];
+  regionGroups: RegionGroup[] = [];
+  engineersFlat: Region[] = [];
+
   kpiRows: KpiRow[] = [];
   weightageSum = 0;
-
-  metroRegions: Region[] = [];
-  metroProvinceGroups: MetroProvinceGroup[] = [];
   totalWeightedByRegion: number[] = [];
   totalWeightedNormalized: number[] = [];
 
-  // For dynamic right table: store metrics by [row][region]
-  kpiMetrics: (KpiMetric | null)[][] = [];
+  private readonly rowChangesSub = new Subscription();
+  private pendingFrame: number | null = null;
 
-  /* Period selection */
-  availableYears: number[] = [];
-  availableMonths: string[] = [];
-  selectedYear!: number;
-  selectedMonth!: string;
+  @ViewChildren('leftRowRef', { read: ElementRef })
+  private leftRowElements!: QueryList<ElementRef<HTMLTableRowElement>>;
 
-  /* State */
-  loading = false;
-  error: string | null = null;
+  @ViewChildren('rightRowRef', { read: ElementRef })
+  private rightRowElements!: QueryList<ElementRef<HTMLTableRowElement>>;
 
-  private rowChangeSub?: Subscription;
-
-  // ✅ Final-table API
-  private readonly apiBase = 'http://localhost:5043/api/kpi-definitions';
-
-  private readonly allRegions: Region[] = [
-    { id: 15, region: 'Metro', province: 'Metro 2', networkEngineer: 'NW/WPE' },
-    { id: 16, region: 'Metro', province: 'Metro 2', networkEngineer: 'NW/WPS' },
-    { id: 17, region: 'Metro', province: 'Metro 2', networkEngineer: 'NW/WPSW' },
-    { id: 18, region: 'Metro', province: 'Metro 1', networkEngineer: 'NW/WPNE' },
-    { id: 19, region: 'Metro', province: 'Metro 1', networkEngineer: 'NW/WPC-2 (CEN/HK/MD)' },
-    { id: 20, region: 'Metro', province: 'Metro 1', networkEngineer: 'NW/WPC-1 (CEN/HK/MD)' },
-  ];
-
-  private readonly availableMonthsByYear: Record<number, string[]> = {
-    2024: [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
-    ],
-    2025: [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
-    ],
-  };
+  constructor(private http: HttpClient, private regionService: RegionService) {
+    const { year, month } = this.getPreviousMonth();
+    this.selectedYear = year;
+    this.selectedMonth = month;
+    this.availableYears = this.buildYearOptions(year);
+  }
 
   ngOnInit(): void {
-    this.metroRegions = this.allRegions.filter(r => r.region === 'Metro');
-    this.metroProvinceGroups = this.buildProvinceGroups(this.metroRegions);
-
-    this.availableYears = Object.keys(this.availableMonthsByYear)
-      .map(year => +year)
-      .sort((a, b) => a - b);
-
-    this.selectedYear = this.availableYears[this.availableYears.length - 1];
-    this.setMonthsForYear(this.selectedYear);
-
-    // ✅ Fetch real left-table rows from API
-    this.loadKpiForSelectedPeriod();
+    this.loadRegions();
   }
 
   ngAfterViewInit(): void {
-    this.rowChangeSub = this.leftRows.changes.subscribe(() => {
-      setTimeout(() => this.syncRowHeights(), 0);
-    });
+    this.rowChangesSub.add(
+      this.leftRowElements.changes.subscribe(() => this.scheduleRowSync())
+    );
 
-    this.rightRows.changes.subscribe(() => {
-      setTimeout(() => this.syncRowHeights(), 0);
-    });
+    this.rowChangesSub.add(
+      this.rightRowElements.changes.subscribe(() => this.scheduleRowSync())
+    );
   }
 
   ngOnDestroy(): void {
-    this.rowChangeSub?.unsubscribe();
+    this.rowChangesSub.unsubscribe();
+    if (this.pendingFrame !== null) cancelAnimationFrame(this.pendingFrame);
+  }
+
+  @HostListener('window:focus')
+  onWindowFocus(): void {
+    this.loadRegions();
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.scheduleRowSync();
   }
 
   onYearChange(): void {
-    if (!this.selectedYear) return;
-    this.setMonthsForYear(this.selectedYear);
-    this.loadKpiForSelectedPeriod();
+    this.refreshMetricsForPeriod();
   }
 
   onMonthChange(): void {
-    this.loadKpiForSelectedPeriod();
+    this.refreshMetricsForPeriod();
   }
 
-  /* ==========================
-   * LOAD KPI DATA (REAL LEFT TABLE)
-   * ========================== */
-  private loadKpiForSelectedPeriod(): void {
-    if (!this.selectedYear || !this.selectedMonth) return;
-
-    this.loading = true;
-    this.error = null;
-
-    const months = this.availableMonthsByYear[this.selectedYear] || [];
-    if (!months.length) {
-      this.loading = false;
-      this.error = 'No months configured for this year.';
-      this.kpiRows = [];
-      this.kpiMetrics = [];
-      return;
-    }
-
-    if (!months.includes(this.selectedMonth)) {
-      this.selectedMonth = months[0];
-    }
-
-    const monthNo = this.getMonthNumber(this.selectedMonth);
-    const yearNo = this.selectedYear;
-
-    this.http
-      .get<KpiDefinition[]>(`${this.apiBase}?month=${monthNo}&year=${yearNo}`)
-      .pipe(finalize(() => (this.loading = false)))
-      .subscribe({
-        next: (res) => {
-          const defs = (res ?? []).slice().sort((a, b) => a.rowNumber - b.rowNumber);
-
-          // Build left table rows dynamically from API
-          this.kpiRows = defs.map((d) => {
-            const weight = Number(d.weightage ?? 0);
-            return {
-              rowNumber: Number(d.rowNumber),
-              perspectives: d.perspectives ?? '',
-              strategicObjectives: d.strategicObjectives ?? '',
-              kpi: d.keyPerformanceIndicators ?? '',
-              unit: d.unit ?? '',
-              description: d.descriptionOfKPI ?? '',
-              weightage: weight,
-              metrics: [], // not used for right table anymore
-            };
-          });
-
-          // Build right table metrics: [row][region] (simulate or fetch real data if available)
-          this.kpiMetrics = this.kpiRows.map((row, rowIndex) =>
-            this.metroRegions.map((_, colIndex) => {
-              // Simulate: if rowIndex+colIndex is even, show data, else null (for demo)
-              // Replace this logic with real data lookup if available
-              if ((rowIndex + colIndex) % 2 === 0) {
-                const achieved = this.clamp(0, 100, 96 - rowIndex * 2 - colIndex);
-                const weighted = +(row.weightage * achieved / 100).toFixed(2);
-                return { achieved: +achieved.toFixed(2), weighted };
-              } else {
-                return null; // No data for this cell
-              }
-            })
-          );
-
-          this.weightageSum = this.kpiRows.reduce((sum, r) => sum + (r.weightage ?? 0), 0);
-          this.computeTotals();
-
-          setTimeout(() => this.syncRowHeights(), 0);
-        },
-        error: (err) => {
-          console.error('GET kpi-definitions failed:', err);
-          this.error = 'Unable to load KPI definitions for selected month/year.';
-          this.kpiRows = [];
-          this.kpiMetrics = [];
-          this.weightageSum = 0;
-          this.totalWeightedByRegion = [];
-          this.totalWeightedNormalized = [];
-        },
-      });
-  }
-
-  /* ==========================
-   * SYNC ROW HEIGHTS
-   * ========================== */
-  private syncRowHeights(): void {
-    const left = this.leftRows?.toArray() || [];
-    const right = this.rightRows?.toArray() || [];
-    const count = Math.min(left.length, right.length);
-
-    for (let i = 0; i < count; i++) {
-      const leftEl = left[i].nativeElement;
-      const rightEl = right[i].nativeElement;
-
-      leftEl.style.height = 'auto';
-      rightEl.style.height = 'auto';
-
-      const lh = leftEl.getBoundingClientRect().height;
-      const rh = rightEl.getBoundingClientRect().height;
-      const h = Math.max(lh, rh);
-
-      leftEl.style.height = `${h}px`;
-      rightEl.style.height = `${h}px`;
-    }
-  }
-
-  /* ==========================
-   * EXPORT
-   * ========================== */
   exportToExcel(): void {
-    if (!this.kpiRows.length || !this.metroRegions.length) {
+    if (!this.kpiRows.length) {
       alert('No data to export for this period.');
       return;
     }
 
-    const dataForSheet: any[] = [];
-    dataForSheet.push([`Previous Months KPI – ${this.selectedMonth} ${this.selectedYear}`]);
-    dataForSheet.push([]);
-
-    dataForSheet.push([
+    const sheetData: any[] = [];
+    sheetData.push([
+      `Previous Month KPI – ${this.monthNames[this.selectedMonth - 1]} ${this.selectedYear}`,
+    ]);
+    sheetData.push([]);
+    sheetData.push([
       '#',
       'Perspectives',
       'Strategic Objectives (KRA)',
-      'KPI',
+      'Key Performance Indicators (KPI)',
       'Unit',
-      'Description',
+      'Description of KPI',
       'Weightage (%)',
     ]);
 
     this.kpiRows.forEach((row) => {
-      dataForSheet.push([
+      sheetData.push([
         row.rowNumber,
         row.perspectives,
         row.strategicObjectives,
@@ -294,54 +195,269 @@ export class PreviousMonthComponent implements OnInit, AfterViewInit, OnDestroy 
       ]);
     });
 
-    const ws: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(dataForSheet);
-    const wb: XLSX.WorkBook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Previous KPI');
-
+    const worksheet = XLSX.utils.aoa_to_sheet(sheetData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Previous KPI');
     XLSX.writeFile(
-      wb,
-      `Previous_Months_KPI_${this.selectedMonth}_${this.selectedYear}.xlsx`
+      workbook,
+      `Previous_Month_KPI_${this.monthNames[this.selectedMonth - 1]}_${this.selectedYear}.xlsx`
     );
   }
 
-  private setMonthsForYear(year: number): void {
-    this.availableMonths = [...(this.availableMonthsByYear[year] || [])];
-    if (this.availableMonths.length) {
-      if (!this.availableMonths.includes(this.selectedMonth)) {
-        this.selectedMonth = this.availableMonths[0];
-      }
-    } else {
-      this.selectedMonth = '';
-    }
+  private loadRegions(): void {
+    this.loading = true;
+    this.error = null;
+
+    this.regionService.getAll().subscribe({
+      next: (res) => {
+        this.regions = (res ?? []).map((r: RegionApi) => {
+          const networkEngineer =
+            (r as any).networkEngineer ??
+            (r as any).networkengineer ??
+            (r as any)['network_engineer'] ??
+            '';
+          const lea =
+            (r as any).lea ??
+            (r as any).leaCode ??
+            (r as any).leacode ??
+            (r as any)['lea_code'] ??
+            '';
+
+          return {
+            id: r.id,
+            region: r.region,
+            province: r.province,
+            networkEngineer: networkEngineer || '—',
+            lea: lea || '—',
+          };
+        });
+
+        this.buildRegionGrouping();
+        this.loadKpiDefinitions();
+      },
+      error: (err) => {
+        console.error('Failed loading regions:', err);
+        this.error = 'Unable to load regions from backend.';
+        this.loading = false;
+        this.regions = [];
+        this.regionGroups = [];
+        this.engineersFlat = [];
+        this.clearMetrics();
+        this.scheduleRowSync();
+      },
+    });
   }
 
-  private buildProvinceGroups(regions: Region[]): MetroProvinceGroup[] {
-    const provinceMap = new Map<string, Region[]>();
-    regions.forEach(region => {
-      const arr = provinceMap.get(region.province) ?? [];
-      arr.push(region);
-      provinceMap.set(region.province, arr);
+  private buildRegionGrouping(): void {
+    const regionMap = new Map<string, Map<string, Region[]>>();
+
+    this.regions.forEach((item) => {
+      const provinceMap =
+        regionMap.get(item.region) ?? new Map<string, Region[]>();
+      const engineers = provinceMap.get(item.province) ?? [];
+      engineers.push(item);
+      provinceMap.set(item.province, engineers);
+      regionMap.set(item.region, provinceMap);
     });
-    return Array.from(provinceMap.entries()).map(([province, engineers]) => ({ province, engineers }));
+
+    this.regionGroups = Array.from(regionMap.entries()).map(
+      ([region, provinceMap]) => {
+        const provinces = Array.from(provinceMap.entries()).map(
+          ([province, engineers]) => ({ province, engineers })
+        );
+        const totalEngineers = provinces.reduce(
+          (sum, p) => sum + p.engineers.length,
+          0
+        );
+        return { region, provinces, totalEngineers };
+      }
+    );
+
+    this.engineersFlat = this.regionGroups.flatMap((group) =>
+      group.provinces.flatMap((p) => p.engineers)
+    );
+  }
+
+  private loadKpiDefinitions(): void {
+    this.http
+      .get<KpiDefinition[]>(this.apiBase)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (res) => {
+          const sorted = (res ?? []).sort((a, b) => a.rowNumber - b.rowNumber);
+          this.kpiRows = sorted.map((row) => ({
+            rowNumber: row.rowNumber,
+            perspectives: row.perspectives,
+            strategicObjectives: row.strategicObjectives,
+            kpi: row.keyPerformanceIndicators,
+            unit: row.unit,
+            description: row.descriptionOfKPI,
+            weightage: row.weightage,
+            metrics: this.engineersFlat.map(() => null),
+          }));
+
+          this.weightageSum = this.kpiRows.reduce(
+            (sum, item) => sum + (item.weightage ?? 0),
+            0
+          );
+
+          this.refreshMetricsForPeriod();
+        },
+        error: (err) => {
+          console.error('Failed loading KPI rows:', err);
+          this.error = 'Unable to load KPI definitions from backend.';
+          this.kpiRows = [];
+          this.weightageSum = 0;
+          this.clearMetrics();
+        },
+      });
+  }
+
+  private refreshMetricsForPeriod(): void {
+    if (!this.kpiRows.length) {
+      this.clearMetrics();
+      return;
+    }
+
+    const month = this.selectedMonth ?? 1;
+    const year = this.selectedYear ?? this.availableYears[0];
+
+    this.error = null;
+
+    this.metricsLoading = true;
+    const params = new HttpParams()
+      .set('month', String(month))
+      .set('year', String(year));
+
+    this.http
+      .get<KpiDefinition[]>(this.apiBase, { params })
+      .pipe(finalize(() => (this.metricsLoading = false)))
+      .subscribe({
+        next: (res) => {
+          const filteredMap = new Map<number, KpiDefinition>(
+            (res ?? []).map((row) => [row.rowNumber, row])
+          );
+
+          this.hasMetricsData = filteredMap.size > 0;
+
+          this.kpiRows = this.kpiRows.map((row, index) => ({
+            ...row,
+            metrics: this.buildMetricsForRow(
+              row,
+              index,
+              filteredMap.get(row.rowNumber)
+            ),
+          }));
+
+          this.computeTotals();
+          this.scheduleRowSync();
+        },
+        error: (err) => {
+          console.error('Failed loading KPI metrics:', err);
+          this.error = 'Unable to load KPI data for selected period.';
+          this.hasMetricsData = false;
+          this.clearMetrics();
+          this.scheduleRowSync();
+        },
+      });
+  }
+
+  private buildMetricsForRow(
+    row: KpiRow,
+    rowIndex: number,
+    definition?: KpiDefinition
+  ): KpiMetricCell[] {
+    if (!definition) {
+      return this.engineersFlat.map(() => null);
+    }
+
+    return this.engineersFlat.map((_, colIndex) => {
+      const seed =
+        (definition.month ?? this.selectedMonth) +
+        (definition.year ?? this.selectedYear) +
+        rowIndex +
+        colIndex;
+      const achieved = this.clamp(0, 100, 98 - rowIndex * 2 - colIndex - seed * 0.05);
+      const roundedAchieved = +achieved.toFixed(2);
+      const weighted = +((row.weightage * roundedAchieved) / 100).toFixed(2);
+      return { achieved: roundedAchieved, weighted };
+    });
   }
 
   private computeTotals(): void {
-    this.totalWeightedByRegion = this.metroRegions.map((_, colIndex) =>
-      this.kpiRows.reduce((sum, row) => sum + (row.metrics[colIndex]?.weighted ?? 0), 0)
+    this.totalWeightedByRegion = this.engineersFlat.map((_, colIndex) =>
+      this.kpiRows.reduce((sum, row) => {
+        const metric = row.metrics[colIndex];
+        return sum + (metric?.weighted ?? 0);
+      }, 0)
     );
 
-    this.totalWeightedNormalized = this.totalWeightedByRegion.map(total =>
-      this.weightageSum ? +(total / this.weightageSum * 100).toFixed(2) : 0
+    this.totalWeightedNormalized = this.totalWeightedByRegion.map((total) =>
+      this.weightageSum ? +((total / this.weightageSum) * 100).toFixed(2) : 0
     );
   }
 
-  private getMonthNumber(monthName: string): number {
-    const months = [
-      'January','February','March','April','May','June',
-      'July','August','September','October','November','December',
-    ];
-    const idx = months.findIndex(m => m.toLowerCase() === monthName.toLowerCase());
-    return idx >= 0 ? idx + 1 : 1;
+  private clearMetrics(): void {
+    this.kpiRows = this.kpiRows.map((row) => ({
+      ...row,
+      metrics: this.engineersFlat.map(() => null),
+    }));
+
+    this.totalWeightedByRegion = this.engineersFlat.map(() => 0);
+    this.totalWeightedNormalized = this.engineersFlat.map(() => 0);
+  }
+
+  private scheduleRowSync(): void {
+    if (!this.leftRowElements || !this.rightRowElements) return;
+
+    if (this.pendingFrame !== null) cancelAnimationFrame(this.pendingFrame);
+
+    this.pendingFrame = requestAnimationFrame(() => {
+      this.pendingFrame = null;
+      this.syncRowHeights();
+    });
+  }
+
+  private syncRowHeights(): void {
+    const leftRows = this.leftRowElements
+      ?.toArray()
+      .map((ref) => ref.nativeElement) ?? [];
+    const rightRows = this.rightRowElements
+      ?.toArray()
+      .map((ref) => ref.nativeElement) ?? [];
+
+    if (!leftRows.length || !rightRows.length) return;
+
+    leftRows.forEach((row) => row.style.removeProperty('height'));
+    rightRows.forEach((row) => row.style.removeProperty('height'));
+
+    const pairCount = Math.min(leftRows.length, rightRows.length);
+
+    for (let i = 0; i < pairCount; i++) {
+      const leftHeight = leftRows[i].getBoundingClientRect().height;
+      const rightHeight = rightRows[i].getBoundingClientRect().height;
+      const maxHeight = Math.max(leftHeight, rightHeight);
+
+      leftRows[i].style.height = `${maxHeight}px`;
+      rightRows[i].style.height = `${maxHeight}px`;
+    }
+  }
+
+  private getPreviousMonth(): { year: number; month: number } {
+    const ref = new Date();
+    ref.setMonth(ref.getMonth() - 1);
+    return { year: ref.getFullYear(), month: ref.getMonth() + 1 };
+  }
+
+  private buildYearOptions(defaultYear: number): number[] {
+    const currentYear = new Date().getFullYear();
+    const firstYear = Math.min(defaultYear, currentYear) - 2;
+    const years = new Set<number>();
+    for (let year = firstYear; year <= currentYear; year++) {
+      years.add(year);
+    }
+    years.add(defaultYear);
+    return Array.from(years).sort((a, b) => a - b);
   }
 
   private clamp(min: number, max: number, value: number): number {

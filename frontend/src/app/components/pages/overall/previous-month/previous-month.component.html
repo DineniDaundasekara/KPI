@@ -1,68 +1,59 @@
 <div class="final-tables-container">
-  <!-- PREVIOUS MONTHS HEADER (Region-management style) -->
+  <!-- PREVIOUS MONTH HEADER -->
   <header class="previous-month-header">
     <div class="header-left">
       <p class="eyebrow">OVERALL KPI / PREVIOUS MONTHS</p>
       <h1>
-        Previous Months KPI
-        <span *ngIf="selectedMonth && selectedYear">
-          – {{ selectedMonth }} {{ selectedYear }}
+        Previous Month KPI
+        <span>
+          – {{ monthNames[selectedMonth - 1] }} {{ selectedYear }}
         </span>
       </h1>
       <p class="subtitle">
-        View and compare KPI metrics for past months, region performance and weighted scores.
+        View KPI definitions on the left while the right table filters by year and month for regional performance.
       </p>
     </div>
 
     <div class="header-right">
-      <!-- Period selector (Year / Month) -->
       <div class="period-selectors">
         <label>
           <span>Year</span>
-          <select
-            [(ngModel)]="selectedYear"
-            (change)="onYearChange()"
-          >
-            <option *ngFor="let y of availableYears" [ngValue]="y">
-              {{ y }}
+          <select [(ngModel)]="selectedYear" (change)="onYearChange()">
+            <option *ngFor="let year of availableYears" [ngValue]="year">
+              {{ year }}
             </option>
           </select>
         </label>
 
         <label>
           <span>Month</span>
-          <select
-            [(ngModel)]="selectedMonth"
-            (change)="onMonthChange()"
-          >
-            <option *ngFor="let m of availableMonths" [ngValue]="m">
-              {{ m }}
+          <select [(ngModel)]="selectedMonth" (change)="onMonthChange()">
+            <option
+              *ngFor="let month of monthNames; let idx = index"
+              [ngValue]="idx + 1"
+            >
+              {{ month }}
             </option>
           </select>
         </label>
       </div>
 
       <span class="count-pill">
-        {{ metroRegions.length || 0 }} Metro NEs
+        {{ engineersFlat.length }} NEs
       </span>
 
-      <button
-        class="primary-btn"
-        type="button"
-        (click)="exportToExcel()"
-      >
+      <button class="primary-btn" type="button" (click)="exportToExcel()">
         Export to Excel
       </button>
     </div>
   </header>
 
-  <!-- Side-by-side tables (left fixed info, right KPI by Metro) -->
+  <!-- Side-by-side tables (left fixed info, right KPI by region) -->
   <div class="side-by-side-tables">
     <!-- LEFT: KPI definition table -->
     <div class="kpi-table-container">
       <table class="kpi-table">
         <thead>
-          <!-- R-GM / P-DGM / NW EE/RTOM AREA header rows -->
           <tr class="colSpan-header" #leftRowRef>
             <th colspan="7">R-GM</th>
           </tr>
@@ -72,8 +63,6 @@
           <tr class="colSpan-header" #leftRowRef>
             <th colspan="7">NW EE/RTOM AREA</th>
           </tr>
-
-          <!-- Standard KPI headings -->
           <tr #leftRowRef>
             <th>#</th>
             <th>Perspectives</th>
@@ -86,7 +75,6 @@
         </thead>
 
         <tbody>
-          <!-- Static left-side rows -->
           <tr *ngFor="let row of kpiRows" #leftRowRef>
             <td>{{ row.rowNumber }}</td>
             <td>{{ row.perspectives }}</td>
@@ -99,7 +87,6 @@
             <td>{{ row.weightage }}%</td>
           </tr>
 
-          <!-- Sum of weightage row -->
           <tr class="summary-row" #leftRowRef>
             <td colspan="6" class="text-right"><b>Weightage</b></td>
             <td class="text-center">
@@ -107,7 +94,6 @@
             </td>
           </tr>
 
-          <!-- Total weightage = 100% row -->
           <tr class="summary-row total-row" #leftRowRef>
             <td colspan="6" class="text-right"><b>Total Weightage</b></td>
             <td class="text-center"><b>100%</b></td>
@@ -116,38 +102,42 @@
       </table>
     </div>
 
-    <!-- RIGHT: Metro performance table -->
+    <!-- RIGHT: Region performance table -->
     <div class="final-table-container">
       <table class="final-distribution-table">
         <thead>
-          <!-- Row 1: Metro -->
           <tr #rightRowRef>
-            <th [attr.colspan]="metroRegions.length * 2">
-              Metro
-            </th>
-          </tr>
-
-          <!-- Row 2: Metro 1 / Metro 2 (provinces) -->
-          <tr #rightRowRef>
-            <ng-container *ngFor="let group of metroProvinceGroups">
-              <th [attr.colspan]="group.engineers.length * 2">
-                {{ group.province }}
+            <ng-container *ngFor="let region of regionGroups">
+              <th [attr.colspan]="region.totalEngineers * 2">
+                {{ region.region }}
               </th>
             </ng-container>
           </tr>
 
-          <!-- Row 3: Network engineer names -->
+          <tr #rightRowRef>
+            <ng-container *ngFor="let region of regionGroups">
+              <th
+                *ngFor="let province of region.provinces"
+                [attr.colspan]="province.engineers.length * 2"
+              >
+                {{ province.province }}
+              </th>
+            </ng-container>
+          </tr>
+
           <tr class="colSpan-header" #rightRowRef>
-            <ng-container *ngFor="let group of metroProvinceGroups">
-              <th *ngFor="let eng of group.engineers" colspan="2">
-                {{ eng.networkEngineer }}
-              </th>
+            <ng-container *ngFor="let region of regionGroups">
+              <ng-container *ngFor="let province of region.provinces">
+                <th *ngFor="let eng of province.engineers" colspan="2">
+                  <span class="nw-engineer">{{ eng.networkEngineer }}</span>
+                  <span class="rtom-area">({{ eng.lea }})</span>
+                </th>
+              </ng-container>
             </ng-container>
           </tr>
 
-          <!-- Row 4: Achieved / Achieved with Weightage -->
           <tr #rightRowRef>
-            <ng-container *ngFor="let _ of metroRegions">
+            <ng-container *ngFor="let _ of engineersFlat">
               <th class="achieved-header">Achieved KPI</th>
               <th class="weighted-header">Achieved KPI with Weightage</th>
             </ng-container>
@@ -155,20 +145,31 @@
         </thead>
 
         <tbody>
-          <!-- KPI data rows -->
           <tr *ngFor="let row of kpiRows" #rightRowRef>
             <ng-container *ngFor="let metric of row.metrics">
               <td class="text-center achieved-cell">
-                {{ metric.achieved | number : '1.2-2' }}%
+                <ng-container *ngIf="metric; else noDataCell">
+                  {{ metric.achieved | number : '1.2-2' }}%
+                </ng-container>
               </td>
               <td class="text-center weighted-cell">
-                {{ metric.weighted | number : '1.2-2' }}%
+                <ng-container *ngIf="metric; else noDataCell">
+                  {{ metric.weighted | number : '1.2-2' }}%
+                </ng-container>
               </td>
             </ng-container>
           </tr>
 
-          <!-- Σ weighted per Metro column -->
-          <tr class="summary-row" #rightRowRef>
+          <tr class="no-data-row" *ngIf="!hasMetricsData" #rightRowRef>
+            <td
+              class="text-center"
+              [attr.colspan]="Math.max(engineersFlat.length * 2, 2)"
+            >
+              No Data
+            </td>
+          </tr>
+
+          <tr class="summary-row" #rightRowRef *ngIf="hasMetricsData">
             <ng-container *ngFor="let total of totalWeightedByRegion">
               <td></td>
               <td class="text-center weighted-cell">
@@ -177,8 +178,7 @@
             </ng-container>
           </tr>
 
-          <!-- Final row: normalized totals per Metro column -->
-          <tr class="summary-row total-row" #rightRowRef>
+          <tr class="summary-row total-row" #rightRowRef *ngIf="hasMetricsData">
             <ng-container *ngFor="let norm of totalWeightedNormalized">
               <td></td>
               <td class="text-center weighted-cell">
@@ -188,12 +188,12 @@
           </tr>
         </tbody>
       </table>
+      <ng-template #noDataCell>
+        <span class="no-data-pill">No Data</span>
+      </ng-template>
     </div>
   </div>
 
-  <!-- Simple loader / error display -->
-  <div *ngIf="loading" class="final-tables-spinner"></div>
-  <div *ngIf="error" class="error-message">
-    {{ error }}
-  </div>
+  <div *ngIf="loading || metricsLoading" class="final-tables-spinner"></div>
+  <div *ngIf="error" class="error-message">{{ error }}</div>
 </div>
