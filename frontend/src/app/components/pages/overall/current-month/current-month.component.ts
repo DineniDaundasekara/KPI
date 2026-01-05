@@ -12,14 +12,15 @@ import {
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
+import { Region as RegionApi, RegionService } from '../../../../services/region.service';
 
-interface Region {
+type Region = {
   id: number;
   region: string;
   province: string;
   networkEngineer: string;
   lea: string;
-}
+};
 
 interface KpiMetric {
   achieved: number;   // %
@@ -74,38 +75,13 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChildren('rightRowRef', { read: ElementRef })
   private rightRowElements!: QueryList<ElementRef<HTMLTableRowElement>>;
 
-  regions: Region[] = [
-    { id: 1,  region: 'Region 3', province: 'NP',        networkEngineer: 'NW/NP-2',               lea: 'KO / MLT / MB / VA' },
-    { id: 2,  region: 'Region 3', province: 'NP',        networkEngineer: 'NW/NP-1',               lea: 'JA' },
-    { id: 3,  region: 'Region 3', province: 'EP',        networkEngineer: 'NW/EP',                 lea: 'BC / AP / KL / TC' },
-
-    { id: 4,  region: 'Region 2', province: 'WPS & SP',  networkEngineer: 'NW/WPS',                lea: 'HR / KT / PH' },
-    { id: 5,  region: 'Region 2', province: 'WPS & SP',  networkEngineer: 'NW/SPW',                lea: 'AG / GL' },
-    { id: 6,  region: 'Region 2', province: 'WPS & SP',  networkEngineer: 'NW/SPE',                lea: 'EMB / HB / MH' },
-
-    { id: 7,  region: 'Region 2', province: 'SAB & UVA', networkEngineer: 'NW/SAB',                lea: 'KE / RN' },
-    { id: 8,  region: 'Region 2', province: 'SAB & UVA', networkEngineer: 'NW/UVA',                lea: 'BD / BW / MRG' },
-
-    { id: 9,  region: 'Region 1', province: 'CP & NCP',  networkEngineer: 'NW/NCP',                lea: 'AD / PR' },
-    { id: 10, region: 'Region 1', province: 'CP & NCP',  networkEngineer: 'NW/CPS',                lea: 'GP / HT / NW' },
-    { id: 11, region: 'Region 1', province: 'CP & NCP',  networkEngineer: 'NW/CPN',                lea: 'DB / KY / MT' },
-
-    { id: 12, region: 'Region 1', province: 'WPN & NWP', networkEngineer: 'NW/NWPW',               lea: 'CW / PX' },
-    { id: 13, region: 'Region 1', province: 'WPN & NWP', networkEngineer: 'NW/NWPE',               lea: 'KG / KLY' },
-    { id: 14, region: 'Region 1', province: 'WPN & NWP', networkEngineer: 'NW/WPN',                lea: 'NG / WT' },
-
-    // Metro
-    { id: 15, region: 'Metro',    province: 'Metro 2',   networkEngineer: 'NW/WPE',                lea: 'KON / KK' },
-    { id: 16, region: 'Metro',    province: 'Metro 2',   networkEngineer: 'NW/WPS',                lea: 'AW / HO' },
-    { id: 17, region: 'Metro',    province: 'Metro 2',   networkEngineer: 'NW/WPSW',               lea: 'ND / RM' },
-
-    { id: 18, region: 'Metro',    province: 'Metro 1',   networkEngineer: 'NW/WPNE',               lea: 'GQ / KI / NTB' },
-    { id: 19, region: 'Metro',    province: 'Metro 1',   networkEngineer: 'NW/WPC-2 (CEN/HK/MD)',  lea: 'CEN / MD' },
-    { id: 20, region: 'Metro',    province: 'Metro 1',   networkEngineer: 'NW/WPC-1 (CEN/HK/MD)',  lea: 'HK' },
-  ];
-
-  metroRegions: Region[] = [];
-  metroProvinceGroups: { province: string; engineers: Region[] }[] = [];
+  regions: Region[] = [];
+  regionGroups: {
+    region: string;
+    provinces: { province: string; engineers: Region[] }[];
+    totalEngineers: number;
+  }[] = [];
+  engineersFlat: Region[] = [];
 
   kpiRows: KpiRow[] = [];
   weightageSum = 0;
@@ -115,29 +91,19 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly rowChangesSub = new Subscription();
   private pendingFrame: number | null = null;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private regionService: RegionService) {
     const now = new Date();
     this.currentYear = now.getFullYear();
     this.currentMonth = now.toLocaleString('en-US', { month: 'long' });
   }
 
   ngOnInit(): void {
-    // right side columns remain same
-    this.metroRegions = this.regions.filter(r => r.region === 'Metro');
+    this.loadRegions();
+  }
 
-    const provinceMap = new Map<string, Region[]>();
-    this.metroRegions.forEach(r => {
-      const arr = provinceMap.get(r.province) ?? [];
-      arr.push(r);
-      provinceMap.set(r.province, arr);
-    });
-
-    this.metroProvinceGroups = Array.from(provinceMap.entries()).map(
-      ([province, engineers]) => ({ province, engineers })
-    );
-
-    // ✅ Load left table from API (NO month/year filter)
-    this.loadLeftTableFromApi();
+  @HostListener('window:focus')
+  onWindowFocus(): void {
+    this.loadRegions();
   }
 
   ngAfterViewInit(): void {
@@ -162,21 +128,81 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
     this.scheduleRowSync();
   }
 
+  private loadRegions(): void {
+    this.loading = true;
+    this.error = null;
+
+    this.regionService.getAll().subscribe({
+      next: (res) => {
+        this.regions = (res ?? []).map((r: RegionApi) => {
+          const networkEngineer = (r as any).networkEngineer ?? (r as any).networkengineer ?? (r as any)['network_engineer'] ?? '';
+          const lea = (r as any).lea ?? (r as any).leaCode ?? (r as any).leacode ?? (r as any)['lea_code'] ?? '';
+
+          return {
+            id: r.id,
+            region: r.region,
+            province: r.province,
+            networkEngineer: networkEngineer || '—',
+            lea: lea || '—',
+          };
+        });
+
+        this.buildRegionGrouping();
+        this.loadLeftTableFromApi();
+      },
+      error: (err) => {
+        console.error('Failed loading regions:', err);
+        this.error = 'Unable to load regions from backend.';
+        this.regions = [];
+        this.regionGroups = [];
+        this.engineersFlat = [];
+        this.loading = false;
+        this.kpiRows = [];
+        this.computeTotals();
+        this.scheduleRowSync();
+      },
+    });
+  }
+
+  private buildRegionGrouping(): void {
+    const regionMap = new Map<string, Map<string, Region[]>>();
+
+    this.regions.forEach((item) => {
+      const provinceMap = regionMap.get(item.region) ?? new Map<string, Region[]>();
+      const engineers = provinceMap.get(item.province) ?? [];
+      engineers.push(item);
+      provinceMap.set(item.province, engineers);
+      regionMap.set(item.region, provinceMap);
+    });
+
+    this.regionGroups = Array.from(regionMap.entries()).map(([region, provinceMap]) => {
+      const provinces = Array.from(provinceMap.entries()).map(([province, engineers]) => ({
+        province,
+        engineers,
+      }));
+
+      const totalEngineers = provinces.reduce((sum, p) => sum + p.engineers.length, 0);
+
+      return { region, provinces, totalEngineers };
+    });
+
+    this.engineersFlat = this.regionGroups.flatMap(g => g.provinces.flatMap(p => p.engineers));
+  }
+
   /** ✅ Fetch KPI definitions from backend (real data for LEFT table) */
   private loadLeftTableFromApi(): void {
     this.loading = true;
     this.error = null;
 
     this.http
-      .get<KpiDefinition[]>(this.apiBase) // ✅ IMPORTANT: fetch ALL
+      .get<KpiDefinition[]>(this.apiBase)
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (res) => {
           const list = (res ?? []).sort((a, b) => a.rowNumber - b.rowNumber);
 
           this.kpiRows = list.map((row, rowIndex) => {
-            // right side metrics still dummy
-            const metrics: KpiMetric[] = this.metroRegions.map((_, colIndex) => {
+            const metrics: KpiMetric[] = this.engineersFlat.map((_, colIndex) => {
               const achieved = 100 - (rowIndex * 2 + colIndex);
               const weighted = +(row.weightage * achieved / 100).toFixed(2);
               return { achieved, weighted };
@@ -210,7 +236,7 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
   private computeTotals(): void {
     this.weightageSum = this.kpiRows.reduce((sum, row) => sum + (row.weightage ?? 0), 0);
 
-    this.totalWeightedByRegion = this.metroRegions.map((_, colIndex) =>
+    this.totalWeightedByRegion = this.engineersFlat.map((_, colIndex) =>
       this.kpiRows.reduce((sum, row) => sum + (row.metrics[colIndex]?.weighted ?? 0), 0)
     );
 
@@ -251,3 +277,4 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 }
+

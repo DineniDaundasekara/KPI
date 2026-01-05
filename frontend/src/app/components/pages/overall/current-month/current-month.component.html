@@ -11,7 +11,7 @@
 
     <div class="header-right">
       <span class="count-pill">
-        {{ metroRegions.length }} Metro NEs
+        {{ engineersFlat.length }} NEs
       </span>
       <button class="primary-btn" type="button">
         Export to Excel
@@ -83,34 +83,42 @@
     <div class="final-table-container">
       <table class="final-distribution-table">
         <thead>
-          <!-- Row 1: Metro -->
+          <!-- Row 1: R-GM (Region) -->
           <tr #rightRowRef>
-            <th [attr.colspan]="metroRegions.length * 2">
-              Metro
-            </th>
-          </tr>
-
-          <!-- Row 2: Metro 1 / Metro 2 -->
-          <tr #rightRowRef>
-            <ng-container *ngFor="let group of metroProvinceGroups">
-              <th [attr.colspan]="group.engineers.length * 2">
-                {{ group.province }}
+            <ng-container *ngFor="let region of regionGroups">
+              <th [attr.colspan]="region.totalEngineers * 2">
+                {{ region.region }}
               </th>
             </ng-container>
           </tr>
 
-          <!-- Row 3: Network engineer names -->
-          <tr class="colSpan-header" #rightRowRef>
-            <ng-container *ngFor="let group of metroProvinceGroups">
-              <th *ngFor="let eng of group.engineers" colspan="2">
-                {{ eng.networkEngineer }}
+          <!-- Row 2: P-DGM (Province) -->
+          <tr #rightRowRef>
+            <ng-container *ngFor="let region of regionGroups">
+              <th
+                *ngFor="let province of region.provinces"
+                [attr.colspan]="province.engineers.length * 2"
+              >
+                {{ province.province }}
               </th>
+            </ng-container>
+          </tr>
+
+          <!-- Row 3: NW EE / RTOM AREA -->
+          <tr class="colSpan-header" #rightRowRef>
+            <ng-container *ngFor="let region of regionGroups">
+              <ng-container *ngFor="let province of region.provinces">
+                <th *ngFor="let eng of province.engineers" colspan="2">
+                  <span class="nw-engineer">{{ eng.networkEngineer }}</span>
+                  <span class="rtom-area">({{ eng.lea }})</span>
+                </th>
+              </ng-container>
             </ng-container>
           </tr>
 
           <!-- Row 4: Achieved / Achieved with Weightage -->
           <tr #rightRowRef>
-            <ng-container *ngFor="let _ of metroRegions">
+            <ng-container *ngFor="let _ of engineersFlat">
               <th class="achieved-header">Achieved KPI</th>
               <th class="weighted-header">Achieved KPI with Weightage</th>
             </ng-container>
@@ -154,3 +162,4 @@
     </div>
   </div>
 </div>
+
