@@ -10,7 +10,6 @@ namespace backend.Models
         [Column("id")]
         public string Id { get; set; } = string.Empty;
 
-        // tinyint
         [Column("rowNumber")]
         public byte RowNumber { get; set; }
 
@@ -29,27 +28,27 @@ namespace backend.Models
         [Column("descriptionOfKPI")]
         public string DescriptionOfKPI { get; set; } = string.Empty;
 
-        // tinyint
-        [Column("weightage")]
-        public byte Weightage { get; set; }
+        // ✅ Weightage auto-calculated (% with decimals)
+        // Recommended DB column type: decimal(10,4)
+        [Column("weightage", TypeName = "decimal(10,4)")]
+        public decimal Weightage { get; set; } = 0m;
 
-        // nvarchar in DB
+        // ✅ User enters points; NOT NULL default 0
+        [Column("pointsApplicable")]
+        public int PointsApplicable { get; set; } = 0;
+
         [Column("createdAt")]
         public string? CreatedAt { get; set; }
 
-        // nvarchar in DB
         [Column("updatedAt")]
         public string? UpdatedAt { get; set; }
 
-        // tinyint
         [Column("v")]
         public byte V { get; set; }
 
-        // tinyint
         [Column("month")]
         public byte Month { get; set; }
 
-        // smallint
         [Column("year")]
         public short Year { get; set; }
     }

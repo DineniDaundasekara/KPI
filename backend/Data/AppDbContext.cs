@@ -13,10 +13,7 @@ namespace backend.Data
         public DbSet<RegionData> RegionData { get; set; } = null!;
         public DbSet<RtomArea> RtomArea { get; set; } = null!;
 
-        // ✅ Email Recipients
         public DbSet<EmailRecipient> EmailRecipients { get; set; }
-
-        // ✅ Routine MTNC
         public DbSet<MtncRoutine> MtncRoutines { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -36,7 +33,7 @@ namespace backend.Data
                 entity.Property(x => x.Role).HasColumnName("role").HasMaxLength(50);
 
                 entity.Property(x => x.IsActive).HasColumnName("isActive");
-                entity.Property(x => x.V).HasColumnName("v"); // depends on your model type
+                entity.Property(x => x.V).HasColumnName("v");
                 entity.Property(x => x.LastLogin).HasColumnName("lastLogin");
 
                 entity.Property(x => x.CreatedAt).HasColumnName("createdAt");
@@ -54,7 +51,7 @@ namespace backend.Data
             });
 
             // =========================
-            // finaldatatables mapping
+            // finaldatatables mapping (UPDATED)
             // =========================
             modelBuilder.Entity<KpiDefinition>(entity =>
             {
@@ -69,9 +66,16 @@ namespace backend.Data
                       .HasColumnName("rowNumber")
                       .HasColumnType("tinyint");
 
+                // ✅ Weightage is now calculated, store decimals
                 entity.Property(x => x.Weightage)
                       .HasColumnName("weightage")
-                      .HasColumnType("tinyint");
+                      .HasColumnType("decimal(10,4)");
+
+                // ✅ PointsApplicable should be NOT NULL in DB (default 0)
+                entity.Property(x => x.PointsApplicable)
+                      .HasColumnName("pointsApplicable")
+                      .HasColumnType("int")
+                      .IsRequired();
 
                 entity.Property(x => x.V)
                       .HasColumnName("v")
@@ -139,7 +143,7 @@ namespace backend.Data
             });
 
             // =========================
-            // ✅ mtncroutinetable1 mapping (FIXED)
+            // mtncroutinetable1 mapping
             // =========================
             modelBuilder.Entity<MtncRoutine>(entity =>
             {
@@ -151,7 +155,6 @@ namespace backend.Data
                       .HasColumnName("id")
                       .HasMaxLength(50);
 
-                // ✅ MAIN FIX: no is tinyint
                 entity.Property(x => x.No)
                       .HasColumnName("no")
                       .HasColumnType("tinyint");
@@ -192,7 +195,6 @@ namespace backend.Data
                       .HasColumnName("updatedAt")
                       .HasColumnType("nvarchar(50)");
 
-                // ✅ v is tinyint
                 entity.Property(x => x.V)
                       .HasColumnName("v")
                       .HasColumnType("tinyint");

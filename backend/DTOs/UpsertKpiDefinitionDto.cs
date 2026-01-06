@@ -13,8 +13,9 @@ namespace backend.DTOs
         [Required] public string Unit { get; set; } = "";
         [Required] public string DescriptionOfKPI { get; set; } = "";
 
-        [Range(0, 255)]
-        public int Weightage { get; set; }
+        // ✅ ONLY PointsApplicable from user
+        [Range(0, 100000)]
+        public int PointsApplicable { get; set; } = 0;
 
         [Range(1, 12)]
         public int? Month { get; set; }

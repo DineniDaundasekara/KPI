@@ -1,5 +1,5 @@
 <div class="final-tables-container">
-  <!-- CURRENT MONTH HEADER (Region-management style) -->
+  <!-- CURRENT MONTH HEADER -->
   <header class="current-month-header">
     <div class="header-left">
       <p class="eyebrow">OVERALL KPI / CURRENT MONTH</p>
@@ -10,18 +10,15 @@
     </div>
 
     <div class="header-right">
-      <span class="count-pill">
-        {{ engineersFlat.length }} NEs
-      </span>
+      <span class="count-pill">{{ engineersFlat.length }} NEs</span>
       <button class="primary-btn" type="button">
         Export to Excel
       </button>
     </div>
   </header>
 
-  <!-- Side-by-side tables (left fixed info, right KPI by Metro) -->
   <div class="side-by-side-tables">
-    <!-- LEFT: KPI definition table -->
+    <!-- LEFT: KPI definition table (UPDATED STRUCTURE) -->
     <div class="kpi-table-container">
       <table class="kpi-table">
         <thead>
@@ -36,79 +33,85 @@
             <th colspan="7">NW EE/RTOM AREA</th>
           </tr>
 
-          <!-- Standard KPI headings -->
+          <!-- ✅ Excel-like headings -->
           <tr #leftRowRef>
-            <th>#</th>
-            <th>Perspectives</th>
-            <th>Strategic Objectives (KRA)</th>
-            <th>Key Performance Indicators (KPI)</th>
-            <th>Unit</th>
-            <th>Description of KPI</th>
-            <th>Weightage</th>
+            <th class="col-num">#</th>
+            <th class="col-persp">Perspectives</th>
+            <th class="col-kra">Strategic Objectives (KRA)</th>
+            <th class="col-kpi">Key Performance Indicators (KPI)</th>
+            <th class="col-target">Target</th>
+            <th class="col-weight">Weightage</th>
+            <th class="col-points">Points Applicable</th>
           </tr>
         </thead>
 
         <tbody>
-          <!-- Static left-side rows -->
+          <!-- KPI rows -->
           <tr *ngFor="let row of kpiRows" #leftRowRef>
-            <td>{{ row.rowNumber }}</td>
-            <td>{{ row.perspectives }}</td>
-            <td>{{ row.strategicObjectives }}</td>
-            <td class="kpi-name-cell">
+            <td class="col-num">{{ row.rowNumber }}</td>
+            <td class="col-persp">{{ row.perspectives }}</td>
+            <td class="col-kra">{{ row.strategicObjectives }}</td>
+
+            <td class="kpi-name-cell col-kpi">
               <b>{{ row.kpi }}</b>
             </td>
-            <td>{{ row.unit }}</td>
-            <td>{{ row.description }}</td>
-            <td>{{ row.weightage }}%</td>
-          </tr>
 
-          <!-- Sum of weightage row -->
-          <tr class="summary-row" #leftRowRef>
-            <td colspan="6" class="text-right"><b>Weightage</b></td>
-            <td class="text-center">
-              <b>{{ weightageSum | number : '1.2-2' }}%</b>
+            <!-- ✅ Target = DescriptionOfKPI (as you said they are same) -->
+            <td class="col-target">
+              {{ row.target }}
+            </td>
+
+            <td class="col-weight">
+              {{ row.weightage | number : '1.0-2' }}%
+            </td>
+
+            <td class="col-points">
+              {{ row.pointsApplicable | number }}
             </td>
           </tr>
 
-          <!-- Total weightage = 100% row -->
-          <tr class="summary-row total-row" #leftRowRef>
-            <td colspan="6" class="text-right"><b>Total Weightage</b></td>
-            <td class="text-center"><b>100%</b></td>
+          <!-- ✅ NEW: Total Marks row -->
+          <tr class="total-marks-row" #leftRowRef>
+            <td colspan="6" class="text-right"><b>Total Marks</b></td>
+            <td class="text-center total-points"><b>{{ totalPointsApplicable | number }}</b></td>
+          </tr>
+
+          <!-- ✅ NEW: KPI label row -->
+          <tr class="kpi-label-row" #leftRowRef>
+            <td colspan="6" class="text-right"><b>KPI</b></td>
+            <td class="kpi-label"></td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <!-- RIGHT: Metro performance table -->
+    <!-- RIGHT: Metro performance table (UNCHANGED) -->
     <div class="final-table-container">
       <table class="final-distribution-table">
         <thead>
-          <!-- Row 1: R-GM (Region) -->
           <tr #rightRowRef>
             <ng-container *ngFor="let region of regionGroups">
-              <th [attr.colspan]="region.totalEngineers * 2">
+              <th [attr.colspan]="region.totalEngineers * 3">
                 {{ region.region }}
               </th>
             </ng-container>
           </tr>
 
-          <!-- Row 2: P-DGM (Province) -->
           <tr #rightRowRef>
             <ng-container *ngFor="let region of regionGroups">
               <th
                 *ngFor="let province of region.provinces"
-                [attr.colspan]="province.engineers.length * 2"
+                [attr.colspan]="province.engineers.length * 3"
               >
                 {{ province.province }}
               </th>
             </ng-container>
           </tr>
 
-          <!-- Row 3: NW EE / RTOM AREA -->
           <tr class="colSpan-header" #rightRowRef>
             <ng-container *ngFor="let region of regionGroups">
               <ng-container *ngFor="let province of region.provinces">
-                <th *ngFor="let eng of province.engineers" colspan="2">
+                <th *ngFor="let eng of province.engineers" colspan="3">
                   <span class="nw-engineer">{{ eng.networkEngineer }}</span>
                   <span class="rtom-area">({{ eng.lea }})</span>
                 </th>
@@ -116,43 +119,45 @@
             </ng-container>
           </tr>
 
-          <!-- Row 4: Achieved / Achieved with Weightage -->
           <tr #rightRowRef>
             <ng-container *ngFor="let _ of engineersFlat">
               <th class="achieved-header">Achieved KPI</th>
-              <th class="weighted-header">Achieved KPI with Weightage</th>
+              <th class="maximum-points-header">Maximum Points Per KPI</th>
+              <th class="points-achieved-header">Points Achieved</th>
             </ng-container>
           </tr>
         </thead>
 
         <tbody>
-          <!-- KPI data rows -->
           <tr *ngFor="let row of kpiRows" #rightRowRef>
             <ng-container *ngFor="let metric of row.metrics">
               <td class="text-center achieved-cell">
                 {{ metric.achieved | number : '1.2-2' }}%
               </td>
-              <td class="text-center weighted-cell">
-                {{ metric.weighted | number : '1.2-2' }}%
+              <td class="text-center maximum-points-cell">
+                {{ metric.maximumPoints | number : '1.4-4' }}
+              </td>
+              <td class="text-center points-achieved-cell">
+                {{ metric.pointsAchieved | number : '1.4-4' }}
               </td>
             </ng-container>
           </tr>
 
-          <!-- Σ weighted per Metro column -->
           <tr class="summary-row" #rightRowRef>
-            <ng-container *ngFor="let total of totalWeightedByRegion">
+            <ng-container *ngFor="let total of totalPointsAchievedByRegion; let idx = index">
               <td></td>
-              <td class="text-center weighted-cell">
-                <b>{{ total | number : '1.2-2' }}%</b>
+              <td></td>
+              <td class="text-center points-achieved-cell">
+                <b>{{ total | number : '1.4-4' }}</b>
               </td>
             </ng-container>
           </tr>
 
-          <!-- Final row: normalized totals per Metro column -->
           <tr class="summary-row total-row" #rightRowRef>
-            <ng-container *ngFor="let norm of totalWeightedNormalized">
+            <ng-container *ngFor="let norm of totalPointsNormalized">
               <td></td>
-              <td class="text-center weighted-cell">
+              <td></td>
+              <td class="text-center points-achieved-cell">
                 <b>{{ norm | number : '1.2-2' }}%</b>
               </td>
             </ng-container>
@@ -162,4 +167,3 @@
     </div>
   </div>
 </div>
-
