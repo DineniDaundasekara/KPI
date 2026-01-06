@@ -73,6 +73,11 @@ namespace backend.Data
                       .HasColumnName("weightage")
                       .HasColumnType("tinyint");
 
+                // ✅ NEW FIELD mapping
+                entity.Property(x => x.PointsApplicable)
+                      .HasColumnName("pointsApplicable")
+                      .HasColumnType("int");
+
                 entity.Property(x => x.V)
                       .HasColumnName("v")
                       .HasColumnType("tinyint");
@@ -113,6 +118,7 @@ namespace backend.Data
                       .HasColumnName("updatedAt")
                       .HasColumnType("nvarchar(50)");
             });
+
 
             // =========================
             // emailrecipients mapping

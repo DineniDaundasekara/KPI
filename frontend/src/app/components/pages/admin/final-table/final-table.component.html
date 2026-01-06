@@ -9,8 +9,11 @@
   <section class="form-section">
     <form class="kpi-form" [formGroup]="form" (ngSubmit)="onSubmit()">
       <h2>{{ editingId ? 'Update KPI Row' : 'Add KPI Row' }}</h2>
+
       <div *ngIf="editingId" class="edit-info">
-        <span class="edit-message">You are editing Row #{{ form.value.rowNumber }}. Make changes and click Update, or Cancel to discard.</span>
+        <span class="edit-message">
+          You are editing Row #{{ form.value.rowNumber }}. Make changes and click Update, or Cancel to discard.
+        </span>
       </div>
 
       <div class="field-grid">
@@ -18,29 +21,41 @@
           <input type="number" formControlName="rowNumber" placeholder="Row Number" />
           <span class="error" *ngIf="form.controls.rowNumber.touched && form.controls.rowNumber.invalid">Required</span>
         </div>
+
         <div class="field-group">
           <input type="text" formControlName="perspectives" placeholder="Perspectives" />
           <span class="error" *ngIf="form.controls.perspectives.touched && form.controls.perspectives.invalid">Required</span>
         </div>
+
         <div class="field-group">
           <input type="text" formControlName="strategicObjectives" placeholder="Strategic Objectives" />
           <span class="error" *ngIf="form.controls.strategicObjectives.touched && form.controls.strategicObjectives.invalid">Required</span>
         </div>
+
         <div class="field-group">
           <input type="text" formControlName="keyPerformanceIndicators" placeholder="Key Performance Indicators" />
           <span class="error" *ngIf="form.controls.keyPerformanceIndicators.touched && form.controls.keyPerformanceIndicators.invalid">Required</span>
         </div>
+
         <div class="field-group">
           <input type="text" formControlName="unit" placeholder="Unit" />
           <span class="error" *ngIf="form.controls.unit.touched && form.controls.unit.invalid">Required</span>
         </div>
+
         <div class="field-group field-span">
           <textarea rows="3" formControlName="descriptionOfKPI" placeholder="Description of KPI"></textarea>
           <span class="error" *ngIf="form.controls.descriptionOfKPI.touched && form.controls.descriptionOfKPI.invalid">Required</span>
         </div>
+
         <div class="field-group">
-          <input type="number" formControlName="weightage" placeholder="Weightage" />
+          <input type="number" formControlName="weightage" placeholder="Weightage (%)" />
           <span class="error" *ngIf="form.controls.weightage.touched && form.controls.weightage.invalid">Required</span>
+        </div>
+
+        <!-- ✅ NEW FIELD -->
+        <div class="field-group">
+          <input type="number" formControlName="pointsApplicable" placeholder="Points Applicable" />
+          <span class="error" *ngIf="form.controls.pointsApplicable.touched && form.controls.pointsApplicable.invalid">Required</span>
         </div>
       </div>
 
@@ -48,7 +63,9 @@
         <button type="submit" [disabled]="form.invalid || saving">
           {{ editingId ? 'Update' : 'Add' }} Record
         </button>
-        <button type="button" class="secondary" *ngIf="editingId" (click)="onCancelEdit()" [disabled]="saving">Cancel</button>
+        <button type="button" class="secondary" *ngIf="editingId" (click)="onCancelEdit()" [disabled]="saving">
+          Cancel
+        </button>
       </div>
     </form>
   </section>
@@ -68,9 +85,14 @@
           <th>Unit</th>
           <th>Description of KPI</th>
           <th>Weightage</th>
+
+          <!-- ✅ NEW -->
+          <th>Points Applicable</th>
+
           <th>Actions</th>
         </tr>
       </thead>
+
       <tbody>
         <tr *ngFor="let record of records" [class.editing-row]="editingId === record.id">
           <td>{{ record.rowNumber }}</td>
@@ -80,6 +102,10 @@
           <td>{{ record.unit }}</td>
           <td>{{ record.descriptionOfKPI }}</td>
           <td>{{ record.weightage }}</td>
+
+          <!-- ✅ NEW -->
+          <td>{{ record.pointsApplicable }}</td>
+
           <td>
             <button type="button" class="edit" (click)="onEdit(record)" [disabled]="saving">Edit</button>
             <button type="button" class="delete" (click)="onDelete(record.id)" [disabled]="saving">Delete</button>
@@ -89,4 +115,3 @@
     </table>
   </section>
 </div>
-

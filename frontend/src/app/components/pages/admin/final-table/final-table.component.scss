@@ -83,6 +83,22 @@
   font-weight: 600;
 }
 
+/* ✅ NEW (you already use these classes in HTML) */
+.edit-info {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: rgba(31, 122, 224, 0.08);
+  border: 1px solid rgba(31, 122, 224, 0.18);
+}
+
+.edit-message {
+  display: block;
+  color: #0a48a4;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
 .field-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -140,7 +156,7 @@
   border-radius: 10px;
   font-size: 1rem;
   font-weight: 500;
-  cursor: pointer;
+  cursor: pointerpointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -209,6 +225,11 @@
   word-break: break-word;
 }
 
+/* ✅ Optional highlight while editing */
+.editing-row {
+  background: rgba(31, 122, 224, 0.08);
+}
+
 .kpi-table tbody tr:hover {
   background: rgba(15, 102, 195, 0.05);
 }
@@ -264,4 +285,3 @@
     overflow-x: auto;
   }
 }
-

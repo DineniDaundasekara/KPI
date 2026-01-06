@@ -51,6 +51,10 @@ namespace backend.Controllers
                 Unit = dto.Unit.Trim(),
                 DescriptionOfKPI = dto.DescriptionOfKPI.Trim(),
                 Weightage = (byte)dto.Weightage,
+
+                // ✅ NEW FIELD
+                PointsApplicable = dto.PointsApplicable,
+
                 Month = (byte)(dto.Month ?? now.Month),
                 Year = (short)(dto.Year ?? now.Year),
                 CreatedAt = nowIso,
@@ -79,6 +83,10 @@ namespace backend.Controllers
             entity.Unit = dto.Unit.Trim();
             entity.DescriptionOfKPI = dto.DescriptionOfKPI.Trim();
             entity.Weightage = (byte)dto.Weightage;
+
+            // ✅ NEW FIELD
+            entity.PointsApplicable = dto.PointsApplicable;
+
             entity.Month = (byte)(dto.Month ?? entity.Month);
             entity.Year = (short)(dto.Year ?? entity.Year);
             entity.UpdatedAt = DateTime.UtcNow.ToString("o");
@@ -108,6 +116,10 @@ namespace backend.Controllers
             Unit = x.Unit,
             DescriptionOfKPI = x.DescriptionOfKPI,
             Weightage = x.Weightage,
+
+            // ✅ NEW FIELD
+            PointsApplicable = x.PointsApplicable ?? 0,
+
             CreatedAt = x.CreatedAt,
             UpdatedAt = x.UpdatedAt,
             V = x.V,

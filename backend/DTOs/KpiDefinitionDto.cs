@@ -10,6 +10,10 @@
         public string Unit { get; set; } = "";
         public string DescriptionOfKPI { get; set; } = "";
         public int Weightage { get; set; }
+
+        // ✅ NEW FIELD
+        public int PointsApplicable { get; set; }
+
         public string? CreatedAt { get; set; }
         public string? UpdatedAt { get; set; }
         public int V { get; set; }

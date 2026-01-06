@@ -17,6 +17,10 @@ export type KpiDefinition = {
   unit: string;
   descriptionOfKPI: string;
   weightage: number;
+
+  // ✅ NEW
+  pointsApplicable: number;
+
   month?: number;
   year?: number;
 };
@@ -29,6 +33,10 @@ export type CreateKpiDefinitionRequest = {
   unit: string;
   descriptionOfKPI: string;
   weightage: number;
+
+  // ✅ NEW
+  pointsApplicable: number;
+
   month: number;
   year: number;
 };
@@ -53,10 +61,8 @@ export class FinalTableComponent implements OnInit {
   saving = false;
   errorMessage = '';
 
-  // ✅ backend API
   private readonly apiBase = 'http://localhost:5043/api/kpi-definitions';
 
-  // ✅ Typed form: number controls are number, not string
   form = this.fb.nonNullable.group({
     rowNumber: [0, [Validators.required, Validators.min(1)]],
     perspectives: ['', [Validators.required]],
@@ -64,7 +70,10 @@ export class FinalTableComponent implements OnInit {
     keyPerformanceIndicators: ['', [Validators.required]],
     unit: ['', [Validators.required]],
     descriptionOfKPI: ['', [Validators.required]],
-    weightage: [0, [Validators.required, Validators.min(0)]]
+    weightage: [0, [Validators.required, Validators.min(0)]],
+
+    // ✅ NEW
+    pointsApplicable: [0, [Validators.required, Validators.min(0)]],
   });
 
   ngOnInit(): void {
@@ -129,10 +138,12 @@ export class FinalTableComponent implements OnInit {
       keyPerformanceIndicators: record.keyPerformanceIndicators ?? '',
       unit: record.unit ?? '',
       descriptionOfKPI: record.descriptionOfKPI ?? '',
-      weightage: record.weightage ?? 0
+      weightage: record.weightage ?? 0,
+
+      // ✅ NEW
+      pointsApplicable: record.pointsApplicable ?? 0,
     });
 
-    // Scroll to the form section for user-friendly editing
     setTimeout(() => {
       const formSection = document.querySelector('.form-section');
       if (formSection) {
@@ -163,7 +174,6 @@ export class FinalTableComponent implements OnInit {
     this.resetForm();
   }
 
-  // ✅ always include month/year (backend expects them)
   private buildPayload(): CreateKpiDefinitionRequest {
     const raw = this.form.getRawValue();
     const now = new Date();
@@ -176,6 +186,10 @@ export class FinalTableComponent implements OnInit {
       unit: raw.unit.trim(),
       descriptionOfKPI: raw.descriptionOfKPI.trim(),
       weightage: Number(raw.weightage),
+
+      // ✅ NEW
+      pointsApplicable: Number(raw.pointsApplicable),
+
       month: now.getMonth() + 1,
       year: now.getFullYear()
     };
@@ -189,7 +203,10 @@ export class FinalTableComponent implements OnInit {
       keyPerformanceIndicators: '',
       unit: '',
       descriptionOfKPI: '',
-      weightage: 0
+      weightage: 0,
+
+      // ✅ NEW
+      pointsApplicable: 0,
     });
 
     this.editingId = null;

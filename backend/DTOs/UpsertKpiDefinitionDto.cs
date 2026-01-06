@@ -16,6 +16,11 @@ namespace backend.DTOs
         [Range(0, 255)]
         public int Weightage { get; set; }
 
+        // ✅ NEW FIELD: Points Applicable
+        // Keep range safe (change max if needed)
+        [Range(0, 100000)]
+        public int PointsApplicable { get; set; } = 0;
+
         [Range(1, 12)]
         public int? Month { get; set; }
 
