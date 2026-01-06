@@ -9,9 +9,11 @@
         public string KeyPerformanceIndicators { get; set; } = "";
         public string Unit { get; set; } = "";
         public string DescriptionOfKPI { get; set; } = "";
-        public int Weightage { get; set; }
 
-        // ✅ NEW FIELD
+        // ✅ Auto-calculated
+        public decimal Weightage { get; set; }
+
+        // ✅ User input
         public int PointsApplicable { get; set; }
 
         public string? CreatedAt { get; set; }

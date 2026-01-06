@@ -32,14 +32,16 @@ namespace backend.Controllers
         }
 
         [HttpPost]
-        public async Task<ActionResult<KpiDefinitionDto>> Create(
-            [FromBody] UpsertKpiDefinitionDto dto)
+        public async Task<ActionResult<KpiDefinitionDto>> Create([FromBody] UpsertKpiDefinitionDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             var now = DateTime.UtcNow;
             var nowIso = now.ToString("o");
+
+            var month = (byte)(dto.Month ?? now.Month);
+            var year = (short)(dto.Year ?? now.Year);
 
             var entity = new KpiDefinition
             {
@@ -50,13 +52,15 @@ namespace backend.Controllers
                 KeyPerformanceIndicators = dto.KeyPerformanceIndicators.Trim(),
                 Unit = dto.Unit.Trim(),
                 DescriptionOfKPI = dto.DescriptionOfKPI.Trim(),
-                Weightage = (byte)dto.Weightage,
 
-                // ✅ NEW FIELD
+                // ✅ only input from UI
                 PointsApplicable = dto.PointsApplicable,
 
-                Month = (byte)(dto.Month ?? now.Month),
-                Year = (short)(dto.Year ?? now.Year),
+                // ✅ backend will calculate after save
+                Weightage = 0m,
+
+                Month = month,
+                Year = year,
                 CreatedAt = nowIso,
                 UpdatedAt = nowIso,
                 V = 0
@@ -65,16 +69,27 @@ namespace backend.Controllers
             _db.KpiDefinitions.Add(entity);
             await _db.SaveChangesAsync();
 
-            return Ok(ToDto(entity));
+            await RecalculateWeightageAsync(month, year);
+
+            // return updated row (after recalculation)
+            var updated = await _db.KpiDefinitions.AsNoTracking()
+                .FirstAsync(x => x.Id == entity.Id);
+
+            return Ok(ToDto(updated));
         }
 
         [HttpPut("{id}")]
-        public async Task<ActionResult<KpiDefinitionDto>> Update(
-            string id,
-            [FromBody] UpsertKpiDefinitionDto dto)
+        public async Task<ActionResult<KpiDefinitionDto>> Update(string id, [FromBody] UpsertKpiDefinitionDto dto)
         {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
             var entity = await _db.KpiDefinitions.FirstOrDefaultAsync(x => x.Id == id);
             if (entity == null) return NotFound();
+
+            // store old month/year (because user might change month/year)
+            var oldMonth = entity.Month;
+            var oldYear = entity.Year;
 
             entity.RowNumber = (byte)dto.RowNumber;
             entity.Perspectives = dto.Perspectives.Trim();
@@ -82,28 +97,69 @@ namespace backend.Controllers
             entity.KeyPerformanceIndicators = dto.KeyPerformanceIndicators.Trim();
             entity.Unit = dto.Unit.Trim();
             entity.DescriptionOfKPI = dto.DescriptionOfKPI.Trim();
-            entity.Weightage = (byte)dto.Weightage;
 
-            // ✅ NEW FIELD
+            // ✅ only input from UI
             entity.PointsApplicable = dto.PointsApplicable;
 
+            // month/year can be changed (optional)
             entity.Month = (byte)(dto.Month ?? entity.Month);
             entity.Year = (short)(dto.Year ?? entity.Year);
+
             entity.UpdatedAt = DateTime.UtcNow.ToString("o");
 
             await _db.SaveChangesAsync();
-            return Ok(ToDto(entity));
+
+            // ✅ recalc old group (if moved) + new group
+            await RecalculateWeightageAsync(oldMonth, oldYear);
+            await RecalculateWeightageAsync(entity.Month, entity.Year);
+
+            var updated = await _db.KpiDefinitions.AsNoTracking()
+                .FirstAsync(x => x.Id == entity.Id);
+
+            return Ok(ToDto(updated));
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(string id)
         {
-            var entity = await _db.KpiDefinitions.FindAsync(id);
+            var entity = await _db.KpiDefinitions.FirstOrDefaultAsync(x => x.Id == id);
             if (entity == null) return NotFound();
+
+            var month = entity.Month;
+            var year = entity.Year;
 
             _db.KpiDefinitions.Remove(entity);
             await _db.SaveChangesAsync();
+
+            // ✅ recalc remaining rows
+            await RecalculateWeightageAsync(month, year);
+
             return NoContent();
+        }
+
+        // =========================
+        // ✅ Auto-calculation logic
+        // =========================
+        private async Task RecalculateWeightageAsync(byte month, short year)
+        {
+            // tracking ON because we update entities
+            var rows = await _db.KpiDefinitions
+                .Where(x => x.Month == month && x.Year == year)
+                .ToListAsync();
+
+            // PointsApplicable is int (NOT NULL)
+            var totalPoints = rows.Sum(x => (decimal)x.PointsApplicable);
+
+            foreach (var r in rows)
+            {
+                var points = (decimal)r.PointsApplicable;
+
+                r.Weightage = totalPoints <= 0m
+                    ? 0m
+                    : Math.Round((points / totalPoints) * 100m, 4);
+            }
+
+            await _db.SaveChangesAsync();
         }
 
         private static KpiDefinitionDto ToDto(KpiDefinition x) => new()
@@ -115,10 +171,11 @@ namespace backend.Controllers
             KeyPerformanceIndicators = x.KeyPerformanceIndicators,
             Unit = x.Unit,
             DescriptionOfKPI = x.DescriptionOfKPI,
+
+            // ✅ decimal weightage
             Weightage = x.Weightage,
 
-            // ✅ NEW FIELD
-            PointsApplicable = x.PointsApplicable ?? 0,
+            PointsApplicable = x.PointsApplicable,
 
             CreatedAt = x.CreatedAt,
             UpdatedAt = x.UpdatedAt,

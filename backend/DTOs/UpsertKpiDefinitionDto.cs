@@ -13,11 +13,7 @@ namespace backend.DTOs
         [Required] public string Unit { get; set; } = "";
         [Required] public string DescriptionOfKPI { get; set; } = "";
 
-        [Range(0, 255)]
-        public int Weightage { get; set; }
-
-        // ✅ NEW FIELD: Points Applicable
-        // Keep range safe (change max if needed)
+        // ✅ ONLY PointsApplicable from user
         [Range(0, 100000)]
         public int PointsApplicable { get; set; } = 0;
 

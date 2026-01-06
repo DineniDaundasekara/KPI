@@ -12,7 +12,8 @@
 
       <div *ngIf="editingId" class="edit-info">
         <span class="edit-message">
-          You are editing Row #{{ form.value.rowNumber }}. Make changes and click Update, or Cancel to discard.
+          You are editing Row #{{ form.value.rowNumber }}. Update Points Applicable and other fields, then click Update.
+          Weightage will be recalculated automatically.
         </span>
       </div>
 
@@ -47,15 +48,23 @@
           <span class="error" *ngIf="form.controls.descriptionOfKPI.touched && form.controls.descriptionOfKPI.invalid">Required</span>
         </div>
 
-        <div class="field-group">
-          <input type="number" formControlName="weightage" placeholder="Weightage (%)" />
-          <span class="error" *ngIf="form.controls.weightage.touched && form.controls.weightage.invalid">Required</span>
+        <!-- ✅ Weightage = READONLY (auto calculated by backend) -->
+        <div class="field-group readonly">
+          <input
+            type="text"
+            formControlName="weightage"
+            placeholder="Weightage (%)"
+            readonly
+            aria-readonly="true"
+          />
+          <small class="hint">Auto-calculated: {{ calculateLiveWeightage() }} of {{ getTotalPointsDisplay() }} total points</small>
         </div>
 
-        <!-- ✅ NEW FIELD -->
+        <!-- ✅ User input -->
         <div class="field-group">
           <input type="number" formControlName="pointsApplicable" placeholder="Points Applicable" />
           <span class="error" *ngIf="form.controls.pointsApplicable.touched && form.controls.pointsApplicable.invalid">Required</span>
+          <small class="hint" *ngIf="!form.controls.pointsApplicable.invalid">Will be {{ calculateLiveWeightage() }} of total weightage</small>
         </div>
       </div>
 
@@ -84,9 +93,11 @@
           <th>Key Performance Indicators</th>
           <th>Unit</th>
           <th>Description of KPI</th>
-          <th>Weightage</th>
 
-          <!-- ✅ NEW -->
+          <!-- ✅ Auto -->
+          <th>Weightage (%)</th>
+
+          <!-- ✅ User -->
           <th>Points Applicable</th>
 
           <th>Actions</th>
@@ -101,9 +112,10 @@
           <td>{{ record.keyPerformanceIndicators }}</td>
           <td>{{ record.unit }}</td>
           <td>{{ record.descriptionOfKPI }}</td>
-          <td>{{ record.weightage }}</td>
 
-          <!-- ✅ NEW -->
+          <!-- ✅ show % with 4 decimals -->
+          <td>{{ formatWeightage(record.weightage) }}</td>
+
           <td>{{ record.pointsApplicable }}</td>
 
           <td>

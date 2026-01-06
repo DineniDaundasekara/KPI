@@ -143,6 +143,20 @@
   grid-column: span 2;
 }
 
+/* ✅ readonly field styling */
+.field-group.readonly input {
+  background: #eef2ff;
+  border-color: rgba(10, 72, 164, 0.25);
+  color: #0a48a4;
+  font-weight: 600;
+}
+
+.field-group .hint {
+  margin-top: 0.35rem;
+  font-size: 0.78rem;
+  color: #64748b;
+}
+
 .actions {
   display: flex;
   gap: 0.75rem;
@@ -156,7 +170,7 @@
   border-radius: 10px;
   font-size: 1rem;
   font-weight: 500;
-  cursor: pointerpointer;
+  cursor: pointer; /* ✅ fixed */
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
