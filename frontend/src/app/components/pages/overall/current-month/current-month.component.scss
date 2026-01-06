@@ -11,8 +11,7 @@
   width: 100%;
 }
 
-
-/* R-GM , P-DGM and NW EE/RTOM AREA header rows (left table) */
+/* R-GM , P-DGM and NW EE/RTOM AREA header rows */
 .colSpan-header th {
   padding-left: 50px;
   padding-right: 20px;
@@ -75,14 +74,6 @@
   table-layout: auto;
 }
 
-/* ==================== */
-/* LEFT TABLE (KPI Data) */
-/* ==================== */
-
-.kpi-table {
-  table-layout: auto;
-}
-
 .final-distribution-table {
   min-width: 1200px;
 }
@@ -94,15 +85,14 @@
   background-color: #2196f3;
   color: white;
   text-align: center;
-  padding: 6px;
-  font-size: 14px;
+  padding: 8px 6px;
+  font-size: 13px;
   border: 1px solid #0f0f0f;
-  line-height: 1.3;
+  line-height: 1.25;
   white-space: normal;
-  font-weight: bold;
+  font-weight: 700;
 }
 
-/* Column headers with colspan (region / province headers) */
 .final-distribution-table th[colspan],
 .kpi-table th[colspan] {
   text-align: center;
@@ -115,28 +105,55 @@
 /* Body cell styling */
 .final-distribution-table td,
 .kpi-table td {
-  background-color: #f8f9fa;
-  color: #333;
+  color: #111827;
   text-align: center;
-  padding: 16px 14px;
+  padding: 12px 10px;
   font-size: 13px;
   border: 1px solid #0f0f0f;
-  min-height: 70px;
-  line-height: 1.5;
+  min-height: 56px;
+  line-height: 1.4;
   white-space: normal;
   word-break: break-word;
 }
 
-/* ========================= */
-/* RIGHT TABLE (Performance) */
-/* ========================= */
+/* ✅ Keep alternating rows */
+.final-distribution-table tbody tr:nth-child(odd),
+.kpi-table tbody tr:nth-child(odd) {
+  background-color: #f1f8ff;
+}
 
+.final-distribution-table tbody tr:nth-child(even),
+.kpi-table tbody tr:nth-child(even) {
+  background-color: #ffffff;
+}
+
+/* Summary rows */
+.summary-row td {
+  background-color: #eef2ff;
+  font-weight: 600;
+}
+
+.summary-row.total-row td {
+  background-color: #e0ecff;
+}
+
+/* LEFT TABLE: column sizing (Excel-like) */
+.col-num { min-width: 50px; }
+.col-persp { min-width: 140px; text-align: center; }
+.col-kra { min-width: 180px; text-align: center; }
+.col-kpi { min-width: 340px; }
+.col-target { min-width: 130px; font-weight: 700; }
+.col-weight { min-width: 90px; }
+.col-points { min-width: 130px; }
+
+/* KPI name cell */
 .kpi-name-cell {
   text-align: left;
   white-space: normal;
-  line-height: 1.4;
+  line-height: 1.35;
 }
 
+/* RIGHT TABLE sizing */
 .achieved-header,
 .achieved-cell {
   min-width: 100px;
@@ -154,72 +171,7 @@
   white-space: normal;
 }
 
-@media screen and (max-width: 1440px) {
-  .achieved-header,
-  .achieved-cell {
-    min-width: 90px;
-  }
-
-  .weighted-header,
-  .weighted-cell {
-    min-width: 120px;
-  }
-}
-
-@media screen and (max-width: 1024px) {
-  .achieved-header,
-  .achieved-cell {
-    min-width: 80px;
-  }
-
-  .weighted-header,
-  .weighted-cell {
-    min-width: 100px;
-  }
-}
-
-@media screen and (max-width: 768px) {
-  .achieved-header,
-  .achieved-cell {
-    min-width: 70px;
-    font-size: 12px;
-  }
-
-  .weighted-header,
-  .weighted-cell {
-    min-width: 80px;
-    font-size: 12px;
-  }
-}
-
-/* Alternating row colors */
-.final-distribution-table tbody tr:nth-child(odd),
-.kpi-table tbody tr:nth-child(odd) {
-  background-color: #f1f8ff;
-}
-
-.final-distribution-table tbody tr:nth-child(even),
-.kpi-table tbody tr:nth-child(even) {
-  background-color: #ffffff;
-}
-
-/* Let summary rows override background */
-.final-distribution-table td,
-.kpi-table td {
-  background-color: transparent;
-}
-
-/* Summary rows on right table */
-.summary-row td {
-  background-color: #eef2ff;
-  font-weight: 600;
-}
-
-.summary-row.total-row td {
-  background-color: #e0ecff;
-}
-
-/* Hover effect like React version */
+/* Hover effect */
 .final-distribution-table td:hover,
 .final-distribution-table th:hover {
   cursor: pointer;
@@ -228,49 +180,12 @@
   transition: all 0.3s ease;
 }
 
-/* Utility alignment classes */
-.text-center {
-  text-align: center;
-}
-
-.text-right {
-  text-align: right;
-}
-
-/* Loading spinner (kept for feature parity – if you use it later) */
-.final-tables-spinner {
-  border: 12px solid #f3f3f3;
-  border-top: 12px solid #1976d2;
-  border-radius: 50%;
-  width: auto;
-  padding: 6px;
-  animation: final-tables-spin 1.5s linear infinite;
-}
-
-@keyframes final-tables-spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* Optional custom cursor (same as your CSS) */
-.cursor {
-  width: 20px;
-  height: 20px;
-  border: 2px solid #402978;
-  border-radius: 50%;
-  position: fixed;
-  pointer-events: none;
-  transform: translate(-50%, -50%);
-  transition: transform 0.1s ease;
-  z-index: 9999;
-}
+/* Utility alignment */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
 
 /* ===================== */
-/* ▶ CURRENT MONTH HEADER */
+/* CURRENT MONTH HEADER */
 /* ===================== */
 
 .current-month-header {
@@ -285,9 +200,7 @@
   flex-wrap: wrap;
 }
 
-.current-month-header .header-left {
-  flex: 1;
-}
+.current-month-header .header-left { flex: 1; }
 
 .current-month-header .eyebrow {
   text-transform: uppercase;
@@ -320,7 +233,6 @@
   gap: 0.75rem;
 }
 
-/* Pill – same feel as Region Management count pill */
 .current-month-header .count-pill {
   padding: 0.35rem 0.9rem;
   border-radius: 999px;
@@ -331,7 +243,6 @@
   font-family: 'Poppins', sans-serif;
 }
 
-/* Blue CTA button – like "+ Add new region" */
 .current-month-header .primary-btn {
   padding: 0.55rem 1.4rem;
   border-radius: 999px;
@@ -358,7 +269,6 @@
   box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
 }
 
-/* Mobile responsiveness */
 @media screen and (max-width: 768px) {
   .current-month-header {
     flex-direction: column;
@@ -370,5 +280,3 @@
     align-items: flex-start;
   }
 }
-
-
