@@ -24,7 +24,8 @@ type Region = {
 
 interface KpiMetric {
   achieved: number; // %
-  weighted: number; // %
+  maximumPoints: number; // Points Per KPI
+  pointsAchieved: number; // Points achieved (achieved % * max points / 100)
 }
 
 interface KpiRow {
@@ -94,8 +95,9 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
 
   kpiRows: KpiRow[] = [];
   weightageSum = 0;
-  totalWeightedByRegion: number[] = [];
-  totalWeightedNormalized: number[] = [];
+  totalPointsApplicable = 0;
+  totalPointsAchievedByRegion: number[] = [];
+  totalPointsNormalized: number[] = [];
 
   private readonly rowChangesSub = new Subscription();
   private pendingFrame: number | null = null;
@@ -233,8 +235,9 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
             const metrics: KpiMetric[] = this.engineersFlat.map(
               (_, colIndex) => {
                 const achieved = 100 - (rowIndex * 2 + colIndex);
-                const weighted = +((row.weightage * achieved) / 100).toFixed(2);
-                return { achieved, weighted };
+                const maximumPoints = row.pointsApplicable;
+                const pointsAchieved = +(((achieved / 100) * maximumPoints).toFixed(4));
+                return { achieved, maximumPoints, pointsAchieved };
               }
             );
 
@@ -275,15 +278,23 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
       0
     );
 
-    this.totalWeightedByRegion = this.engineersFlat.map((_, colIndex) =>
+    // ✅ Calculate total points applicable
+    this.totalPointsApplicable = this.kpiRows.reduce(
+      (sum, row) => sum + (row.pointsApplicable ?? 0),
+      0
+    );
+
+    // ✅ Calculate total points achieved by region
+    this.totalPointsAchievedByRegion = this.engineersFlat.map((_, colIndex) =>
       this.kpiRows.reduce(
-        (sum, row) => sum + (row.metrics[colIndex]?.weighted ?? 0),
+        (sum, row) => sum + (row.metrics[colIndex]?.pointsAchieved ?? 0),
         0
       )
     );
 
-    this.totalWeightedNormalized = this.totalWeightedByRegion.map((total) =>
-      this.weightageSum ? +((total / this.weightageSum) * 100).toFixed(2) : 0
+    // ✅ Normalized: percentage of total possible points
+    this.totalPointsNormalized = this.totalPointsAchievedByRegion.map((total) =>
+      this.totalPointsApplicable ? +((total / this.totalPointsApplicable) * 100).toFixed(2) : 0
     );
   }
 

@@ -137,6 +137,32 @@
   background-color: #e0ecff;
 }
 
+/* ✅ Total Marks row styling */
+.total-marks-row td {
+  background-color: #c8e6c9;
+  font-weight: 700;
+  color: #1b5e20;
+  padding: 12px 10px;
+}
+
+.total-marks-row .total-points {
+  background-color: #a5d6a7;
+  font-size: 1.1rem;
+  color: #1b5e20;
+}
+
+/* ✅ KPI label row styling */
+.kpi-label-row td {
+  background-color: #2196f3;
+  font-weight: 700;
+  color: #ffffff;
+  padding: 12px 10px;
+}
+
+.kpi-label-row .kpi-label {
+  background-color: #2196f3;
+}
+
 /* LEFT TABLE: column sizing (Excel-like) */
 .col-num { min-width: 50px; }
 .col-persp { min-width: 140px; text-align: center; }
@@ -156,12 +182,22 @@
 /* RIGHT TABLE sizing */
 .achieved-header,
 .achieved-cell {
-  min-width: 100px;
+  min-width: 120px;
+  background-color: #f3e5f5;
 }
 
-.weighted-header,
-.weighted-cell {
+.maximum-points-header,
+.maximum-points-cell {
   min-width: 140px;
+  background-color: #e3f2fd;
+}
+
+.points-achieved-header,
+.points-achieved-cell {
+  min-width: 140px;
+  background-color: #e8f5e9;
+  font-weight: 600;
+  color: #1b5e20;
 }
 
 .achieved-header,
