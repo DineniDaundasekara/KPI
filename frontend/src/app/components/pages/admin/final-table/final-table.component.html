@@ -48,23 +48,45 @@
           <span class="error" *ngIf="form.controls.descriptionOfKPI.touched && form.controls.descriptionOfKPI.invalid">Required</span>
         </div>
 
-        <!-- ✅ Weightage = READONLY (auto calculated by backend) -->
-        <div class="field-group readonly">
-          <input
-            type="text"
-            formControlName="weightage"
-            placeholder="Weightage (%)"
-            readonly
-            aria-readonly="true"
-          />
-          <small class="hint">Auto-calculated: {{ calculateLiveWeightage() }} of {{ getTotalPointsDisplay() }} total points</small>
+        <!-- ✅ CALCULATION SUMMARY BOX -->
+        <div class="field-group field-span calculation-summary">
+          <div class="summary-box">
+            <div class="summary-row">
+              <span class="label">Your Points:</span>
+              <span class="value">{{ form.value.pointsApplicable || 0 }}</span>
+            </div>
+            <div class="summary-row">
+              <span class="label">Total Points:</span>
+              <span class="value">{{ getTotalPointsDisplay() }}</span>
+            </div>
+            <div class="summary-row highlight">
+              <span class="label">Your Weightage:</span>
+              <span class="value">{{ calculateLiveWeightage() }}</span>
+            </div>
+            <p class="formula">Formula: (Your Points ÷ Total Points) × 100%</p>
+          </div>
         </div>
 
-        <!-- ✅ User input -->
+        <!-- ✅ User input: Points Applicable -->
         <div class="field-group">
-          <input type="number" formControlName="pointsApplicable" placeholder="Points Applicable" />
-          <span class="error" *ngIf="form.controls.pointsApplicable.touched && form.controls.pointsApplicable.invalid">Required</span>
-          <small class="hint" *ngIf="!form.controls.pointsApplicable.invalid">Will be {{ calculateLiveWeightage() }} of total weightage</small>
+          <label>Points Applicable *</label>
+          <input 
+            type="number" 
+            formControlName="pointsApplicable" 
+            placeholder="Enter points (e.g., 50)" 
+            min="0"
+          />
+          <span class="error" *ngIf="form.controls.pointsApplicable.touched && form.controls.pointsApplicable.invalid">Required - Enter a number ≥ 0</span>
+          <small class="hint">Enter your points. Weightage updates automatically.</small>
+        </div>
+
+        <!-- ✅ Display: Weightage (readonly, calculated) -->
+        <div class="field-group">
+          <label>Weightage (%) *</label>
+          <div class="readonly-display">
+            {{ calculateLiveWeightage() }}
+          </div>
+          <small class="hint">Auto-calculated based on total points</small>
         </div>
       </div>
 
