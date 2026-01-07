@@ -1,0 +1,15 @@
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace backend.Dtos
+{
+    public class TowerKpiUpdateDto
+    {
+        [Required] public int No { get; set; }
+        [Required] public string Responsibility { get; set; } = null!;
+        [Required] public string Frequency { get; set; } = null!;
+        [Required] public string Weightage { get; set; } = null!;
+        [Required] public string Kpi { get; set; } = null!;
+        public int? Month { get; set; }
+        public int? Year { get; set; }
+    }
+}
