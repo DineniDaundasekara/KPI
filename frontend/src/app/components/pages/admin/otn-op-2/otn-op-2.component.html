@@ -1,5 +1,6 @@
 <div class="kpi-page">
   <div class="kpi-overlay"></div>
+
   <section class="kpi-hero">
     <h1>{{ pageTitle }}</h1>
     <p>Fiber and transport KPI oversight for INT &amp; NT OP_02.</p>
@@ -8,32 +9,68 @@
   <section class="form-section">
     <form class="kpi-form" [formGroup]="form" (ngSubmit)="onSubmit()">
       <h2>{{ editingId ? 'Update KPI' : 'Create KPI' }}</h2>
+
       <div class="field-group">
         <input type="number" formControlName="no" placeholder="No" required />
-        <span class="error" *ngIf="form.controls.no.invalid && form.controls.no.touched">Required</span>
+        <span class="error" *ngIf="form.controls.no.invalid && form.controls.no.touched">
+          Required
+        </span>
       </div>
+
       <div class="field-group">
-        <input type="text" formControlName="network_engineer_kpi" placeholder="KPI" required />
-        <span class="error" *ngIf="form.controls.network_engineer_kpi.invalid && form.controls.network_engineer_kpi.touched">Required</span>
+        <input type="text"
+               formControlName="network_Engineer_Kpi"
+               placeholder="KPI"
+               required />
+        <span class="error"
+              *ngIf="form.controls.network_Engineer_Kpi.invalid && form.controls.network_Engineer_Kpi.touched">
+          Required
+        </span>
       </div>
+
       <div class="field-group">
-        <input type="text" formControlName="division" placeholder="Division" required />
-        <span class="error" *ngIf="form.controls.division.invalid && form.controls.division.touched">Required</span>
+        <input type="text"
+               formControlName="division"
+               placeholder="Division"
+               required />
+        <span class="error"
+              *ngIf="form.controls.division.invalid && form.controls.division.touched">
+          Required
+        </span>
       </div>
+
       <div class="field-group">
-        <input type="text" formControlName="section" placeholder="Section" required />
-        <span class="error" *ngIf="form.controls.section.invalid && form.controls.section.touched">Required</span>
+        <input type="text"
+               formControlName="section"
+               placeholder="Section"
+               required />
+        <span class="error"
+              *ngIf="form.controls.section.invalid && form.controls.section.touched">
+          Required
+        </span>
       </div>
+
       <div class="field-group">
-        <input type="text" formControlName="kpi_percent" placeholder="KPI (%)" required />
-        <span class="error" *ngIf="form.controls.kpi_percent.invalid && form.controls.kpi_percent.touched">Required</span>
+        <input type="number"
+               formControlName="kpi_Percent"
+               placeholder="KPI (%)"
+               required />
+        <span class="error"
+              *ngIf="form.controls.kpi_Percent.invalid && form.controls.kpi_Percent.touched">
+          Required
+        </span>
       </div>
 
       <div class="actions">
         <button type="submit" [disabled]="form.invalid || saving">
           {{ editingId ? 'Update' : 'Add' }}
         </button>
-        <button type="button" class="secondary" *ngIf="editingId" (click)="onCancelEdit()" [disabled]="saving">
+
+        <button type="button"
+                class="secondary"
+                *ngIf="editingId"
+                (click)="onCancelEdit()"
+                [disabled]="saving">
           Cancel
         </button>
       </div>
@@ -42,34 +79,49 @@
 
   <section class="table-section">
     <div class="state" *ngIf="loading">Loading KPI data...</div>
-    <div class="state error" *ngIf="!loading && errorMessage">{{ errorMessage }}</div>
-    <div class="state" *ngIf="!loading && !errorMessage && !records.length">No KPI entries yet.</div>
+    <div class="state error" *ngIf="!loading && errorMessage">
+      {{ errorMessage }}
+    </div>
+    <div class="state"
+         *ngIf="!loading && !errorMessage && !records.length">
+      No KPI entries yet.
+    </div>
 
     <table *ngIf="!loading && records.length" class="kpi-table">
       <thead>
         <tr>
           <th>No</th>
           <th>Network Engineers KPI</th>
-          <th>DIVISION</th>
-          <th>SECTION</th>
+          <th>Division</th>
+          <th>Section</th>
           <th>KPI (%)</th>
           <th>Actions</th>
         </tr>
       </thead>
+
       <tbody>
         <tr *ngFor="let record of records">
           <td>{{ record.no }}</td>
-          <td>{{ record.network_engineer_kpi }}</td>
+          <td>{{ record.network_Engineer_Kpi }}</td>
           <td>{{ record.division }}</td>
           <td>{{ record.section }}</td>
-          <td>{{ record.kpi_percent }}</td>
+          <td>{{ record.kpi_Percent }}</td>
           <td>
-            <button type="button" class="edit" (click)="onEdit(record)" [disabled]="saving">Edit</button>
-            <button type="button" class="delete" (click)="onDelete(record._id)" [disabled]="saving">Delete</button>
+            <button class="edit"
+                    type="button"
+                    (click)="onEdit(record)"
+                    [disabled]="saving">
+              Edit
+            </button>
+            <button class="delete"
+                    type="button"
+                    (click)="onDelete(record.id)"
+                    [disabled]="saving">
+              Delete
+            </button>
           </td>
         </tr>
       </tbody>
     </table>
   </section>
 </div>
-

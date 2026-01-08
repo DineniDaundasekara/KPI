@@ -55,7 +55,7 @@
           <input
             type="text"
             required
-            [ngModel]="form.network_engineer_kpi"
+            [ngModel]="form.networkEngineerKpi"
             (ngModelChange)="handleInputChange('kpi', $event)"
             name="kpi"
             placeholder="Network Engineer KPI"
@@ -91,7 +91,7 @@
           <input
             type="text"
             required
-            [ngModel]="form.kpi_percent"
+            [ngModel]="form.kpiPercent"
             (ngModelChange)="handleInputChange('platform', $event)"
             name="platform"
             placeholder="KPI (%)"
@@ -133,13 +133,13 @@
           <tbody>
             <tr *ngFor="let item of data">
               <td>{{ item.no }}</td>
-              <td>{{ item.network_engineer_kpi }}</td>
+              <td>{{ item.networkEngineerKpi }}</td>
               <td>{{ item.division }}</td>
               <td>{{ item.section }}</td>
-              <td>{{ item.kpi_percent }}</td>
+              <td>{{ item.kpiPercent }}</td>
               <td class="row-actions">
                 <button type="button" class="mini-btn edit" (click)="editRow(item)">Edit</button>
-                <button type="button" class="mini-btn delete" (click)="deleteRow(item._id)">Delete</button>
+                <button type="button" class="mini-btn delete" (click)="deleteRow(item.id)">Delete</button>
               </td>
             </tr>
 
