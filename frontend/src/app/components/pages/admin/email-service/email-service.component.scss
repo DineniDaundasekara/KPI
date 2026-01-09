@@ -58,8 +58,7 @@ input.editing {
 .kpi-overlay {
   position: absolute;
   inset: 0;
-  background: url('/assets/admin/network-grid.svg') center/650px repeat,
-    linear-gradient(135deg, rgba(16, 33, 54, 0.12), rgba(0, 122, 211, 0.08));
+  background: linear-gradient(135deg, rgba(16, 33, 54, 0.12), rgba(0, 122, 211, 0.08));
   opacity: 0.75;
   pointer-events: none;
   z-index: 0;

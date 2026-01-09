@@ -15,8 +15,11 @@ namespace backend.Data
         public DbSet<EmailRecipient> EmailRecipients { get; set; }
         public DbSet<MtncRoutine> MtncRoutines { get; set; }
 
-        // ✅ NEW: form6_kpi table entity
+        // ✅ Existing: form6_kpi table entity
         public DbSet<IpNwOpKpi> IpNwOpKpis { get; set; } = null!;
+
+        // ✅ NEW: form8_2025 table entity (MUST match Form8Controller usage)
+        public DbSet<Form8_2025> Form8Records { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -201,7 +204,7 @@ namespace backend.Data
             });
 
             // =========================
-            // ✅ form6_kpi mapping (IP NW OP)
+            // form6_kpi mapping (IP NW OP)
             // =========================
             modelBuilder.Entity<IpNwOpKpi>(entity =>
             {
@@ -231,7 +234,69 @@ namespace backend.Data
 
                 entity.Property(x => x.KpiPercent)
                       .HasColumnName("kpi_percent")
-                      .HasColumnType("float"); // ✅ FIX HERE
+                      .HasColumnType("float");
+            });
+
+            // =========================
+            // ✅ NEW: form8_2025 mapping
+            // =========================
+            modelBuilder.Entity<Form8_2025>(entity =>
+            {
+                entity.ToTable("form8_2025", "dbo");
+
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("id")
+                      .HasColumnType("nvarchar(50)");
+
+                entity.Property(x => x.No)
+                      .HasColumnName("no")
+                      .HasColumnType("tinyint");
+
+                entity.Property(x => x.Network_Engineer_Kpi)
+                      .HasColumnName("network_engineer_kpi")
+                      .HasMaxLength(255);
+
+                entity.Property(x => x.Division)
+                      .HasColumnName("division")
+                      .HasMaxLength(100);
+
+                entity.Property(x => x.Section)
+                      .HasColumnName("section")
+                      .HasMaxLength(100);
+
+                entity.Property(x => x.Kpi_Percent)
+                      .HasColumnName("kpi_percent")
+                      .HasColumnType("float");
+
+                entity.Property(x => x.Unavailable_Minutes_Id)
+                      .HasColumnName("unavailable_minutes_id")
+                      .HasColumnType("nvarchar(50)");
+
+                entity.Property(x => x.Total_Minutes_Id)
+                      .HasColumnName("total_minutes_id")
+                      .HasColumnType("nvarchar(50)");
+
+                entity.Property(x => x.Total_Nodes_Id)
+                      .HasColumnName("total_nodes_id")
+                      .HasColumnType("nvarchar(50)");
+
+                entity.Property(x => x.Month)
+                      .HasColumnName("month")
+                      .HasColumnType("tinyint");
+
+                entity.Property(x => x.Year)
+                      .HasColumnName("year")
+                      .HasColumnType("smallint");
+
+                entity.Property(x => x.UpdatedAt)
+                      .HasColumnName("updatedAt")
+                      .HasColumnType("nvarchar(50)");
+
+                entity.Property(x => x.v)
+                      .HasColumnName("v")
+                      .HasColumnType("float");
             });
 
             base.OnModelCreating(modelBuilder);
