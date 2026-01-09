@@ -12,9 +12,11 @@ namespace backend.Data
         public DbSet<KpiDefinition> KpiDefinitions { get; set; }
         public DbSet<RegionData> RegionData { get; set; } = null!;
         public DbSet<RtomArea> RtomArea { get; set; } = null!;
-
         public DbSet<EmailRecipient> EmailRecipients { get; set; }
         public DbSet<MtncRoutine> MtncRoutines { get; set; }
+
+        // ✅ NEW: form6_kpi table entity
+        public DbSet<IpNwOpKpi> IpNwOpKpis { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -66,12 +68,10 @@ namespace backend.Data
                       .HasColumnName("rowNumber")
                       .HasColumnType("tinyint");
 
-                // ✅ Weightage is now calculated, store decimals
                 entity.Property(x => x.Weightage)
                       .HasColumnName("weightage")
                       .HasColumnType("decimal(10,4)");
 
-                // ✅ PointsApplicable should be NOT NULL in DB (default 0)
                 entity.Property(x => x.PointsApplicable)
                       .HasColumnName("pointsApplicable")
                       .HasColumnType("int")
@@ -198,6 +198,40 @@ namespace backend.Data
                 entity.Property(x => x.V)
                       .HasColumnName("v")
                       .HasColumnType("tinyint");
+            });
+
+            // =========================
+            // ✅ form6_kpi mapping (IP NW OP)
+            // =========================
+            modelBuilder.Entity<IpNwOpKpi>(entity =>
+            {
+                entity.ToTable("form6_kpi", "dbo");
+
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("id")
+                      .HasMaxLength(50);
+
+                entity.Property(x => x.No)
+                      .HasColumnName("no")
+                      .HasColumnType("int");
+
+                entity.Property(x => x.NetworkEngineerKpi)
+                      .HasColumnName("network_engineer_kpi")
+                      .HasMaxLength(500);
+
+                entity.Property(x => x.Division)
+                      .HasColumnName("division")
+                      .HasMaxLength(200);
+
+                entity.Property(x => x.Section)
+                      .HasColumnName("section")
+                      .HasMaxLength(200);
+
+                entity.Property(x => x.KpiPercent)
+                      .HasColumnName("kpi_percent")
+                      .HasColumnType("float"); // ✅ FIX HERE
             });
 
             base.OnModelCreating(modelBuilder);

@@ -247,6 +247,12 @@
     color: #b42318;
   }
 }
+.action-btn:disabled,
+.mini-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 
 @media (max-width: 1100px) {
   .admin-grid {
