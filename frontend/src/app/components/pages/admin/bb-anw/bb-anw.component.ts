@@ -2,43 +2,15 @@ import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { firstValueFrom } from 'rxjs';
 
-interface Form7Row {
-  _id: string;
+export interface Form7Row {
+  id: string;
   no: number;
-  network_engineer_kpi: string;
+  networkEngineerKpi: string;
   division: string;
   section: string;
-  kpi_percent: string | number;
+  kpiPercent: number;
 }
-
-const MOCK_FORM7_ROWS: Form7Row[] = [
-  {
-    _id: 'mock-1',
-    no: 8,
-    network_engineer_kpi: 'Tellabs NW Availability',
-    division: 'TRANSPORT & ACCESS',
-    section: 'BB&ANW',
-    kpi_percent: 99.99,
-  },
-  {
-    _id: 'mock-2',
-    no: 9,
-    network_engineer_kpi: 'MEN NW Availability',
-    division: 'TRANSPORT & ACCESS',
-    section: 'BB&ANW',
-    kpi_percent: 99.98,
-  },
-  {
-    _id: 'mock-3',
-    no: 10,
-    network_engineer_kpi: 'MSAN Availability (Except Power)',
-    division: 'TRANSPORT & ACCESS',
-    section: 'BB&ANW',
-    kpi_percent: 99.95,
-  },
-];
 
 @Component({
   selector: 'app-admin-bb-anw',
@@ -50,20 +22,22 @@ const MOCK_FORM7_ROWS: Form7Row[] = [
 export class AdminBbAnwComponent implements OnInit {
   pageTitle = 'Admin — BB ANW';
 
+  private apiUrl = 'http://localhost:5043/api/form7';
+
   data: Form7Row[] = [];
+
   form = {
     no: '',
-    network_engineer_kpi: '',
+    networkEngineerKpi: '',
     division: '',
     section: '',
-    kpi_percent: '',
+    kpiPercent: '',
   };
 
   editingId: string | null = null;
   loading = false;
   saving = false;
   error: string | null = null;
-  notice: string | null = null;
 
   constructor(private http: HttpClient) {}
 
@@ -73,120 +47,100 @@ export class AdminBbAnwComponent implements OnInit {
 
   loadData(): void {
     this.loading = true;
-    this.error = null;
-    this.notice = null;
-
-    this.http.get<Form7Row[]>('/form7/').subscribe({
-      next: (res) => {
-        const rows = Array.isArray(res) && res.length ? res : [...MOCK_FORM7_ROWS];
-        this.data = rows.map((row, idx) => ({
-          ...row,
-          no: typeof row.no === 'number' ? row.no : Number(row.no) || idx + 1,
-        }));
+    this.http.get<Form7Row[]>(this.apiUrl).subscribe({
+      next: res => {
+        this.data = res;
         this.loading = false;
-        if (!res || !res.length) {
-          this.notice = 'Using mock data until the backend returns Form7 records.';
-        }
       },
-      error: (err) => {
-        console.error('Failed to load Form7 data:', err);
-        this.data = [...MOCK_FORM7_ROWS];
+      error: err => {
+        console.error(err);
+        this.error = 'Failed to load data';
         this.loading = false;
-        this.error = 'Backend unreachable. Showing mock data.';
-      },
+      }
     });
   }
 
-  async submitForm(): Promise<void> {
-    if (this.saving) {
-      return;
-    }
+  submitForm(): void {
+    if (this.saving) return;
 
     const payload = {
-      no: Number(this.form.no) || 0,
-      network_engineer_kpi: this.form.network_engineer_kpi.trim(),
+      no: Number(this.form.no),
+      networkEngineerKpi: this.form.networkEngineerKpi.trim(),
       division: this.form.division.trim(),
       section: this.form.section.trim(),
-      kpi_percent: this.form.kpi_percent,
+      kpiPercent: Number(this.form.kpiPercent)
     };
 
-    if (!payload.no || !payload.network_engineer_kpi || !payload.division || !payload.section) {
-      this.error = 'Please complete all required fields.';
+    if (!payload.no || !payload.networkEngineerKpi || !payload.division || !payload.section) {
+      this.error = 'Please fill all required fields';
       return;
     }
 
     this.saving = true;
     this.error = null;
 
-    try {
-      if (this.editingId) {
-        await firstValueFrom(this.http.put(`/form7/update/${this.editingId}`, payload));
-      } else {
-        await firstValueFrom(this.http.post('/form7/add', payload));
-      }
+    const request$ = this.editingId
+      ? this.http.put(`${this.apiUrl}/${this.editingId}`, payload)
+      : this.http.post(this.apiUrl, payload);
 
-      this.resetForm();
-      this.loadData();
-    } catch (err) {
-      console.error('Failed to save BB ANW data:', err);
-      this.error = 'Failed to save data. Please try again.';
-    } finally {
-      this.saving = false;
-    }
+    request$.subscribe({
+      next: () => {
+        this.resetForm();
+        this.loadData();
+        this.saving = false;
+      },
+      error: err => {
+        console.error(err);
+        this.error = 'Save failed';
+        this.saving = false;
+      }
+    });
   }
 
   editRow(row: Form7Row): void {
     this.form = {
-      no: String(row.no ?? ''),
-      network_engineer_kpi: row.network_engineer_kpi ?? '',
-      division: row.division ?? '',
-      section: row.section ?? '',
-      kpi_percent: String(row.kpi_percent ?? ''),
+      no: row.no.toString(),
+      networkEngineerKpi: row.networkEngineerKpi,
+      division: row.division,
+      section: row.section,
+      kpiPercent: row.kpiPercent.toString()
     };
-    this.editingId = row._id;
-    this.error = null;
+    this.editingId = row.id;
+  }
+
+  deleteRow(id: string): void {
+    if (!confirm('Delete this KPI?')) return;
+
+    this.saving = true;
+    this.http.delete(`${this.apiUrl}/${id}`).subscribe({
+      next: () => {
+        this.loadData();
+        this.saving = false;
+      },
+      error: err => {
+        console.error(err);
+        this.error = 'Delete failed';
+        this.saving = false;
+      }
+    });
   }
 
   cancelEdit(): void {
     this.resetForm();
   }
 
-  async deleteRow(id: string): Promise<void> {
-    const confirmDelete = window.confirm('Are you sure you want to delete this KPI?');
-    if (!confirmDelete) {
-      return;
-    }
-
-    this.saving = true;
-    this.error = null;
-
-    try {
-      await firstValueFrom(this.http.delete(`/form7/delete/${id}`));
-      if (this.editingId === id) {
-        this.resetForm();
-      }
-      this.loadData();
-    } catch (err) {
-      console.error('Failed to delete Form7 entry:', err);
-      this.error = 'Failed to delete the selected KPI.';
-    } finally {
-      this.saving = false;
-    }
-  }
-
-  trackRow(index: number, row: Form7Row): string {
-    return row._id || `${row.network_engineer_kpi}-${index}`;
+  trackRow(_: number, row: Form7Row): string {
+    return row.id;
   }
 
   private resetForm(): void {
     this.form = {
       no: '',
-      network_engineer_kpi: '',
+      networkEngineerKpi: '',
       division: '',
       section: '',
-      kpi_percent: '',
+      kpiPercent: '',
     };
     this.editingId = null;
   }
 }
-
