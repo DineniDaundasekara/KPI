@@ -16,7 +16,9 @@ namespace backend.Data
         public DbSet<EmailRecipient> EmailRecipients { get; set; }
         public DbSet<MtncRoutine> MtncRoutines { get; set; }
         public DbSet<Form8_2025> Form8Records { get; set; }
+        public DbSet<Form4_2025> Form4_2025 { get; set; }
         public DbSet<Form9_2025> Form9_2025 { get; set; }
+        public DbSet<Form7_2025> Form7 { get; set; } = null!;
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
