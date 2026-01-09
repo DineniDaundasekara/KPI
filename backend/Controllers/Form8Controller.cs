@@ -21,7 +21,11 @@ namespace backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.Form8Records.ToListAsync();
+            var data = await _context.Form8Records
+                 .AsNoTracking()   // 🔥 VERY IMPORTANT
+                 .Take(100)        // 🔥 TEMP LIMIT
+
+                .ToListAsync();
             return Ok(data);
         }
 

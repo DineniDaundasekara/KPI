@@ -1,13 +1,12 @@
 ﻿using backend.Data;
+using backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
-using backend.Models;
 
 namespace backend.Controllers
 {
     [ApiController]
-    [Route("form7")]
+    [Route("api/form7")]
     public class Form7Controller : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -17,19 +16,13 @@ namespace backend.Controllers
             _context = context;
         }
 
-        // GET /form7/
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.Form7
-                .OrderBy(x => x.No)
-                .ToListAsync();
-
-            return Ok(data);
+            return Ok(await _context.Form7.OrderBy(x => x.No).ToListAsync());
         }
 
-        // POST /form7/add
-        [HttpPost("add")]
+        [HttpPost]
         public async Task<IActionResult> Add(Form7_2025 model)
         {
             _context.Form7.Add(model);
@@ -37,9 +30,8 @@ namespace backend.Controllers
             return Ok(model);
         }
 
-        // PUT /form7/update/{id}
-        [HttpPut("update/{id}")]
-        public async Task<IActionResult> Update(int id, Form7_2025 model)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(string id, Form7_2025 model)
         {
             var record = await _context.Form7.FindAsync(id);
             if (record == null) return NotFound();
@@ -54,9 +46,8 @@ namespace backend.Controllers
             return Ok(record);
         }
 
-        // DELETE /form7/delete/{id}
-        [HttpDelete("delete/{id}")]
-        public async Task<IActionResult> Delete(int id)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(string id)
         {
             var record = await _context.Form7.FindAsync(id);
             if (record == null) return NotFound();

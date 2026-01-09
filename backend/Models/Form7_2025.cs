@@ -7,21 +7,22 @@ namespace backend.Models
     public class Form7_2025
     {
         [Key]
-        public int Id { get; set; }
+        [Column("id")]
+        public string Id { get; set; } = Guid.NewGuid().ToString();
 
-        [Required]
-        public int No { get; set; }
+        [Column("no")]
+        public byte No { get; set; }
 
-        [Required, MaxLength(200)]
+        [Column("network_engineer_kpi")]
         public string NetworkEngineerKpi { get; set; } = string.Empty;
 
-        [Required, MaxLength(100)]
+        [Column("division")]
         public string Division { get; set; } = string.Empty;
 
-        [Required, MaxLength(100)]
+        [Column("section")]
         public string Section { get; set; } = string.Empty;
 
-        [Required]
-        public decimal KpiPercent { get; set; }
+        [Column("kpi_percent")]
+        public double KpiPercent { get; set; }
     }
 }

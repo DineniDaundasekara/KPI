@@ -44,14 +44,6 @@
     </div>
   </div>
 
-  <div *ngIf="notice" class="alert alert-info">
-    <i class="bi bi-info-circle-fill"></i>
-    <div class="alert-body">
-      <div class="alert-title">Info</div>
-      <div class="alert-text">{{ notice }}</div>
-    </div>
-  </div>
-
   <!-- Main Grid -->
   <div class="admin-grid">
     <!-- Form Card -->
@@ -77,7 +69,6 @@
             <i class="bi bi-hash"></i>
             No <b>*</b>
           </span>
-
           <input
             type="number"
             name="no"
@@ -85,10 +76,7 @@
             min="1"
             [(ngModel)]="form.no"
             [disabled]="saving"
-            placeholder="e.g., 8"
           />
-
-          <small class="hint">Unique row number used for ordering.</small>
         </label>
 
         <!-- KPI -->
@@ -97,17 +85,13 @@
             <i class="bi bi-graph-up-arrow"></i>
             Network Engineer KPI <b>*</b>
           </span>
-
           <input
             type="text"
-            name="network_engineer_kpi"
+            name="networkEngineerKpi"
             required
-            [(ngModel)]="form.network_engineer_kpi"
+            [(ngModel)]="form.networkEngineerKpi"
             [disabled]="saving"
-            placeholder="e.g., Tellabs NW Availability"
           />
-
-          <small class="hint">Use a clear KPI name shown in dashboards.</small>
         </label>
 
         <!-- Division -->
@@ -116,14 +100,12 @@
             <i class="bi bi-diagram-3"></i>
             Division <b>*</b>
           </span>
-
           <input
             type="text"
             name="division"
             required
             [(ngModel)]="form.division"
             [disabled]="saving"
-            placeholder="e.g., TRANSPORT & ACCESS"
           />
         </label>
 
@@ -133,14 +115,12 @@
             <i class="bi bi-layers"></i>
             Section <b>*</b>
           </span>
-
           <input
             type="text"
             name="section"
             required
             [(ngModel)]="form.section"
             [disabled]="saving"
-            placeholder="e.g., BB&ANW"
           />
         </label>
 
@@ -150,20 +130,16 @@
             <i class="bi bi-percent"></i>
             KPI (%) <b>*</b>
           </span>
-
           <input
             type="number"
             step="0.001"
             min="0"
             max="100"
-            name="kpi_percent"
+            name="kpiPercent"
             required
-            [(ngModel)]="form.kpi_percent"
+            [(ngModel)]="form.kpiPercent"
             [disabled]="saving"
-            placeholder="e.g., 99.99"
           />
-
-          <small class="hint">0–100. Supports decimals (e.g., 99.985).</small>
         </label>
 
         <!-- Actions -->
@@ -173,107 +149,56 @@
             {{ editingId ? 'Update KPI' : 'Add KPI' }}
           </button>
 
-          <button
-            type="button"
-            class="btn secondary"
-            (click)="cancelEdit()"
-            [disabled]="saving"
-          >
+          <button type="button" class="btn secondary" (click)="cancelEdit()" [disabled]="saving">
             <i class="bi bi-x-circle"></i>
             Cancel
           </button>
         </div>
 
-        <!-- Edit Tip -->
         <div *ngIf="editingId" class="edit-tip">
           <i class="bi bi-lightbulb"></i>
-          You’re editing an existing record. Click <b>Update KPI</b> to save changes.
+          You’re editing an existing record.
         </div>
       </form>
     </section>
 
     <!-- Table Card -->
     <section class="card table-card">
-      <div class="card-header">
-        <div class="card-header-left">
-          <h2><i class="bi bi-table"></i> Stored KPIs</h2>
-          <p class="muted">
-            {{ loading ? 'Loading data…' : (data.length + ' record(s) loaded') }}
-          </p>
-        </div>
-      </div>
-
       <div *ngIf="loading" class="table-loader">
-        <div class="spinner-border" role="status" aria-label="Loading">
-          <span class="visually-hidden">Loading...</span>
-        </div>
+        <div class="spinner-border"></div>
       </div>
 
       <div *ngIf="!loading && data.length" class="table-wrapper">
         <table>
           <thead>
             <tr>
-              <th class="col-no">No</th>
+              <th>No</th>
               <th>Network Engineer KPI</th>
               <th>Division</th>
               <th>Section</th>
-              <th class="col-kpi">KPI (%)</th>
-              <th class="actions">Actions</th>
+              <th>KPI (%)</th>
+              <th>Actions</th>
             </tr>
           </thead>
 
           <tbody>
-            <tr *ngFor="let row of data; trackBy: trackRow" [class.is-editing]="editingId === row._id">
-              <td class="mono">{{ row.no }}</td>
-
-              <td>
-                <div class="kpi-name">
-                  {{ row.network_engineer_kpi }}
-                  <span *ngIf="editingId === row._id" class="row-badge">
-                    <i class="bi bi-pencil"></i> Editing
-                  </span>
-                </div>
-              </td>
-
+            <tr *ngFor="let row of data; trackBy: trackRow" [class.is-editing]="editingId === row.id">
+              <td>{{ row.no }}</td>
+              <td>{{ row.networkEngineerKpi }}</td>
               <td>{{ row.division }}</td>
               <td>{{ row.section }}</td>
-
-              <td class="col-kpi">
-                <span class="kpi-pill">
-                  <i class="bi bi-percent"></i> {{ row.kpi_percent }}
-                </span>
-              </td>
-
-              <td class="actions">
-                <button type="button" class="btn text" (click)="editRow(row)" [disabled]="saving">
-                  <i class="bi bi-pencil-square"></i>
-                  Edit
-                </button>
-
-                <button
-                  type="button"
-                  class="btn danger"
-                  (click)="deleteRow(row._id)"
-                  [disabled]="saving"
-                  title="Delete this KPI"
-                >
-                  <i class="bi bi-trash3"></i>
-                  Delete
-                </button>
+              <td>{{ row.kpiPercent }}</td>
+              <td>
+                <button class="btn text" (click)="editRow(row)">Edit</button>
+                <button class="btn danger" (click)="deleteRow(row.id)">Delete</button>
               </td>
             </tr>
           </tbody>
         </table>
-
-        <div class="table-footnote">
-          <i class="bi bi-shield-check"></i>
-          Tip: Always verify KPI % before saving (0–100).
-        </div>
       </div>
 
       <div *ngIf="!loading && !data.length" class="empty-state">
-        <i class="bi bi-folder-x"></i>
-        <p>No KPIs found. Add a new one using the form.</p>
+        <p>No KPIs found.</p>
       </div>
     </section>
   </div>

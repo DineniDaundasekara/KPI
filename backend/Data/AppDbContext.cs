@@ -9,7 +9,9 @@ namespace backend.Data
     {
         // DbSet properties belong at class scope (not inside the constructor).
         public DbSet<RegionData> RegionData { get; set; } = null!;
+
         public DbSet<RtomArea> RtomArea { get; set; } = null!;
+
         public DbSet<User> Users { get; set; } = null!;
 
         public DbSet<Form7_2025> Form7 { get; set; } = null!;
@@ -20,6 +22,7 @@ namespace backend.Data
 
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
+
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -74,11 +74,16 @@ export class OtnOp1Component implements OnInit {
       });
   }
 
-  onEdit(record: any): void {
-    this.editingId = record.id || record._id;
-    this.form.patchValue(record);
-  }
-
+onEdit(record: any): void {
+  this.editingId = record.Id;
+  this.form.patchValue({
+    no: record.No,
+    network_Engineer_Kpi: record.Network_Engineer_Kpi,
+    division: record.Division,
+    section: record.Section,
+    kpi_Percent: record.Kpi_Percent
+  });
+}
   onDelete(id: string): void {
     if (!confirm('Delete this record?')) return;
 

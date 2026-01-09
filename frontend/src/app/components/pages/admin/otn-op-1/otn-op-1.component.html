@@ -58,16 +58,16 @@
       </thead>
       <tbody>
         <tr *ngFor="let record of records">
-          <td>{{ record.no }}</td>
-          <td>{{ record.network_Engineer_Kpi }}</td>
-          <td>{{ record.division }}</td>
-          <td>{{ record.section }}</td>
-          <td>{{ record.kpi_Percent }}</td>
-          <td>
-            <button type="button" class="edit" (click)="onEdit(record)" [disabled]="saving">Edit</button>
-            <button type="button" class="delete" (click)="onDelete(record._id)" [disabled]="saving">Delete</button>
-          </td>
-        </tr>
+  <td>{{ record.No }}</td>
+  <td>{{ record.Network_Engineer_Kpi }}</td>
+  <td>{{ record.Division }}</td>
+  <td>{{ record.Section }}</td>
+  <td>{{ record.Kpi_Percent }}</td>
+  <td>
+    <button class="edit" (click)="onEdit(record)">Edit</button>
+    <button class="delete" (click)="onDelete(record.Id)">Delete</button>
+  </td>
+</tr>
       </tbody>
     </table>
   </section>
