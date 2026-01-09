@@ -1,0 +1,145 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using backend.Data;
+using backend.Models;
+using backend.Dtos;
+using backend.Helpers;
+
+namespace backend.Controllers
+{
+    [ApiController]
+    [Route("api/kpitower")]
+    public class KpiTowerController : ControllerBase
+    {
+        private readonly AppDbContext _context;
+
+        public KpiTowerController(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<TowerKpi>>> GetAll()
+        {
+            var list = await _context.TowerKpis
+                .OrderBy(x => x.No)
+                .ToListAsync();
+
+            return Ok(list);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<ActionResult<TowerKpi>> GetById(string id)
+        {
+            var item = await _context.TowerKpis.FindAsync(id);
+            if (item == null) return NotFound();
+            return Ok(item);
+        }
+
+        [HttpPost]
+        public async Task<ActionResult<TowerKpi>> Create([FromBody] TowerKpiCreateDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            byte? month = null;
+            if (dto.Month.HasValue)
+            {
+                if (dto.Month.Value < 1 || dto.Month.Value > 12)
+                    return BadRequest("Month must be 1-12");
+
+                month = (byte)dto.Month.Value;
+            }
+
+            short? year = null;
+            if (dto.Year.HasValue)
+            {
+                if (dto.Year.Value < short.MinValue || dto.Year.Value > short.MaxValue)
+                    return BadRequest("Year out of range for Int16");
+
+                year = (short)dto.Year.Value;
+            }
+
+            var now = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+
+            var entity = new TowerKpi
+            {
+                Id = ObjectIdLike.NewId24(),
+                No = (byte)dto.No,
+                Responsibility = dto.Responsibility,
+                Frequency = dto.Frequency,
+                Weightage = dto.Weightage,
+                Kpi = dto.Kpi,
+                Month = month,
+                Year = year,
+                CreatedAt = now,   // ✅ string
+                UpdatedAt = now,   // ✅ string
+                V = 0
+            };
+
+            _context.TowerKpis.Add(entity);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetById), new { id = entity.Id }, entity);
+        }
+
+        [HttpPut("{id}")]
+        public async Task<ActionResult<TowerKpi>> Update(string id, [FromBody] TowerKpiUpdateDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var entity = await _context.TowerKpis.FindAsync(id);
+            if (entity == null)
+                return NotFound();
+
+            if (dto.Month.HasValue)
+            {
+                if (dto.Month.Value < 1 || dto.Month.Value > 12)
+                    return BadRequest("Month must be 1-12");
+
+                entity.Month = (byte)dto.Month.Value;
+            }
+            else
+            {
+                entity.Month = null;
+            }
+
+            if (dto.Year.HasValue)
+            {
+                if (dto.Year.Value < short.MinValue || dto.Year.Value > short.MaxValue)
+                    return BadRequest("Year out of range for Int16");
+
+                entity.Year = (short)dto.Year.Value;
+            }
+            else
+            {
+                entity.Year = null;
+            }
+
+            entity.No = (byte)dto.No;
+            entity.Responsibility = dto.Responsibility;
+            entity.Frequency = dto.Frequency;
+            entity.Weightage = dto.Weightage;
+            entity.Kpi = dto.Kpi;
+
+            entity.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"); // ✅ string
+
+            await _context.SaveChangesAsync();
+            return Ok(entity);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(string id)
+        {
+            var entity = await _context.TowerKpis.FindAsync(id);
+            if (entity == null)
+                return NotFound();
+
+            _context.TowerKpis.Remove(entity);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+    }
+}

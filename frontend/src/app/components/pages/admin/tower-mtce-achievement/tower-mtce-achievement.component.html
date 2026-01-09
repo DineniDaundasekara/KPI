@@ -1,51 +1,58 @@
 <div class="kpi-page">
   <div class="kpi-overlay"></div>
+
   <section class="kpi-hero">
     <h1>{{ pageTitle }}</h1>
-    <p>Tower maintenance KPI tracking with quarterly responsibilities.</p>
+    <p>Admin panel for Tower Maintenance KPIs</p>
   </section>
 
+  <!-- FORM -->
   <section class="form-section">
     <form class="kpi-form" [formGroup]="form" (ngSubmit)="onSubmit()">
-      <h2>{{ editingId ? 'Update Responsibility' : 'Add Responsibility' }}</h2>
+      <h2>{{ editingId ? 'Update KPI' : 'Add KPI' }}</h2>
+
       <div class="field-group">
-        <input type="number" formControlName="no" placeholder="No" required />
-        <span class="error" *ngIf="form.controls.no.invalid && form.controls.no.touched">Required</span>
+        <input type="number" formControlName="no" placeholder="No" />
       </div>
+
       <div class="field-group">
-        <input type="text" formControlName="responsibility" placeholder="Responsibility" required />
-        <span class="error" *ngIf="form.controls.responsibility.invalid && form.controls.responsibility.touched">Required</span>
+        <input type="text" formControlName="responsibility" placeholder="Responsibility" />
       </div>
+
       <div class="field-group">
-        <input type="text" formControlName="frequency" placeholder="Frequency" required />
-        <span class="error" *ngIf="form.controls.frequency.invalid && form.controls.frequency.touched">Required</span>
+        <input type="text" formControlName="frequency" placeholder="Frequency" />
       </div>
+
       <div class="field-group">
-        <input type="text" formControlName="weightage" placeholder="Weightage" required />
-        <span class="error" *ngIf="form.controls.weightage.invalid && form.controls.weightage.touched">Required</span>
+        <input type="text" formControlName="weightage" placeholder="Weightage" />
       </div>
+
       <div class="field-group">
-        <input type="text" formControlName="kpi" placeholder="KPI" required />
-        <span class="error" *ngIf="form.controls.kpi.invalid && form.controls.kpi.touched">Required</span>
+        <input type="text" formControlName="kpi" placeholder="KPI" />
       </div>
 
       <div class="actions">
-        <button type="submit" [disabled]="form.invalid || saving">
+        <button type="submit" [disabled]="saving">
           {{ editingId ? 'Update' : 'Add' }}
         </button>
-        <button type="button" class="secondary" *ngIf="editingId" (click)="onCancelEdit()" [disabled]="saving">
+
+        <button
+          type="button"
+          class="secondary"
+          *ngIf="editingId"
+          (click)="onCancelEdit()">
           Cancel
         </button>
       </div>
     </form>
   </section>
 
+  <!-- TABLE -->
   <section class="table-section">
     <div class="state" *ngIf="loading">Loading KPI data...</div>
-    <div class="state error" *ngIf="!loading && errorMessage">{{ errorMessage }}</div>
-    <div class="state" *ngIf="!loading && !errorMessage && !records.length">No tower responsibilities yet.</div>
+    <div class="state error" *ngIf="errorMessage">{{ errorMessage }}</div>
 
-    <table *ngIf="!loading && records.length" class="kpi-table">
+    <table class="kpi-table" *ngIf="records.length">
       <thead>
         <tr>
           <th>No</th>
@@ -56,6 +63,7 @@
           <th>Actions</th>
         </tr>
       </thead>
+
       <tbody>
         <tr *ngFor="let record of records">
           <td>{{ record.no }}</td>
@@ -64,12 +72,11 @@
           <td>{{ record.weightage }}</td>
           <td>{{ record.kpi }}</td>
           <td>
-            <button type="button" class="edit" (click)="onEdit(record)" [disabled]="saving">Edit</button>
-            <button type="button" class="delete" (click)="onDelete(record._id)" [disabled]="saving">Delete</button>
+            <button class="edit" (click)="onEdit(record)">Edit</button>
+            <button class="delete" (click)="onDelete(record.id)">Delete</button>
           </td>
         </tr>
       </tbody>
     </table>
   </section>
 </div>
-
