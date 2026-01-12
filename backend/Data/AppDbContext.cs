@@ -40,7 +40,7 @@ namespace backend.Data
         // FORMS (2025)
         // =========================
         public DbSet<Form4_2025> Form4_2025 { get; set; } = null!;
-        public DbSet<Form7_2025> Form7 { get; set; } = null!;
+        public DbSet<Form7_2025> Form7_2025 { get; set; } = null!; 
         public DbSet<Form8_2025> Form8Records { get; set; } = null!;
         public DbSet<Form9_2025> Form9_2025 { get; set; } = null!;
 

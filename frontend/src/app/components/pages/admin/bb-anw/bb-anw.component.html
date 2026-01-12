@@ -1,171 +1,171 @@
 <div class="page-container">
-  <!-- Header -->
-  <div class="page-header">
+
+  <!-- HEADER -->
+  <section class="page-header">
     <div class="header-left">
       <div class="title-row">
         <h1>{{ pageTitle }}</h1>
         <span class="header-chip" [class.editing]="editingId">
-          <i class="bi" [ngClass]="editingId ? 'bi-pencil-square' : 'bi-plus-circle'"></i>
-          {{ editingId ? 'Editing' : 'New entry' }}
+          <span *ngIf="editingId">Editing record</span>
+          <span *ngIf="!editingId">New entry</span>
         </span>
       </div>
 
-      <p class="page-subtitle">
-        Create, edit, and remove Form7 KPIs for Broadband & Access Network.
-      </p>
+      <p class="page-subtitle">BB & ANW KPI Management (Form 7)</p>
 
       <div class="header-meta">
         <span class="meta-item">
-          <i class="bi bi-database"></i>
-          {{ loading ? 'Loading…' : (data.length + ' record(s)') }}
+          <i class="bi bi-calendar"></i>
+          <span>Period: {{ form.month }}/{{ form.year }}</span>
         </span>
-
-        <span class="meta-item" *ngIf="saving">
+        <span class="meta-item" *ngIf="loading">
           <i class="bi bi-arrow-repeat spin"></i>
-          Saving…
+          <span>Loading data...</span>
         </span>
       </div>
     </div>
 
     <div class="header-actions">
-      <button type="button" class="ghost-button" (click)="loadData()" [disabled]="loading || saving">
+      <button type="button" class="ghost-button" (click)="loadData()" [disabled]="loading">
         <i class="bi bi-arrow-clockwise"></i>
-        Refresh
+        <span>Refresh data</span>
       </button>
     </div>
-  </div>
+  </section>
 
-  <!-- Alerts -->
+  <!-- ALERTS / STATUS -->
   <div *ngIf="error" class="alert alert-danger">
     <i class="bi bi-exclamation-triangle-fill"></i>
     <div class="alert-body">
-      <div class="alert-title">Action required</div>
-      <div class="alert-text">{{ error }}</div>
+      <div class="alert-title">Operation failed</div>
+      <div>{{ error }}</div>
     </div>
   </div>
 
-  <!-- Main Grid -->
+  <div *ngIf="!error && !loading && !data.length" class="alert alert-info">
+    <i class="bi bi-info-circle-fill"></i>
+    <div class="alert-body">
+      <div class="alert-title">No records yet</div>
+      <div>Add the first BB & ANW KPI row using the form on the left.</div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
   <div class="admin-grid">
-    <!-- Form Card -->
-    <section class="card form-card">
+
+    <!-- FORM CARD -->
+    <div class="card">
       <div class="card-header">
         <div class="card-header-left">
           <h2>
-            <i class="bi" [ngClass]="editingId ? 'bi-pencil-square' : 'bi-plus-circle'"></i>
-            {{ editingId ? 'Edit KPI' : 'Add KPI' }}
+            <span>{{ editingId ? 'Update KPI row' : 'Add KPI row' }}</span>
           </h2>
-          <p>Fields map directly to the Form7 payload.</p>
+          <p>Maintain BB & ANW Form 7 KPI definitions.</p>
         </div>
-
         <span class="status-pill" [class.editing]="editingId">
-          {{ editingId ? 'Editing existing row' : 'Ready to add' }}
+          {{ editingId ? 'Editing existing row' : 'Creating new row' }}
         </span>
       </div>
 
-      <form (ngSubmit)="submitForm()" #kpiForm="ngForm" class="form-grid">
+      <form class="form-grid" (ngSubmit)="submitForm()">
+
         <!-- No -->
-        <label class="form-field">
-          <span class="field-label">
-            <i class="bi bi-hash"></i>
-            No <b>*</b>
-          </span>
+        <div class="form-field">
+          <div class="field-label">
+            <span>No</span>
+            <span class="mono">#</span>
+          </div>
           <input
             type="number"
             name="no"
             required
-            min="1"
-            [(ngModel)]="form.no"
-            [disabled]="saving"
-          />
-        </label>
+            [(ngModel)]="form.no">
+          <div class="hint">Row order number in the Form 7 listing.</div>
+        </div>
 
         <!-- KPI -->
-        <label class="form-field">
-          <span class="field-label">
-            <i class="bi bi-graph-up-arrow"></i>
-            Network Engineer KPI <b>*</b>
-          </span>
+        <div class="form-field">
+          <div class="field-label">
+            <span>Network Engineer KPI</span>
+          </div>
           <input
             type="text"
             name="networkEngineerKpi"
             required
-            [(ngModel)]="form.networkEngineerKpi"
-            [disabled]="saving"
-          />
-        </label>
+            [(ngModel)]="form.networkEngineerKpi">
+        </div>
 
         <!-- Division -->
-        <label class="form-field">
-          <span class="field-label">
-            <i class="bi bi-diagram-3"></i>
-            Division <b>*</b>
-          </span>
+        <div class="form-field">
+          <div class="field-label">
+            <span>Division</span>
+          </div>
           <input
             type="text"
             name="division"
             required
-            [(ngModel)]="form.division"
-            [disabled]="saving"
-          />
-        </label>
+            [(ngModel)]="form.division">
+        </div>
 
         <!-- Section -->
-        <label class="form-field">
-          <span class="field-label">
-            <i class="bi bi-layers"></i>
-            Section <b>*</b>
-          </span>
+        <div class="form-field">
+          <div class="field-label">
+            <span>Section</span>
+          </div>
           <input
             type="text"
             name="section"
             required
-            [(ngModel)]="form.section"
-            [disabled]="saving"
-          />
-        </label>
+            [(ngModel)]="form.section">
+        </div>
 
-        <!-- KPI % -->
-        <label class="form-field">
-          <span class="field-label">
-            <i class="bi bi-percent"></i>
-            KPI (%) <b>*</b>
-          </span>
+        <!-- KPI Percent -->
+        <div class="form-field">
+          <div class="field-label">
+            <span>KPI Percent (%)</span>
+          </div>
           <input
             type="number"
-            step="0.001"
-            min="0"
-            max="100"
+            step="0.01"
             name="kpiPercent"
             required
-            [(ngModel)]="form.kpiPercent"
-            [disabled]="saving"
-          />
-        </label>
+            [(ngModel)]="form.kpiPercent">
+        </div>
 
-        <!-- Actions -->
+        <!-- ACTIONS -->
         <div class="form-actions">
-          <button type="submit" class="btn primary" [disabled]="saving || kpiForm.invalid">
-            <i class="bi" [ngClass]="editingId ? 'bi-check2-circle' : 'bi-plus-circle'"></i>
-            {{ editingId ? 'Update KPI' : 'Add KPI' }}
+          <button type="submit" class="btn primary" [disabled]="saving">
+            {{ editingId ? 'Update row' : 'Add row' }}
           </button>
 
-          <button type="button" class="btn secondary" (click)="cancelEdit()" [disabled]="saving">
-            <i class="bi bi-x-circle"></i>
-            Cancel
+          <button
+            type="button"
+            class="btn secondary"
+            *ngIf="editingId"
+            (click)="cancelEdit()">
+            Cancel edit
           </button>
         </div>
 
         <div *ngIf="editingId" class="edit-tip">
-          <i class="bi bi-lightbulb"></i>
-          You’re editing an existing record.
+          <i class="bi bi-pencil-square"></i>
+          <span>You are editing an existing record. Use "Cancel edit" to switch back to adding a new row.</span>
         </div>
-      </form>
-    </section>
 
-    <!-- Table Card -->
-    <section class="card table-card">
+      </form>
+    </div>
+
+    <!-- TABLE CARD -->
+    <div class="card table-card">
+      <div class="card-header">
+        <div class="card-header-left">
+          <h2>Saved BB & ANW KPI rows</h2>
+          <p>Review and manage existing Form 7 entries.</p>
+        </div>
+      </div>
+
       <div *ngIf="loading" class="table-loader">
-        <div class="spinner-border"></div>
+        <div>Loading KPI data...</div>
       </div>
 
       <div *ngIf="!loading && data.length" class="table-wrapper">
@@ -173,33 +173,43 @@
           <thead>
             <tr>
               <th>No</th>
-              <th>Network Engineer KPI</th>
+              <th>KPI</th>
               <th>Division</th>
               <th>Section</th>
-              <th>KPI (%)</th>
+              <th>%</th>
               <th>Actions</th>
             </tr>
           </thead>
 
           <tbody>
-            <tr *ngFor="let row of data; trackBy: trackRow" [class.is-editing]="editingId === row.id">
-              <td>{{ row.no }}</td>
-              <td>{{ row.networkEngineerKpi }}</td>
+            <tr *ngFor="let row of data; trackBy: trackRow" [class.is-editing]="row.id === editingId">
+              <td class="mono">{{ row.no }}</td>
+              <td class="kpi-name">
+                <span>{{ row.networkEngineerKpi }}</span>
+              </td>
               <td>{{ row.division }}</td>
               <td>{{ row.section }}</td>
               <td>{{ row.kpiPercent }}</td>
               <td>
-                <button class="btn text" (click)="editRow(row)">Edit</button>
-                <button class="btn danger" (click)="deleteRow(row.id)">Delete</button>
+                <button type="button" class="btn text" (click)="editRow(row)">Edit</button>
+                <button type="button" class="btn danger" (click)="deleteRow(row.id)">Delete</button>
               </td>
             </tr>
           </tbody>
         </table>
+
+        <div class="table-footnote">
+          <i class="bi bi-info-circle"></i>
+          <span>KPI values are stored exactly as provided and can be updated at any time.</span>
+        </div>
       </div>
 
       <div *ngIf="!loading && !data.length" class="empty-state">
-        <p>No KPIs found.</p>
+        <i class="bi bi-folder2-open"></i>
+        <p>No KPI rows have been saved yet.</p>
       </div>
-    </section>
+    </div>
+
   </div>
+
 </div>

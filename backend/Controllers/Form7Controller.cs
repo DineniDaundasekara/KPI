@@ -1,4 +1,5 @@
 ﻿using backend.Data;
+using backend.DTOs;
 using backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -16,44 +17,90 @@ namespace backend.Controllers
             _context = context;
         }
 
+        // =========================
+        // GET ALL
+        // =========================
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            return Ok(await _context.Form7.OrderBy(x => x.No).ToListAsync());
+            var data = await _context.Form7_2025
+                .OrderBy(x => x.No)
+                .ToListAsync();
+
+            return Ok(data);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Add(Form7_2025 model)
+        // =========================
+        // ADD
+        // =========================
+        [HttpPost("add")]
+        public async Task<IActionResult> Add([FromBody] Form7Dto dto)
         {
-            _context.Form7.Add(model);
+            var entity = new Form7_2025
+            {
+                Id = Guid.NewGuid().ToString(),
+                No = dto.No,
+                NetworkEngineerKpi = dto.NetworkEngineerKpi,
+                Division = dto.Division,
+                Section = dto.Section,
+                KpiPercent = dto.KpiPercent,
+
+                // 🔴 REQUIRED VALUES
+                UnavailableMinutes = dto.UnavailableMinutes,
+                TotalMinutes = dto.TotalMinutes,
+                TotalNodes = dto.TotalNodes,
+
+                Month = (byte)dto.Month,
+                Year = (short)dto.Year,
+                UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
+            };
+
+            _context.Form7_2025.Add(entity);
             await _context.SaveChangesAsync();
-            return Ok(model);
+
+            return Ok(entity);
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(string id, Form7_2025 model)
+        // =========================
+        // UPDATE
+        // =========================
+        [HttpPut("update/{id}")]
+        public async Task<IActionResult> Update(string id, [FromBody] Form7Dto dto)
         {
-            var record = await _context.Form7.FindAsync(id);
-            if (record == null) return NotFound();
+            var entity = await _context.Form7_2025.FirstOrDefaultAsync(x => x.Id == id);
+            if (entity == null)
+                return NotFound();
 
-            record.No = model.No;
-            record.NetworkEngineerKpi = model.NetworkEngineerKpi;
-            record.Division = model.Division;
-            record.Section = model.Section;
-            record.KpiPercent = model.KpiPercent;
+            entity.No = dto.No;
+            entity.NetworkEngineerKpi = dto.NetworkEngineerKpi;
+            entity.Division = dto.Division;
+            entity.Section = dto.Section;
+            entity.KpiPercent = dto.KpiPercent;
+            entity.UnavailableMinutes = dto.UnavailableMinutes;
+            entity.TotalMinutes = dto.TotalMinutes;
+            entity.TotalNodes = dto.TotalNodes;
+            entity.Month = (byte)dto.Month;
+            entity.Year = (short)dto.Year;
+            entity.UpdatedAt = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
 
             await _context.SaveChangesAsync();
-            return Ok(record);
+
+            return Ok(entity);
         }
 
-        [HttpDelete("{id}")]
+        // =========================
+        // DELETE
+        // =========================
+        [HttpDelete("delete/{id}")]
         public async Task<IActionResult> Delete(string id)
         {
-            var record = await _context.Form7.FindAsync(id);
-            if (record == null) return NotFound();
+            var entity = await _context.Form7_2025.FirstOrDefaultAsync(x => x.Id == id);
+            if (entity == null)
+                return NotFound();
 
-            _context.Form7.Remove(record);
+            _context.Form7_2025.Remove(entity);
             await _context.SaveChangesAsync();
+
             return Ok();
         }
     }

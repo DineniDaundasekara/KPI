@@ -1,146 +1,101 @@
-import { CommonModule } from '@angular/common';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-
-export interface Form7Row {
-  id: string;
-  no: number;
-  networkEngineerKpi: string;
-  division: string;
-  section: string;
-  kpiPercent: number;
-}
+import { BbAnwService, Form7Record } from '../../../../services/bb-anw.service';
 
 @Component({
-  selector: 'app-admin-bb-anw',
+  selector: 'app-bb-anw',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './bb-anw.component.html',
-  styleUrls: ['./bb-anw.component.scss'],
+  styleUrls: ['./bb-anw.component.scss']
 })
-export class AdminBbAnwComponent implements OnInit {
-  pageTitle = 'Admin — BB ANW';
+export class BbAnwComponent implements OnInit {
 
-  private apiUrl = 'http://localhost:5043/api/form7';
+  pageTitle = 'BB & ANW – Form 7';
+  data: Form7Record[] = [];
 
-  data: Form7Row[] = [];
-
-  form = {
-    no: '',
-    networkEngineerKpi: '',
-    division: '',
-    section: '',
-    kpiPercent: '',
-  };
-
-  editingId: string | null = null;
   loading = false;
   saving = false;
-  error: string | null = null;
+  error = '';
 
-  constructor(private http: HttpClient) {}
+  editingId: string | null = null;
+
+  form: Form7Record = this.emptyForm();
+
+  constructor(private service: BbAnwService) {}
 
   ngOnInit(): void {
     this.loadData();
   }
 
+  private emptyForm(): Form7Record {
+    return {
+      no: 0,
+      networkEngineerKpi: '',
+      division: '',
+      section: '',
+      kpiPercent: 0,
+      unavailableMinutes: 0,
+      totalMinutes: 0,
+      totalNodes: 0,
+      month: new Date().getMonth() + 1,
+      year: new Date().getFullYear()
+    };
+  }
+
   loadData(): void {
     this.loading = true;
-    this.http.get<Form7Row[]>(this.apiUrl).subscribe({
-      next: res => {
-        this.data = res;
-        this.loading = false;
-      },
-      error: err => {
-        console.error(err);
-        this.error = 'Failed to load data';
-        this.loading = false;
-      }
+    this.service.getAll().subscribe({
+      next: res => this.data = res,
+      error: () => this.error = 'Failed to load data',
+      complete: () => this.loading = false
     });
   }
 
   submitForm(): void {
-    if (this.saving) return;
-
-    const payload = {
-      no: Number(this.form.no),
-      networkEngineerKpi: this.form.networkEngineerKpi.trim(),
-      division: this.form.division.trim(),
-      section: this.form.section.trim(),
-      kpiPercent: Number(this.form.kpiPercent)
-    };
-
-    if (!payload.no || !payload.networkEngineerKpi || !payload.division || !payload.section) {
-      this.error = 'Please fill all required fields';
-      return;
-    }
-
     this.saving = true;
-    this.error = null;
 
     const request$ = this.editingId
-      ? this.http.put(`${this.apiUrl}/${this.editingId}`, payload)
-      : this.http.post(this.apiUrl, payload);
+      ? this.service.update(this.editingId, this.form)
+      : this.service.add(this.form);
 
     request$.subscribe({
       next: () => {
-        this.resetForm();
+        this.cancelEdit();
         this.loadData();
-        this.saving = false;
       },
       error: err => {
         console.error(err);
         this.error = 'Save failed';
         this.saving = false;
-      }
+      },
+      complete: () => this.saving = false
     });
   }
 
-  editRow(row: Form7Row): void {
-    this.form = {
-      no: row.no.toString(),
-      networkEngineerKpi: row.networkEngineerKpi,
-      division: row.division,
-      section: row.section,
-      kpiPercent: row.kpiPercent.toString()
-    };
-    this.editingId = row.id;
+  editRow(row: Form7Record): void {
+    this.editingId = row.id!;
+    this.form = { ...row };
   }
 
-  deleteRow(id: string): void {
-    if (!confirm('Delete this KPI?')) return;
+  deleteRow(id?: string): void {
+    if (!id || !confirm('Delete this record?')) return;
 
     this.saving = true;
-    this.http.delete(`${this.apiUrl}/${id}`).subscribe({
-      next: () => {
-        this.loadData();
-        this.saving = false;
-      },
-      error: err => {
-        console.error(err);
-        this.error = 'Delete failed';
-        this.saving = false;
-      }
+    this.service.delete(id).subscribe({
+      next: () => this.loadData(),
+      error: () => this.error = 'Delete failed',
+      complete: () => this.saving = false
     });
   }
 
   cancelEdit(): void {
-    this.resetForm();
-  }
-
-  trackRow(_: number, row: Form7Row): string {
-    return row.id;
-  }
-
-  private resetForm(): void {
-    this.form = {
-      no: '',
-      networkEngineerKpi: '',
-      division: '',
-      section: '',
-      kpiPercent: '',
-    };
     this.editingId = null;
+    this.form = this.emptyForm();
+  }
+
+  trackRow(_: number, row: Form7Record): string {
+    return row.id!;
   }
 }
