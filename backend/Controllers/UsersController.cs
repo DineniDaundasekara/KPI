@@ -1,9 +1,8 @@
-﻿using System.Text.RegularExpressions;
-using backend.Data;
-using backend.DTOs;
-using backend.Models;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using backend.Data;
+using backend.Models;
+using backend.DTOs;
 
 namespace backend.Controllers
 {
@@ -13,117 +12,224 @@ namespace backend.Controllers
     {
         private readonly AppDbContext _db;
 
-        public UsersController(AppDbContext db) => _db = db;
-
-        [HttpGet("admins")]
-        public async Task<ActionResult<List<AdminUserDto>>> GetAdmins()
+        public UsersController(AppDbContext db)
         {
-            var admins = await _db.Users
-                .Where(u => u.Role == "admin" || u.Role == "padmin")
-                .OrderByDescending(u => u.LastLogin)
-                .ToListAsync();
-
-            return Ok(admins.Select(ToAdminDto).ToList());
+            _db = db;
         }
 
-        [HttpPost("admins")]
-        public async Task<ActionResult<AdminUserDto>> CreateAdmin([FromBody] CreateAdminDto dto)
+        // ✔ GET ALL USERS
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<UserDto>>> GetUsers()
         {
-            if (string.IsNullOrWhiteSpace(dto.Name))
-                return BadRequest("Name is required.");
-
-            var service = (dto.ServiceNumber ?? "").Trim();
-
-            // ✅ must be exactly 6 digits
-            if (!Regex.IsMatch(service, @"^\d{6}$"))
-                return BadRequest("ServiceNumber must be exactly 6 digits (example: 010399).");
-
-            var exists = await _db.Users.AnyAsync(u => u.Username == service);
-            if (exists)
-                return Conflict($"Service Number {service} already exists.");
-
-            var nowIso = DateTime.UtcNow.ToString("o");
-
-            var user = new User
+            try
             {
-                Id = Guid.NewGuid().ToString("N"),
-                Username = service,                 // ✅ store as string "010399"
-                Name = dto.Name.Trim(),
-                Role = string.IsNullOrWhiteSpace(dto.Role) ? "admin" : dto.Role.Trim(),
-                IsActive = true,
-                V = false,
-                LastLogin = DateTime.UtcNow,
-                CreatedAt = nowIso,
-                UpdatedAt = nowIso
-            };
+                var users = await _db.Users.ToListAsync();
 
-            ApplyPages(user, dto.Pages);
+                var result = users.Select(u => new UserDto
+                {
+                    id = u.id ?? "",
+                    name = u.name ?? "",
+                    username = u.username, // Can be null
+                    role = u.role ?? "",
+                    isActive = u.isActive ?? "",
+                    Pages = u.Pages,
+                    createdAt = u.createdAt ?? "",
+                    updatedAt = u.updatedAt ?? "",
+                    v = u.v // Can be null
+                });
 
-            _db.Users.Add(user);
-            await _db.SaveChangesAsync();
-
-            return Ok(ToAdminDto(user));
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}\nStack Trace: {ex.StackTrace}");
+            }
         }
 
-        [HttpPatch("{id}/status")]
-        public async Task<IActionResult> ToggleStatus(string id)
+        // ✔ GET USER BY ID
+        [HttpGet("{id}")]
+        public async Task<ActionResult<UserDto>> GetUser(string id)
         {
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
-            if (user == null) return NotFound();
+            try
+            {
+                var user = await _db.Users.FirstOrDefaultAsync(x => x.id == id);
 
-            user.IsActive = !user.IsActive;
-            user.UpdatedAt = DateTime.UtcNow.ToString("o");
+                if (user == null) return NotFound();
 
-            await _db.SaveChangesAsync();
-            return NoContent();
+                return new UserDto
+                {
+                    id = user.id ?? "",
+                    name = user.name ?? "",
+                    username = user.username,
+                    role = user.role ?? "",
+                    isActive = user.isActive ?? "",
+                    Pages = user.Pages,
+                    createdAt = user.createdAt ?? "",
+                    updatedAt = user.updatedAt ?? "",
+                    v = user.v
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}\nStack Trace: {ex.StackTrace}");
+            }
         }
 
+        // ✔ CREATE USER
+        [HttpPost]
+        public async Task<ActionResult<UserDto>> CreateUser(CreateUserDto dto)
+        {
+            try
+            {
+                var newId = Guid.NewGuid().ToString();
+
+                var user = new User
+                {
+                    id = newId,
+                    username = dto.username, // This is non-nullable in CreateUserDto
+                    name = dto.name,
+                    role = dto.role,
+                    isActive = dto.isActive,
+                    Pages = dto.pages,
+                    createdAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+                    updatedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ"),
+                    v = false // Default value
+                };
+
+                _db.Users.Add(user);
+                await _db.SaveChangesAsync();
+
+                return CreatedAtAction(nameof(GetUser), new { id = user.id }, new UserDto
+                {
+                    id = user.id,
+                    name = user.name,
+                    username = user.username,
+                    role = user.role,
+                    isActive = user.isActive,
+                    Pages = user.Pages,
+                    createdAt = user.createdAt,
+                    updatedAt = user.updatedAt,
+                    v = user.v
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error creating user: {ex.Message}\nStack Trace: {ex.StackTrace}");
+            }
+        }
+
+        // ✔ UPDATE USER
+        [HttpPut("{id}")]
+        public async Task<ActionResult> UpdateUser(string id, UpdateUserDto dto)
+        {
+            try
+            {
+                var user = await _db.Users.FirstOrDefaultAsync(x => x.id == id);
+
+                if (user == null) return NotFound();
+
+                // Update only provided fields
+                if (dto.username.HasValue)
+                    user.username = dto.username.Value;
+
+                if (!string.IsNullOrEmpty(dto.name))
+                    user.name = dto.name;
+
+                if (!string.IsNullOrEmpty(dto.role))
+                    user.role = dto.role;
+
+                if (!string.IsNullOrEmpty(dto.isActive))
+                    user.isActive = dto.isActive;
+
+                if (dto.pages != null)
+                    user.Pages = dto.pages;
+
+                user.updatedAt = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+
+                await _db.SaveChangesAsync();
+                return Ok("User updated successfully");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error updating user: {ex.Message}\nStack Trace: {ex.StackTrace}");
+            }
+        }
+
+        // ✔ DELETE USER
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<ActionResult> DeleteUser(string id)
         {
-            var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == id);
-            if (user == null) return NotFound();
+            try
+            {
+                var user = await _db.Users.FirstOrDefaultAsync(x => x.id == id);
 
-            _db.Users.Remove(user);
-            await _db.SaveChangesAsync();
-            return NoContent();
+                if (user == null) return NotFound();
+
+                _db.Users.Remove(user);
+                await _db.SaveChangesAsync();
+
+                return Ok("User deleted successfully");
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error deleting user: {ex.Message}\nStack Trace: {ex.StackTrace}");
+            }
         }
 
-        private static AdminUserDto ToAdminDto(User u) => new AdminUserDto
+        // Optional: Get User by username
+        [HttpGet("by-username/{username}")]
+        public async Task<ActionResult<UserDto>> GetUserByUsername(short username)
         {
-            Id = u.Id,
-            Name = u.Name,
-            Role = u.Role,
-            IsActive = u.IsActive,
-            LastLogin = u.LastLogin,
-            CreatedAt = u.CreatedAt,
-            ServiceNumber = u.Username,
-            Pages = ExtractPages(u)
-        };
+            try
+            {
+                var user = await _db.Users.FirstOrDefaultAsync(x => x.username == username);
 
-        private static List<string> ExtractPages(User u)
-        {
-            var pages = new[] { u.Pages_0, u.Pages_1, u.Pages_2, u.Pages_3, u.Pages_4, u.Pages_5, u.Pages_6, u.Pages_7, u.Pages_8 };
-            return pages.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p!.Trim()).ToList();
+                if (user == null) return NotFound();
+
+                return new UserDto
+                {
+                    id = user.id ?? "",
+                    name = user.name ?? "",
+                    username = user.username,
+                    role = user.role ?? "",
+                    isActive = user.isActive ?? "",
+                    Pages = user.Pages,
+                    createdAt = user.createdAt ?? "",
+                    updatedAt = user.updatedAt ?? "",
+                    v = user.v
+                };
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Error: {ex.Message}\nStack Trace: {ex.StackTrace}");
+            }
         }
 
-        private static void ApplyPages(User u, List<string>? pages)
+        // Add a test endpoint to check database
+        [HttpGet("test-db")]
+        public async Task<ActionResult> TestDb()
         {
-            var clean = (pages ?? new List<string>())
-                .Where(p => !string.IsNullOrWhiteSpace(p))
-                .Select(p => p.Trim())
-                .Take(9)
-                .ToList();
+            try
+            {
+                var count = await _db.Users.CountAsync();
+                var sample = await _db.Users.FirstOrDefaultAsync();
 
-            u.Pages_0 = clean.ElementAtOrDefault(0);
-            u.Pages_1 = clean.ElementAtOrDefault(1);
-            u.Pages_2 = clean.ElementAtOrDefault(2);
-            u.Pages_3 = clean.ElementAtOrDefault(3);
-            u.Pages_4 = clean.ElementAtOrDefault(4);
-            u.Pages_5 = clean.ElementAtOrDefault(5);
-            u.Pages_6 = clean.ElementAtOrDefault(6);
-            u.Pages_7 = clean.ElementAtOrDefault(7);
-            u.Pages_8 = clean.ElementAtOrDefault(8);
+                return Ok(new
+                {
+                    totalUsers = count,
+                    sampleUser = sample,
+                    connection = "Database connection successful"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    error = ex.Message,
+                    innerError = ex.InnerException?.Message,
+                    stackTrace = ex.StackTrace
+                });
+            }
         }
     }
 }

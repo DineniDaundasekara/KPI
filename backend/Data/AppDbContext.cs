@@ -61,15 +61,11 @@ namespace backend.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // --------------------------------------------------
             // TM ACTIVITY PLAN
-            // --------------------------------------------------
             modelBuilder.Entity<TmActivity1>(entity =>
             {
                 entity.ToTable("tmtable1", "dbo");
-
                 entity.HasKey(x => x.Id);
-
                 entity.Property(x => x.Id).HasColumnName("id");
                 entity.Property(x => x.No).HasColumnName("no");
                 entity.Property(x => x.Kpi).HasColumnName("kpi");
@@ -84,39 +80,31 @@ namespace backend.Data
                 entity.Property(x => x.V).HasColumnName("v");
             });
 
-            // --------------------------------------------------
             // KPI TOWER
-            // --------------------------------------------------
             modelBuilder.Entity<TowerKpi>(entity =>
             {
                 entity.ToTable("kpitowertable_2025", "dbo");
-
                 entity.HasKey(x => x.Id);
-
                 entity.Property(x => x.Id).HasColumnName("id");
                 entity.Property(x => x.No).HasColumnName("no");
                 entity.Property(x => x.Responsibility).HasColumnName("responsibility");
                 entity.Property(x => x.Frequency).HasColumnName("frequency");
                 entity.Property(x => x.Weightage).HasColumnName("weightage");
                 entity.Property(x => x.Kpi).HasColumnName("kpi");
+                entity.Property(x => x.Month).HasColumnName("month");
+                entity.Property(x => x.Year).HasColumnName("year");
                 entity.Property(x => x.CreatedAt).HasColumnName("createdAt");
                 entity.Property(x => x.UpdatedAt).HasColumnName("updatedAt");
                 entity.Property(x => x.V).HasColumnName("v");
-                entity.Property(x => x.Month).HasColumnName("month");
-                entity.Property(x => x.Year).HasColumnName("year");
             });
 
-            // --------------------------------------------------
-            // MAINTENANCE ROUTINE ✅ FIX
-            // --------------------------------------------------
+            // MAINTENANCE ROUTINE
             modelBuilder.Entity<MtncRoutine>(entity =>
             {
                 entity.ToTable("mtncroutinetable1", "dbo");
-
                 entity.HasKey(x => x.Id);
-
                 entity.Property(x => x.Id).HasColumnName("id").HasMaxLength(50);
-                entity.Property(x => x.No).HasColumnName("no"); // tinyint/smallint handled in entity
+                entity.Property(x => x.No).HasColumnName("no");
                 entity.Property(x => x.Kpi).HasColumnName("kpi");
                 entity.Property(x => x.Target).HasColumnName("target");
                 entity.Property(x => x.Calculation).HasColumnName("calculation");
@@ -129,15 +117,11 @@ namespace backend.Data
                 entity.Property(x => x.V).HasColumnName("v");
             });
 
-            // --------------------------------------------------
-            // IP NETWORK OPERATIONS KPI (FORM 6)
-            // --------------------------------------------------
+            // IP NW OP KPI
             modelBuilder.Entity<IpNwOpKpi>(entity =>
             {
                 entity.ToTable("form6_kpi", "dbo");
-
                 entity.HasKey(x => x.Id);
-
                 entity.Property(x => x.Id).HasColumnName("id").HasMaxLength(50);
                 entity.Property(x => x.No).HasColumnName("no");
                 entity.Property(x => x.NetworkEngineerKpi).HasColumnName("network_engineer_kpi");
