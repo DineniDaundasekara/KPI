@@ -1,11 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { 
-  FormBuilder, 
-  FormGroup, 
-  Validators, 
-  ReactiveFormsModule 
-} from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { Form4ApiService, ServiceFulfilmentKpi } from '../../../../services/form4api.service';
 
 @Component({
   selector: 'app-admin-service-fulfilment',
@@ -15,66 +11,31 @@ import {
   styleUrls: ['./service-fulfilment.component.scss']
 })
 export class AdminServiceFulfilmentComponent implements OnInit {
-  pageTitle = 'Admin — Service Fulfilment';
-  
-  // Statistics data
-  activeKpis = 8;
-  targetsMet = 87;
-  avgWeightage = 12.5;
-  dgmCount = 5;
-  
-  // Form
-  kpiForm: FormGroup;
-  isEditing = false;
-  editingIndex: number | null = null;
-  
-  // DGM list for dropdown
-  dgmList = [
-    'John Anderson',
-    'Sarah Mitchell',
-    'Robert Chen',
-    'Emma Wilson',
-    'Michael Brown'
-  ];
-  
-  // Sample KPI data
-  kpiList: any[] = [
-    {
-      no: 'KPI-001',
-      kpi: 'First Response Time',
-      target: '≤ 2 hours',
-      calculation: 'Time from ticket creation to first agent response',
-      platform: 'CRM',
-      responsibleDgm: 'John Anderson',
-      definedOla: 'Response within 2 hours during business hours (9 AM - 6 PM)',
-      weightage: 15,
-      dataSources: 'Ticketing System, Customer Service Portal'
-    },
-    {
-      no: 'KPI-002',
-      kpi: 'Resolution Rate',
-      target: '95%',
-      calculation: '(Resolved tickets / Total tickets) × 100',
-      platform: 'Web',
-      responsibleDgm: 'Sarah Mitchell',
-      definedOla: '95% of tickets resolved within agreed SLA timeframe',
-      weightage: 20,
-      dataSources: 'Ticketing System, Customer Feedback'
-    },
-    {
-      no: 'KPI-003',
-      kpi: 'Customer Satisfaction',
-      target: '≥ 4.5/5',
-      calculation: 'Average of post-resolution survey scores',
-      platform: 'Mobile',
-      responsibleDgm: 'Robert Chen',
-      definedOla: 'Maintain CSAT score above 4.5 for all service categories',
-      weightage: 25,
-      dataSources: 'Survey System, Customer Feedback Portal'
-    }
-  ];
 
-  constructor(private fb: FormBuilder) {
+  pageTitle = 'Service Fulfilment KPIs';
+
+  activeKpis = 0;
+  targetsMet = 0;
+  avgWeightage = 0;
+  dgmCount = 0;
+
+  kpiForm!: FormGroup;
+  isEditing = false;
+  editingId: string | null = null;
+  showForm = false;
+
+  kpiList: ServiceFulfilmentKpi[] = [];
+
+  loading = false;
+  saving = false;
+  errorMessage = '';
+
+  constructor(
+    private fb: FormBuilder,
+    private form4Api: Form4ApiService
+  ) {}
+
+  ngOnInit(): void {
     this.kpiForm = this.fb.group({
       no: ['', Validators.required],
       kpi: ['', Validators.required],
@@ -83,84 +44,126 @@ export class AdminServiceFulfilmentComponent implements OnInit {
       platform: ['', Validators.required],
       responsibleDgm: ['', Validators.required],
       definedOla: ['', Validators.required],
-      weightage: [0, [Validators.required, Validators.min(0), Validators.max(100)]],
-      dataSources: ['', Validators.required]
+      weightage: ['', Validators.required],
+      dataSources: ['', Validators.required],
+      month: [11, Validators.required],
+      year: [2025, Validators.required]
     });
+
+    this.loadKpis();
   }
 
-  ngOnInit() {
-    this.updateStatistics();
-  }
+  // ================= LOAD =================
+  loadKpis(): void {
+    this.loading = true;
 
-  // Update statistics based on current KPI list
-  updateStatistics() {
-    this.activeKpis = this.kpiList.length;
-    
-    if (this.kpiList.length > 0) {
-      const totalWeightage = this.kpiList.reduce((sum, kpi) => sum + kpi.weightage, 0);
-      this.avgWeightage = Math.round((totalWeightage / this.kpiList.length) * 10) / 10;
-      
-      // Count unique DGMs
-      const uniqueDgms = new Set(this.kpiList.map(kpi => kpi.responsibleDgm));
-      this.dgmCount = uniqueDgms.size;
-    }
-  }
+    this.form4Api.getAll().subscribe({
+      next: (data) => {
+        this.kpiList = data;
+        this.activeKpis = data.length;
 
-  // Add new KPI
-  addNewKpi() {
-    this.isEditing = false;
-    this.editingIndex = null;
-    this.kpiForm.reset({
-      weightage: 0
-    });
-  }
+        this.avgWeightage =
+          data.reduce((sum, k) => sum + k.weightage, 0) / (data.length || 1);
 
-  // Edit existing KPI
-  editKpi(index: number) {
-    this.isEditing = true;
-    this.editingIndex = index;
-    const kpi = this.kpiList[index];
-    this.kpiForm.patchValue(kpi);
-    
-    // Scroll to form
-    const formElement = document.querySelector('.form-container');
-    if (formElement) {
-      formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }
+        this.dgmCount = new Set(data.map(k => k.responsibleDgm)).size;
+        this.targetsMet = data.length ? 100 : 0;
 
-  // Delete KPI
-  deleteKpi(index: number) {
-    if (confirm('Are you sure you want to delete this KPI?')) {
-      this.kpiList.splice(index, 1);
-      this.updateStatistics();
-    }
-  }
-
-  // Submit form (save or update)
-  onSubmit() {
-    if (this.kpiForm.valid) {
-      const kpiData = this.kpiForm.value;
-      
-      if (this.isEditing && this.editingIndex !== null) {
-        // Update existing KPI
-        this.kpiList[this.editingIndex] = { ...kpiData };
-      } else {
-        // Add new KPI
-        this.kpiList.unshift({ ...kpiData });
+        this.loading = false;
+      },
+      error: () => {
+        this.errorMessage = 'Failed to load KPI data';
+        this.loading = false;
       }
-      
-      this.resetForm();
-      this.updateStatistics();
-    }
+    });
   }
 
-  // Reset form
-  resetForm() {
-    this.kpiForm.reset({
-      weightage: 0
-    });
+  // ================= ADD =================
+  addNewKpi(): void {
+    this.showForm = true;
     this.isEditing = false;
-    this.editingIndex = null;
+    this.editingId = null;
+    this.kpiForm.reset({ month: 11, year: 2025 });
+    setTimeout(() => this.scrollToForm(), 100);
+  }
+
+  // ================= SUBMIT =================
+  onSubmit(): void {
+    if (this.kpiForm.invalid) {
+      this.kpiForm.markAllAsTouched();
+      return;
+    }
+
+    this.saving = true;
+
+    const formValue = this.kpiForm.value;
+    const payload: ServiceFulfilmentKpi = {
+      ...formValue,
+      defineDoladetails: formValue.definedOla
+    };
+    delete (payload as any).definedOla;
+
+    const request$ =
+      this.isEditing && this.editingId
+        ? this.form4Api.update(this.editingId, payload)
+        : this.form4Api.add(payload);
+
+    request$.subscribe({
+      next: () => {
+        this.resetForm();
+        this.loadKpis();
+      },
+      error: () => {
+        this.errorMessage = 'Save failed';
+        this.saving = false;
+      },
+      complete: () => (this.saving = false)
+    });
+  }
+
+  // ================= EDIT =================
+  editKpi(index: number): void {
+    const kpi = this.kpiList[index];
+
+    this.showForm = true;
+    this.isEditing = true;
+    this.editingId = kpi.id!;
+
+    this.kpiForm.patchValue({
+      no: kpi.no,
+      kpi: kpi.kpi,
+      target: kpi.target,
+      calculation: kpi.calculation,
+      platform: kpi.platform,
+      responsibleDgm: kpi.responsibleDgm,
+      definedOla: kpi.defineDoladetails,
+      weightage: kpi.weightage,
+      dataSources: kpi.dataSources,
+      month: kpi.month,
+      year: kpi.year
+    });
+
+    setTimeout(() => this.scrollToForm(), 100);
+  }
+
+  // ================= DELETE =================
+  deleteKpi(index: number): void {
+    const id = this.kpiList[index].id;
+    if (!id || !confirm('Delete this KPI?')) return;
+
+    this.form4Api.delete(id).subscribe(() => this.loadKpis());
+  }
+
+  // ================= RESET =================
+  resetForm(): void {
+    this.kpiForm.reset();
+    this.isEditing = false;
+    this.editingId = null;
+    this.showForm = false;
+  }
+
+  // ================= SCROLL =================
+  scrollToForm(): void {
+    document.querySelector('.form-container')
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }

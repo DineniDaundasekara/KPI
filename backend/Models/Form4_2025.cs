@@ -1,8 +1,15 @@
-﻿
-namespace backend.DTOs
+﻿using System;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace backend.Models
 {
-    public class ServiceFulfilmentKpiDto
+    [Table("form4_2025")]
+    public class Form4_2025
     {
+        [Key]
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+
         public int No { get; set; }
 
         public string Kpi { get; set; } = string.Empty;
@@ -20,9 +27,12 @@ namespace backend.DTOs
         public int Weightage { get; set; }
 
         public string DataSources { get; set; } = string.Empty;
+        public byte Month { get; set; }   // tinyint
+        public short Year { get; set; }   // smallint
 
-        public int Month { get; set; }
 
-        public int Year { get; set; }
+        public string UpdatedAt { get; set; } = string.Empty;
+
+        public int? V { get; set; }
     }
 }

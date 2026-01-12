@@ -18,11 +18,14 @@ namespace backend.Data
         // ✅ Existing: form6_kpi
         public DbSet<IpNwOpKpi> IpNwOpKpis { get; set; } = null!;
 
-        // ✅ NEW: form8_2025 (Controller uses: _context.Form8Records)
+        // ✅ Existing: form8_2025 (Controller uses: _context.Form8Records)
         public DbSet<Form8_2025> Form8Records { get; set; } = null!;
 
-        // ✅ NEW: form9_2025 (Controller uses: _context.Form9_2025)
+        // ✅ Existing: form9_2025 (Controller uses: _context.Form9_2025)
         public DbSet<Form9_2025> Form9_2025 { get; set; } = null!;
+
+        // ✅ NEW: form4_2025 (Controller uses: _context.Form4_2025)
+        public DbSet<Form4_2025> Form4_2025 { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -241,7 +244,7 @@ namespace backend.Data
             });
 
             // =========================
-            // ✅ form8_2025 mapping
+            // form8_2025 mapping
             // =========================
             modelBuilder.Entity<Form8_2025>(entity =>
             {
@@ -270,7 +273,7 @@ namespace backend.Data
             });
 
             // =========================
-            // ✅ form9_2025 mapping
+            // form9_2025 mapping
             // =========================
             modelBuilder.Entity<Form9_2025>(entity =>
             {
@@ -292,6 +295,72 @@ namespace backend.Data
 
                 entity.Property(x => x.UpdatedAt).HasColumnName("updatedAt").HasColumnType("nvarchar(50)");
                 entity.Property(x => x.v).HasColumnName("v").HasColumnType("float");
+            });
+
+            // =========================
+            // ✅ NEW: form4_2025 mapping
+            // =========================
+            modelBuilder.Entity<Form4_2025>(entity =>
+            {
+                entity.ToTable("form4_2025", "dbo");
+
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("id")
+                      .HasMaxLength(50);
+
+                entity.Property(x => x.No)
+                      .HasColumnName("no")
+                      .HasColumnType("int");
+
+                entity.Property(x => x.Kpi)
+                      .HasColumnName("kpi")
+                      .HasMaxLength(500);
+
+                entity.Property(x => x.Target)
+                      .HasColumnName("target")
+                      .HasMaxLength(100);
+
+                entity.Property(x => x.Calculation)
+                      .HasColumnName("calculation")
+                      .HasMaxLength(500);
+
+                entity.Property(x => x.Platform)
+                      .HasColumnName("platform")
+                      .HasMaxLength(150);
+
+                entity.Property(x => x.ResponsibleDgm)
+                      .HasColumnName("responsibleDgm")
+                      .HasMaxLength(150);
+
+                entity.Property(x => x.DefineDoladetails)
+                      .HasColumnName("defineDoladetails")
+                      .HasMaxLength(500);
+
+                entity.Property(x => x.Weightage)
+                      .HasColumnName("weightage")
+                      .HasColumnType("int");
+
+                entity.Property(x => x.DataSources)
+                      .HasColumnName("dataSources")
+                      .HasMaxLength(500);
+
+                entity.Property(x => x.Month)
+                      .HasColumnName("month")
+                      .HasColumnType("tinyint");
+
+                entity.Property(x => x.Year)
+                      .HasColumnName("year")
+                      .HasColumnType("smallint");
+
+                entity.Property(x => x.UpdatedAt)
+                      .HasColumnName("updatedAt")
+                      .HasColumnType("nvarchar(50)");
+
+                entity.Property(x => x.V)
+                      .HasColumnName("v")
+                      .HasColumnType("int");
             });
 
             base.OnModelCreating(modelBuilder);

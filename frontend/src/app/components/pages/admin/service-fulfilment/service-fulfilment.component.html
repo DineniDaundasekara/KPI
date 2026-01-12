@@ -19,14 +19,14 @@
           <div class="stat-icon">🎯</div>
           <div class="stat-content">
             <h3>Targets Met</h3>
-            <p class="stat-value">{{ targetsMet }}%</p>
+            <p class="stat-value">{{ targetsMet | number:'1.0-0' }}%</p>
           </div>
         </div>
         <div class="stat-card">
           <div class="stat-icon">⚖️</div>
           <div class="stat-content">
             <h3>Avg Weightage</h3>
-            <p class="stat-value">{{ avgWeightage }}%</p>
+            <p class="stat-value">{{ avgWeightage | number:'1.0-1' }}%</p>
           </div>
         </div>
         <div class="stat-card">
@@ -39,13 +39,20 @@
       </div>
 
       <!-- KPI Management Form -->
-      <div class="form-container">
+      <div class="form-container" [class.is-editing]="isEditing" *ngIf="showForm">
         <div class="form-header">
-          <h2>Service Fulfilment KPI Configuration</h2>
-          <p>Add or edit service fulfilment KPIs with details</p>
-          <button class="btn-add" (click)="addNewKpi()">
-            <span>+</span> Add New KPI
-          </button>
+          <div class="form-header__text">
+            <h2>Service Fulfilment KPI Configuration</h2>
+            <p>Add or edit service fulfilment KPIs with details</p>
+          </div>
+          <div class="form-header__actions">
+            <span class="mode-chip" [class.editing]="isEditing">
+              {{ isEditing ? 'Editing existing KPI' : 'Add mode' }}
+            </span>
+            <button type="button" class="btn-close" (click)="resetForm()">
+              <span>×</span> Close Form
+            </button>
+          </div>
         </div>
 
         <form [formGroup]="kpiForm" (ngSubmit)="onSubmit()" class="kpi-form">
@@ -191,19 +198,32 @@
 
           <!-- Form Actions -->
           <div class="form-actions">
-            <button type="button" class="btn-cancel" (click)="resetForm()">Reset</button>
-            <button type="submit" class="btn-submit" [disabled]="kpiForm.invalid">
-              {{ isEditing ? 'Update KPI' : 'Save KPI' }}
-            </button>
+            <div class="action-hint">
+              <span *ngIf="isEditing">You are editing an existing KPI. Save to apply changes.</span>
+              <span *ngIf="!isEditing">Fill the required fields and save to add a new KPI.</span>
+              <span *ngIf="saving" class="saving-pill">Saving…</span>
+            </div>
+            <div class="action-buttons">
+              <button type="button" class="btn-cancel" (click)="resetForm()">Reset</button>
+              <button type="submit" class="btn-submit" [disabled]="kpiForm.invalid || saving">
+                {{ isEditing ? 'Update KPI' : 'Save KPI' }}
+              </button>
+            </div>
           </div>
         </form>
+      </div>
 
-        <!-- KPI List Table -->
-        <div class="kpi-list-container" *ngIf="kpiList.length > 0">
+      <!-- KPI List Table -->
+      <div class="table-card" *ngIf="kpiList.length > 0">
+        <div class="table-header-section">
           <h3>Configured KPIs</h3>
-          <div class="table-responsive">
-            <table class="kpi-table">
-              <thead>
+          <button class="btn-add" (click)="addNewKpi()" *ngIf="!showForm">
+            <span>+</span> Add New KPI
+          </button>
+        </div>
+        <div class="table-responsive">
+          <table class="kpi-table">
+            <thead>
                 <tr>
                   <th>NO</th>
                   <th>KPI</th>
@@ -236,7 +256,6 @@
             </table>
           </div>
         </div>
-      </div>
     </div>
   </div>
 </div>
