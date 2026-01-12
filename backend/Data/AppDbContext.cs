@@ -27,6 +27,13 @@ namespace backend.Data
         // ✅ NEW: form4_2025 (Controller uses: _context.Form4_2025)
         public DbSet<Form4_2025> Form4_2025 { get; set; } = null!;
 
+        public DbSet<Form7_2025> Form7 { get; set; } = null!;
+
+        // ✅ TM
+        public DbSet<TmActivity1> TmActivity1 { get; set; } = null!;
+
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // =========================
@@ -362,6 +369,70 @@ namespace backend.Data
                       .HasColumnName("v")
                       .HasColumnType("int");
             });
+
+            modelBuilder.Entity<Form7_2025>(entity =>
+            {
+                entity.ToTable("form7_2025", "dbo");
+
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("id")
+                      .HasMaxLength(50);
+
+                entity.Property(x => x.No)
+                      .HasColumnName("no")
+                      .HasColumnType("tinyint");
+
+                entity.Property(x => x.NetworkEngineerKpi)
+                      .HasColumnName("network_engineer_kpi")
+                      .HasMaxLength(500);
+
+                entity.Property(x => x.Division)
+                      .HasColumnName("division")
+                      .HasMaxLength(200);
+
+                entity.Property(x => x.Section)
+                      .HasColumnName("section")
+                      .HasMaxLength(200);
+
+                entity.Property(x => x.KpiPercent)
+                      .HasColumnName("kpi_percent")
+                      .HasColumnType("float");
+
+                entity.Property(x => x.UpdatedAt)
+                      .HasColumnName("updatedAt")
+                      .HasColumnType("nvarchar(50)")
+                      .IsRequired();
+            });
+
+            // =========================
+            // TM table mapping (tmtable1)
+            // =========================
+            modelBuilder.Entity<TmActivity1>(entity =>
+            {
+                entity.ToTable("tmtable1", "dbo");
+
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.No).HasColumnName("no").HasColumnType("tinyint").IsRequired(false);
+
+                entity.Property(x => x.Kpi).HasColumnName("kpi").HasMaxLength(500).IsRequired();
+                entity.Property(x => x.Target).HasColumnName("target").HasMaxLength(500).IsRequired(false);
+                entity.Property(x => x.Calculation).HasColumnName("calculation").HasMaxLength(500).IsRequired(false);
+                entity.Property(x => x.Platform).HasColumnName("platform").HasMaxLength(150).IsRequired(false);
+
+                entity.Property(x => x.ResponsibleDGM).HasColumnName("responsibleDGM").HasMaxLength(150).IsRequired(false);
+                entity.Property(x => x.DefinedOLADetails).HasColumnName("definedOLADetails").HasMaxLength(500).IsRequired(false);
+                entity.Property(x => x.DataSources).HasColumnName("dataSources").HasMaxLength(500).IsRequired(false);
+
+                entity.Property(x => x.CreatedAt).HasColumnName("createdAt").HasMaxLength(50).IsRequired(false);
+                entity.Property(x => x.UpdatedAt).HasColumnName("updatedAt").HasMaxLength(50).IsRequired(false);
+
+                entity.Property(x => x.V).HasColumnName("v").HasColumnType("tinyint").IsRequired(false);
+            });
+
+
 
             base.OnModelCreating(modelBuilder);
         }

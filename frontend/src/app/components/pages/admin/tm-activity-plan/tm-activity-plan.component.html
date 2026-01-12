@@ -22,7 +22,8 @@
       </div>
       <div class="field-group">
         <input type="text" formControlName="calculation" placeholder="Calculation" required />
-        <span class="error" *ngIf="form.controls.calculation.invalid && form.controls.calculation.touched">Required</span>
+        <span class="error"
+          *ngIf="form.controls.calculation.invalid && form.controls.calculation.touched">Required</span>
       </div>
       <div class="field-group">
         <input type="text" formControlName="platform" placeholder="Platform" required />
@@ -30,15 +31,18 @@
       </div>
       <div class="field-group">
         <input type="text" formControlName="responsibleDGM" placeholder="Responsible DGM" required />
-        <span class="error" *ngIf="form.controls.responsibleDGM.invalid && form.controls.responsibleDGM.touched">Required</span>
+        <span class="error"
+          *ngIf="form.controls.responsibleDGM.invalid && form.controls.responsibleDGM.touched">Required</span>
       </div>
       <div class="field-group">
         <input type="text" formControlName="definedOLADetails" placeholder="Defined OLA Details" required />
-        <span class="error" *ngIf="form.controls.definedOLADetails.invalid && form.controls.definedOLADetails.touched">Required</span>
+        <span class="error"
+          *ngIf="form.controls.definedOLADetails.invalid && form.controls.definedOLADetails.touched">Required</span>
       </div>
       <div class="field-group">
         <input type="text" formControlName="dataSources" placeholder="Data Sources" required />
-        <span class="error" *ngIf="form.controls.dataSources.invalid && form.controls.dataSources.touched">Required</span>
+        <span class="error"
+          *ngIf="form.controls.dataSources.invalid && form.controls.dataSources.touched">Required</span>
       </div>
 
       <div class="actions">
@@ -83,11 +87,10 @@
           <td>{{ record.dataSources }}</td>
           <td>
             <button type="button" class="edit" (click)="onEdit(record)" [disabled]="saving">Edit</button>
-            <button type="button" class="delete" (click)="onDelete(record._id)" [disabled]="saving">Delete</button>
+            <button type="button" class="delete" (click)="onDelete(record.id!)" [disabled]="saving">Delete</button>
           </td>
         </tr>
       </tbody>
     </table>
   </section>
 </div>
-

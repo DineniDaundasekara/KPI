@@ -5,8 +5,8 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
 
 type ActivityRecord = {
-  _id: string;
-  no: number | string;
+  id?: number; // Backend uses 'id' (int)
+  no: string;
   kpi: string;
   target: string;
   calculation: string;
@@ -15,20 +15,6 @@ type ActivityRecord = {
   definedOLADetails: string;
   dataSources: string;
 };
-
-const MOCK_ACTIVITY_RECORDS: ActivityRecord[] = [
-  {
-    _id: '67528f98b576da39f9897dbd',
-    no: 4,
-    kpi: 'Customer Satisfaction Score',
-    target: '85%',
-    calculation: 'Survey data',
-    platform: 'Customer Feedback System',
-    responsibleDGM: 'Pro. DGM',
-    definedOLADetails: 'Response time within 24 hours',
-    dataSources: 'Customer surveys, feedback forms'
-  }
-];
 
 @Component({
   selector: 'app-admin-tm-activity-plan',
@@ -42,8 +28,8 @@ export class AdminTmActivityPlanComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
 
   pageTitle = 'TM Activity Plan';
-  records: ActivityRecord[] = [...MOCK_ACTIVITY_RECORDS];
-  editingId: string | null = null;
+  records: ActivityRecord[] = [];
+  editingId: number | null = null;
   loading = false;
   saving = false;
   errorMessage = '';
@@ -67,16 +53,15 @@ export class AdminTmActivityPlanComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
     this.http
-      .get<ActivityRecord[]>('/api/repeated-hardcode-tab1')
+      .get<ActivityRecord[]>('http://localhost:5043/api/TmActivityPlans') // Connect to real API
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: response => {
-          this.records = response?.length ? response : [...MOCK_ACTIVITY_RECORDS];
+          this.records = response || [];
         },
         error: err => {
           console.error('Failed to fetch data', err);
-          this.errorMessage = 'Unable to load TM activities right now. Showing sample data.';
-          this.records = [...MOCK_ACTIVITY_RECORDS];
+          this.errorMessage = 'Unable to load TM activities.';
         }
       });
   }
@@ -87,10 +72,11 @@ export class AdminTmActivityPlanComponent implements OnInit {
       return;
     }
 
-    const payload = this.form.getRawValue();
+    const formValue = this.form.getRawValue();
+    const payload = { ...formValue, no: String(formValue.no) };
     const request$ = this.editingId
-      ? this.http.put(`/api/repeated-hardcode-tab1/update/${this.editingId}`, payload)
-      : this.http.post('/api/repeated-hardcode-tab1/add', payload);
+      ? this.http.put(`http://localhost:5043/api/TmActivityPlans/${this.editingId}`, { id: this.editingId, ...payload })
+      : this.http.post('http://localhost:5043/api/TmActivityPlans', payload);
 
     this.saving = true;
     request$
@@ -108,9 +94,9 @@ export class AdminTmActivityPlanComponent implements OnInit {
   }
 
   onEdit(record: ActivityRecord): void {
-    this.editingId = record._id;
+    this.editingId = record.id!;
     this.form.patchValue({
-      no: record.no?.toString() ?? '',
+      no: record.no,
       kpi: record.kpi,
       target: record.target,
       calculation: record.calculation,
@@ -121,14 +107,14 @@ export class AdminTmActivityPlanComponent implements OnInit {
     });
   }
 
-  onDelete(id: string): void {
+  onDelete(id: number): void {
     if (!window.confirm('Are you sure you want to delete this item?')) {
       return;
     }
 
     this.saving = true;
     this.http
-      .delete(`/api/repeated-hardcode-tab1/delete/${id}`)
+      .delete(`http://localhost:5043/api/TmActivityPlans/${id}`)
       .pipe(finalize(() => (this.saving = false)))
       .subscribe({
         next: () => this.fetchData(),
@@ -157,4 +143,3 @@ export class AdminTmActivityPlanComponent implements OnInit {
     this.editingId = null;
   }
 }
-
