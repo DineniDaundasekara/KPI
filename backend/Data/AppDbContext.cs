@@ -66,7 +66,7 @@ namespace backend.Data
             // --------------------------------------------------
             modelBuilder.Entity<TmActivity1>(entity =>
             {
-                entity.ToTable("tmtable1");
+                entity.ToTable("tmtable1", "dbo");
 
                 entity.HasKey(x => x.Id);
 
@@ -89,7 +89,7 @@ namespace backend.Data
             // --------------------------------------------------
             modelBuilder.Entity<TowerKpi>(entity =>
             {
-                entity.ToTable("kpitowertable_2025");
+                entity.ToTable("kpitowertable_2025", "dbo");
 
                 entity.HasKey(x => x.Id);
 
@@ -107,7 +107,30 @@ namespace backend.Data
             });
 
             // --------------------------------------------------
-            // IP NETWORK OPERATIONS KPI (FORM 6) ✅ FIX
+            // MAINTENANCE ROUTINE ✅ FIX
+            // --------------------------------------------------
+            modelBuilder.Entity<MtncRoutine>(entity =>
+            {
+                entity.ToTable("mtncroutinetable1", "dbo");
+
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id).HasColumnName("id").HasMaxLength(50);
+                entity.Property(x => x.No).HasColumnName("no"); // tinyint/smallint handled in entity
+                entity.Property(x => x.Kpi).HasColumnName("kpi");
+                entity.Property(x => x.Target).HasColumnName("target");
+                entity.Property(x => x.Calculation).HasColumnName("calculation");
+                entity.Property(x => x.Platform).HasColumnName("platform");
+                entity.Property(x => x.ResponsibleDGM).HasColumnName("responsibleDGM");
+                entity.Property(x => x.DefinedOLADetails).HasColumnName("definedOLADetails");
+                entity.Property(x => x.DataSources).HasColumnName("dataSources");
+                entity.Property(x => x.CreatedAt).HasColumnName("createdAt");
+                entity.Property(x => x.UpdatedAt).HasColumnName("updatedAt");
+                entity.Property(x => x.V).HasColumnName("v");
+            });
+
+            // --------------------------------------------------
+            // IP NETWORK OPERATIONS KPI (FORM 6)
             // --------------------------------------------------
             modelBuilder.Entity<IpNwOpKpi>(entity =>
             {
@@ -115,24 +138,12 @@ namespace backend.Data
 
                 entity.HasKey(x => x.Id);
 
-                entity.Property(x => x.Id)
-                      .HasColumnName("id")
-                      .HasMaxLength(50);
-
-                entity.Property(x => x.No)
-                      .HasColumnName("no");
-
-                entity.Property(x => x.NetworkEngineerKpi)
-                      .HasColumnName("network_engineer_kpi");
-
-                entity.Property(x => x.Division)
-                      .HasColumnName("division");
-
-                entity.Property(x => x.Section)
-                      .HasColumnName("section");
-
-                entity.Property(x => x.KpiPercent)
-                      .HasColumnName("kpi_percent");
+                entity.Property(x => x.Id).HasColumnName("id").HasMaxLength(50);
+                entity.Property(x => x.No).HasColumnName("no");
+                entity.Property(x => x.NetworkEngineerKpi).HasColumnName("network_engineer_kpi");
+                entity.Property(x => x.Division).HasColumnName("division");
+                entity.Property(x => x.Section).HasColumnName("section");
+                entity.Property(x => x.KpiPercent).HasColumnName("kpi_percent");
             });
 
             base.OnModelCreating(modelBuilder);
