@@ -54,6 +54,11 @@ namespace backend.Data
         // =========================
         public DbSet<TowerKpi> TowerKpis { get; set; } = null!;
 
+        // =========================
+        // IP NW OP KPI (FORM 6)
+        // =========================
+        public DbSet<IpNwOpKpi> IpNwOpKpis { get; set; } = null!;
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // --------------------------------------------------
@@ -99,6 +104,35 @@ namespace backend.Data
                 entity.Property(x => x.V).HasColumnName("v");
                 entity.Property(x => x.Month).HasColumnName("month");
                 entity.Property(x => x.Year).HasColumnName("year");
+            });
+
+            // --------------------------------------------------
+            // IP NETWORK OPERATIONS KPI (FORM 6) ✅ FIX
+            // --------------------------------------------------
+            modelBuilder.Entity<IpNwOpKpi>(entity =>
+            {
+                entity.ToTable("form6_kpi", "dbo");
+
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("id")
+                      .HasMaxLength(50);
+
+                entity.Property(x => x.No)
+                      .HasColumnName("no");
+
+                entity.Property(x => x.NetworkEngineerKpi)
+                      .HasColumnName("network_engineer_kpi");
+
+                entity.Property(x => x.Division)
+                      .HasColumnName("division");
+
+                entity.Property(x => x.Section)
+                      .HasColumnName("section");
+
+                entity.Property(x => x.KpiPercent)
+                      .HasColumnName("kpi_percent");
             });
 
             base.OnModelCreating(modelBuilder);

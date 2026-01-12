@@ -2,14 +2,15 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 
 interface Form6Row {
-  id: string;
+  _id: string;
   no: number;
-  networkEngineerKpi: string;
+  network_engineer_kpi: string;
   division: string;
   section: string;
-  kpiPercent: number;
+  kpi_percent: number; // keep as number for sorting + display
 }
 
 @Component({
@@ -22,17 +23,17 @@ interface Form6Row {
 export class AdminIpNwOpComponent implements OnInit {
   pageTitle = 'Admin — IP NW OP';
 
-  // ✅ change port if your backend uses different one
-  private readonly baseUrl = '/api/IpNwOp';
+  // backend base url
+  private apiBase = 'http://localhost:5043';
 
   data: Form6Row[] = [];
 
   form = {
     no: '',
-    networkEngineerKpi: '',
+    network_engineer_kpi: '',
     division: '',
     section: '',
-    kpiPercent: '',
+    kpi_percent: '',
   };
 
   editingId: string | null = null;
@@ -46,31 +47,32 @@ export class AdminIpNwOpComponent implements OnInit {
     this.loadData();
   }
 
+  // ✅ only initial load + manual retry uses this
   loadData(): void {
     this.loading = true;
     this.error = null;
 
-    this.http.get<Form6Row[]>(this.baseUrl).subscribe({
+    this.http.get<Form6Row[]>(`${this.apiBase}/form6/`).subscribe({
       next: (res) => {
         this.data = Array.isArray(res) ? res : [];
+        this.sortData();
         this.loading = false;
       },
       error: (err) => {
-        console.error('Load error:', err);
+        console.error(err);
         this.data = [];
-        this.error = 'Failed to load data from backend.';
+        this.error = 'Failed to load data. Please try again.';
         this.loading = false;
       },
     });
   }
 
-  // ✅ required because your HTML uses handleInputChange(...)
   handleInputChange(name: string, value: string): void {
     const fieldMapping: Record<string, keyof typeof this.form> = {
-      kpi: 'networkEngineerKpi',
+      kpi: 'network_engineer_kpi',
       target: 'division',
       calculation: 'section',
-      platform: 'kpiPercent',
+      platform: 'kpi_percent',
     };
 
     const fieldName = fieldMapping[name] || (name as keyof typeof this.form);
@@ -81,25 +83,53 @@ export class AdminIpNwOpComponent implements OnInit {
     this.error = null;
 
     const payload = {
-      id: this.editingId ?? undefined,
-      no: this.form.no ? Number(this.form.no) : 0,
-      networkEngineerKpi: this.form.networkEngineerKpi,
-      division: this.form.division,
-      section: this.form.section,
-      kpiPercent: this.form.kpiPercent ? Number(this.form.kpiPercent) : 0,
+      no: Number(this.form.no),
+      network_engineer_kpi: this.form.network_engineer_kpi.trim(),
+      division: this.form.division.trim(),
+      section: this.form.section.trim(),
+      kpi_percent: Number(this.form.kpi_percent),
     };
 
+    if (
+      !payload.no ||
+      !payload.network_engineer_kpi ||
+      !payload.division ||
+      !payload.section ||
+      Number.isNaN(payload.kpi_percent)
+    ) {
+      this.error = 'Please fill all fields correctly.';
+      return;
+    }
+
     try {
+      // ✅ do NOT set loading for full page here (avoid big loading screen)
       if (this.editingId) {
-        await this.http.put(`${this.baseUrl}/${this.editingId}`, payload).toPromise();
+        // UPDATE
+        await firstValueFrom(
+          this.http.put(`${this.apiBase}/form6/update/${this.editingId}`, payload)
+        );
+
+        // 🔥 update local array instantly
+        const idx = this.data.findIndex((x) => x._id === this.editingId);
+        if (idx !== -1) {
+          this.data[idx] = { _id: this.editingId, ...payload };
+          this.sortData();
+        }
       } else {
-        await this.http.post(this.baseUrl, payload).toPromise();
+        // ADD
+        const res: any = await firstValueFrom(
+          this.http.post(`${this.apiBase}/form6/add`, payload)
+        );
+
+        // 🔥 insert locally instantly
+        const newId = res?._id || res?.id || crypto.randomUUID();
+        this.data.push({ _id: newId, ...payload });
+        this.sortData();
       }
 
       this.resetForm();
-      this.loadData();
     } catch (err) {
-      console.error('Save error:', err);
+      console.error(err);
       this.error = 'Failed to save data. Please try again.';
     }
   }
@@ -107,12 +137,13 @@ export class AdminIpNwOpComponent implements OnInit {
   editRow(item: Form6Row): void {
     this.form = {
       no: String(item.no ?? ''),
-      networkEngineerKpi: item.networkEngineerKpi ?? '',
+      network_engineer_kpi: item.network_engineer_kpi ?? '',
       division: item.division ?? '',
       section: item.section ?? '',
-      kpiPercent: String(item.kpiPercent ?? ''),
+      kpi_percent: String(item.kpi_percent ?? ''),
     };
-    this.editingId = item.id;
+
+    this.editingId = item._id;
   }
 
   cancelEdit(): void {
@@ -124,21 +155,27 @@ export class AdminIpNwOpComponent implements OnInit {
     if (!ok) return;
 
     try {
-      await this.http.delete(`${this.baseUrl}/${id}`).toPromise();
-      this.loadData();
+      await firstValueFrom(this.http.delete(`${this.apiBase}/form6/delete/${id}`));
+
+      // 🔥 remove locally instantly
+      this.data = this.data.filter((x) => x._id !== id);
     } catch (err) {
-      console.error('Delete error:', err);
+      console.error(err);
       this.error = 'Failed to delete item. Please try again.';
     }
+  }
+
+  private sortData(): void {
+    this.data = [...this.data].sort((a, b) => (a.no ?? 0) - (b.no ?? 0));
   }
 
   resetForm(): void {
     this.form = {
       no: '',
-      networkEngineerKpi: '',
+      network_engineer_kpi: '',
       division: '',
       section: '',
-      kpiPercent: '',
+      kpi_percent: '',
     };
     this.editingId = null;
   }
