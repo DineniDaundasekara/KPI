@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RegionService, Region } from '../../../../services/region.service';
 import * as ExcelJS from 'exceljs';
 import { firstValueFrom } from 'rxjs';
 
@@ -427,7 +428,10 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 	private friendlyToDbKey: Record<string, string> = {};
 	private filtersInitialized = false;
 
-	constructor(private http: HttpClient) {}
+	constructor(
+		private http: HttpClient,
+		private regionService: RegionService
+	) {}
 
 	ngOnInit(): void {
 		this.buildFriendlyMap();
@@ -506,19 +510,31 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 	}
 
 	loadRegionTable(): void {
-		this.http.get<any>('/api/region-table').subscribe({
-			next: (res) => {
-				const rows = Array.isArray(res?.data) && res.data.length
-					? res.data
-					: Array.isArray(res) && res.length
-					? res
-					: LOCAL_REGION_TABLE;
+		this.regionService.getAll().subscribe({
+			next: (res: Region[] | any[]) => {
+				const source = Array.isArray(res) ? res : [];
 
-				this.regionTable = [...rows];
+				const mapped: RegionRow[] = source.map((item: any) => ({
+					region: item.region ?? item.Region ?? '',
+					province: item.province ?? item.Province ?? '',
+					networkEngineer:
+						item.networkEngineer ??
+						item.networkengineer ??
+						item.NetworkEngineer ??
+						'',
+					lea:
+						item.lea ??
+						item.leacode ??
+						item.leaCode ??
+						item.LEA ??
+						'',
+				}));
+
+				this.regionTable = mapped.length ? mapped : [...LOCAL_REGION_TABLE];
 				this.initializeFilters();
 			},
 			error: (err) => {
-				console.error('Failed to fetch region table:', err);
+				console.error('Failed to fetch region table from API, using local fallback:', err);
 				this.regionTable = [...LOCAL_REGION_TABLE];
 				this.initializeFilters();
 			},
