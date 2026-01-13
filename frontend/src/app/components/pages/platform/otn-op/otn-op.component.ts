@@ -4,6 +4,8 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import * as ExcelJS from 'exceljs';
 import { firstValueFrom, forkJoin } from 'rxjs';
+import { Form8Service } from '../../../../services/form8.service';
+import { KpiService, KpiRecord } from '../../../../services/kpi.service';
 
 type Dict<T = any> = Record<string, T>;
 
@@ -493,6 +495,8 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 	form8Data: Form8Entry[] = [];
 	form9Data: Form9Entry[] = [];
 	regionTable: RegionRow[] = [...LOCAL_REGION_TABLE];
+	adminForm8Rows: any[] = [];
+	adminForm9Rows: KpiRecord[] = [];
 
 	loading = true;
 	error: string | null = null;
@@ -555,7 +559,11 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 	private friendlyToDbKey: Record<string, string> = {};
 	private filtersInitialized = false;
 
-	constructor(private http: HttpClient) {}
+	constructor(
+		private http: HttpClient,
+		private form8Service: Form8Service,
+		private kpiService: KpiService
+	) {}
 
 	ngOnInit(): void {
 		this.buildFriendlyMap();
@@ -717,38 +725,20 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 		this.error = null;
 
 		forkJoin({
-			form8: this.http.get<Form8Entry[]>('/form8'),
-			form9: this.http.get<Form9Entry[]>('/form9'),
+			form8: this.form8Service.getAll(),
+			form9: this.kpiService.getAll(),
 		}).subscribe({
 			next: ({ form8, form9 }) => {
-				const has8 = Array.isArray(form8) && form8.length;
-				const has9 = Array.isArray(form9) && form9.length;
-
-				this.form8Data = (has8 ? form8 : MOCK_FORM8_DATA).map((entry) => ({
-					...entry,
-					formType: 'form8',
-					isModified: false,
-				}));
-
-				this.form9Data = (has9 ? form9 : MOCK_FORM9_DATA).map((entry) => ({
-					...entry,
-					formType: 'form9',
-					isModified: false,
-				}));
-
-				if (!has8 || !has9) {
-					this.showToast('danger', 'Backend data incomplete — showing mock KPIs.');
-				}
-
+				this.adminForm8Rows = Array.isArray(form8) ? form8 : [];
+				this.adminForm9Rows = Array.isArray(form9) ? form9 : [];
 				this.loading = false;
 			},
 			error: (err) => {
-				console.error('Failed to load OTN data:', err);
-				this.form8Data = [...MOCK_FORM8_DATA];
-				this.form9Data = [...MOCK_FORM9_DATA];
+				console.error('Failed to load OTN admin data:', err);
+				this.adminForm8Rows = [];
+				this.adminForm9Rows = [];
 				this.loading = false;
-				this.error = null;
-				this.showToast('danger', 'Backend unreachable — mock data in use.');
+				this.error = 'Failed to load OTN KPI data.';
 			},
 		});
 	}
