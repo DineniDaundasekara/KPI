@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 export interface Form7Record {
+  [x: string]: any;
   id?: string;
   no: number;
   networkEngineerKpi: string;
