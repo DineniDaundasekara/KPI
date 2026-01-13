@@ -3,6 +3,8 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import * as XLSX from 'xlsx';
+import { Form4ApiService, ServiceFulfilmentKpi } from '../../../../services/form4api.service';
+import { RegionService, Region } from '../../../../services/region.service';
 
 interface KpiData {
   _id: { $oid: string } | number;
@@ -50,6 +52,7 @@ export class ServiceFulfilmentComponent implements OnInit {
   // Data
   data: KpiData[] = [];
   regionTable: RegionData[] = [];
+  adminKpiRows: ServiceFulfilmentKpi[] = [];
   editingCell: { rowId: string | number | null, key: string | null } = { rowId: null, key: null };
   
   // Dropdown options
@@ -598,9 +601,14 @@ export class ServiceFulfilmentComponent implements OnInit {
     { id: 20, region: 'Metro', province: 'Metro 1', networkEngineer: 'NWWPC-1 (CEN/HK/MD)', lea: 'CENHKMD1' }
   ];
 
-  constructor(private toastr: ToastrService) {}
+  constructor(
+    private toastr: ToastrService,
+    private form4Api: Form4ApiService,
+    private regionService: RegionService
+  ) {}
 
   ngOnInit() {
+    this.loadRegionTable();
     this.loadData();
     this.checkUserRole();
     this.setupEditPermissionCheck();
@@ -608,18 +616,37 @@ export class ServiceFulfilmentComponent implements OnInit {
 
   loadData() {
     this.loading = true;
-    setTimeout(() => {
-      this.regionTable = [...this.regionData];
-      this.data = [...this.realKpiData];
-      this.loading = false;
-      
-      // Initialize dropdown options
-      const regions = this.getUniqueRegions();
-      if (regions.length > 0) {
-        this.formValues.dropdown1 = regions[0];
-        this.updateDropdown2Options();
+    this.form4Api.getAll().subscribe({
+      next: (kpis) => {
+        this.adminKpiRows = Array.isArray(kpis) ? kpis : [];
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load Service Fulfilment admin data:', err);
+        this.adminKpiRows = [];
+        this.loading = false;
+        this.error = 'Failed to load Service Fulfilment KPI data.';
       }
-    }, 800);
+    });
+  }
+
+  loadRegionTable() {
+    this.regionService.getAll().subscribe({
+      next: (res: Region[] | any[]) => {
+        const source = Array.isArray(res) ? res : [];
+        const mapped: RegionData[] = source.map((item: any) => ({
+          region: item.region ?? item.Region ?? '',
+          province: item.province ?? item.Province ?? '',
+          networkEngineer: item.networkEngineer ?? item.networkengineer ?? item.NetworkEngineer ?? '',
+          lea: item.lea ?? item.leacode ?? item.leaCode ?? item.LEA ?? ''
+        }));
+        this.regionTable = mapped.length ? mapped : [...this.regionData];
+      },
+      error: (err) => {
+        console.error('Failed to fetch region table from API, using local fallback:', err);
+        this.regionTable = [...this.regionData];
+      }
+    });
   }
 
   checkUserRole() {

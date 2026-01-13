@@ -6,7 +6,7 @@
     <div class="mt-3">
       <small class="text-muted">
         <i class="bi bi-info-circle me-1"></i>
-        {{ data.length }} KPIs loaded •
+        {{ adminRows.length }} KPIs loaded •
         <span [class.text-success]="isEditingAllowed" [class.text-warning]="!isEditingAllowed">
           <i class="bi" [ngClass]="isEditingAllowed ? 'bi-check-circle' : 'bi-exclamation-circle'"></i>
           {{ isEditingAllowed ? 'Edit mode enabled (Platform Admin)' : 'View only mode (User)' }}
@@ -122,15 +122,15 @@
     <div class="selected-filters mb-4">
       <div class="filter-chip">
         <span class="filter-label">R-GM:</span>
-        <span class="filter-value">{{ formValues.dropdown1 || 'All Regions' }}</span>
+        <span class="filter-value">{{ formValues.dropdown1 || 'Select an option' }}</span>
       </div>
       <div class="filter-chip">
         <span class="filter-label">P-DGM:</span>
-        <span class="filter-value">{{ formValues.dropdown2 || 'All P-DGM' }}</span>
+        <span class="filter-value">{{ formValues.dropdown2 || 'Select an option' }}</span>
       </div>
       <div class="filter-chip">
         <span class="filter-label">NW EE:</span>
-        <span class="filter-value">{{ formValues.dropdown3 || 'All Engineers' }}</span>
+        <span class="filter-value">{{ formValues.dropdown3 || 'Select an option' }}</span>
       </div>
       <div class="filter-chip">
         <span class="filter-label">RTOM AREA:</span>
@@ -138,7 +138,7 @@
           {{
             formValues.dropdown4
               ? (optionMapping[formValues.dropdown4] || formValues.dropdown4)
-              : 'All Areas'
+              : 'Select an option'
           }}
         </span>
       </div>
@@ -162,171 +162,26 @@
                 <th>Network Engineer KPI</th>
                 <th>Division</th>
                 <th>Section</th>
-                <th>KPI Percent</th>
-                <th *ngIf="selectedKey">{{ optionMapping[selectedKey] || selectedKey }}</th>
+                <th>KPI %</th>
               </tr>
             </thead>
 
             <tbody>
-              <ng-container *ngFor="let entry of data">
-                <!-- Main row -->
-                <tr>
-                  <td>{{ entry.no }}</td>
-                  <td><b>{{ entry.network_engineer_kpi }}</b></td>
-                  <td>{{ entry.division }}</td>
-                  <td>{{ entry.section }}</td>
-                  <td>{{ entry.kpi_percent }}</td>
+              <tr *ngFor="let row of adminRows">
+                <td>{{ row.no }}</td>
+                <td>{{ row.network_engineer_kpi }}</td>
+                <td>{{ row.division }}</td>
+                <td>{{ row.section }}</td>
+                <td>{{ row.kpi_percent }}</td>
+              </tr>
 
-                  <td *ngIf="selectedKey">
-                    {{
-                      (entry.total_minutes?.[selectedKey] || entry.unavailable_minutes?.[selectedKey] || entry.total_nodes?.[selectedKey])
-                        ? (calculatePercentage(entry.total_minutes?.[selectedKey], entry.unavailable_minutes?.[selectedKey], entry.total_nodes?.[selectedKey]) | number:'1.2-2') + '%'
-                        : ''
-                    }}
-                  </td>
-                </tr>
-
-                <!-- Sub rows only when an RTOM area is selected -->
-                <ng-container *ngIf="selectedKey">
-                  <!-- Unavailable Minutes -->
-                  <tr class="sub-row">
-                    <td colspan="5" class="sub-label">Unavailable Minutes</td>
-                    <td>
-                      <ng-container
-                        *ngIf="editCell.rowId === entry._id && editCell.key === ('unavailable_minutes.' + selectedKey); else viewUM"
-                      >
-                        <div class="edit-box">
-                          <input
-                            type="text"
-                            class="form-control form-control-sm"
-                            [value]="editCell.value"
-                            (input)="onEditInput($any($event.target).value)"
-                            autofocus
-                          />
-                          <div class="edit-actions">
-                            <button type="button" class="btn btn-success btn-sm table-button" (click)="doneEdit()">Done</button>
-                            <button type="button" class="btn btn-secondary btn-sm table-button" (click)="cancelEdit()">Cancel</button>
-                          </div>
-                        </div>
-                      </ng-container>
-
-                      <ng-template #viewUM>
-                        <div class="cell-view">
-                          <span>{{ entry.unavailable_minutes?.[selectedKey] ?? '' }}</span>
-                          <button
-                            *ngIf="isEditingAllowed"
-                            type="button"
-                            class="btn btn-outline-warning btn-sm table-button"
-                            (click)="startEdit(entry, 'unavailable_minutes')"
-                          >
-                            Edit
-                          </button>
-                        </div>
-                      </ng-template>
-                    </td>
-                  </tr>
-
-                  <!-- Total Minutes -->
-                  <tr class="sub-row">
-                    <td colspan="5" class="sub-label">Total Minutes</td>
-                    <td>
-                      <ng-container
-                        *ngIf="editCell.rowId === entry._id && editCell.key === ('total_minutes.' + selectedKey); else viewTM"
-                      >
-                        <div class="edit-box">
-                          <input
-                            type="text"
-                            class="form-control form-control-sm"
-                            [value]="editCell.value"
-                            (input)="onEditInput($any($event.target).value)"
-                            autofocus
-                          />
-                          <div class="edit-actions">
-                            <button type="button" class="btn btn-success btn-sm table-button" (click)="doneEdit()">Done</button>
-                            <button type="button" class="btn btn-secondary btn-sm table-button" (click)="cancelEdit()">Cancel</button>
-                          </div>
-                        </div>
-                      </ng-container>
-
-                      <ng-template #viewTM>
-                        <div class="cell-view">
-                          <span>{{ entry.total_minutes?.[selectedKey] ?? '' }}</span>
-                          <button
-                            *ngIf="isEditingAllowed"
-                            type="button"
-                            class="btn btn-outline-warning btn-sm table-button"
-                            (click)="startEdit(entry, 'total_minutes')"
-                          >
-                            Edit
-                          </button>
-                        </div>
-                      </ng-template>
-                    </td>
-                  </tr>
-
-                  <!-- Total Nodes -->
-                  <tr class="sub-row">
-                    <td colspan="5" class="sub-label">Total Nodes</td>
-                    <td>
-                      <ng-container
-                        *ngIf="editCell.rowId === entry._id && editCell.key === ('total_nodes.' + selectedKey); else viewTN"
-                      >
-                        <div class="edit-box">
-                          <input
-                            type="text"
-                            class="form-control form-control-sm"
-                            [value]="editCell.value"
-                            (input)="onEditInput($any($event.target).value)"
-                            autofocus
-                          />
-                          <div class="edit-actions">
-                            <button type="button" class="btn btn-success btn-sm table-button" (click)="doneEdit()">Done</button>
-                            <button type="button" class="btn btn-secondary btn-sm table-button" (click)="cancelEdit()">Cancel</button>
-                          </div>
-                        </div>
-                      </ng-container>
-
-                      <ng-template #viewTN>
-                        <div class="cell-view">
-                          <span>{{ entry.total_nodes?.[selectedKey] ?? '' }}</span>
-                          <button
-                            *ngIf="isEditingAllowed"
-                            type="button"
-                            class="btn btn-outline-warning btn-sm table-button"
-                            (click)="startEdit(entry, 'total_nodes')"
-                          >
-                            Edit
-                          </button>
-                        </div>
-                      </ng-template>
-                    </td>
-                  </tr>
-                </ng-container>
-              </ng-container>
-
-              <tr *ngIf="data.length === 0">
-                <td colspan="6" class="text-center py-5 text-muted">
-                  No KPI data found. Try changing filters.
+              <tr *ngIf="adminRows.length === 0">
+                <td colspan="5" class="text-center py-5 text-muted">
+                  No KPI data found.
                 </td>
               </tr>
             </tbody>
           </table>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="p-3 text-center">
-          <button
-            type="button"
-            class="btn btn-primary me-3"
-            (click)="saveAllChanges()"
-            [disabled]="!isEditingAllowed || loading"
-          >
-            <i class="bi bi-save me-1"></i>Save All Changes
-          </button>
-
-          <button type="button" class="btn btn-success" (click)="exportToExcel()" [disabled]="loading">
-            <i class="bi bi-file-earmark-excel me-1"></i>Export to Excel
-          </button>
         </div>
       </div>
     </div>
