@@ -3,6 +3,8 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import * as ExcelJS from 'exceljs';
+import { Form6Service, Form6Record } from '../../../../services/form6.service';
+import { RegionService, Region } from '../../../../services/region.service';
 
 const MOCK_FORM6_DATA: Form6Entry[] = [
   {
@@ -148,6 +150,7 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   // placeholder data; replace with backend payload when ready
   data: Form6Entry[] = [...MOCK_FORM6_DATA];
   regionTable: RegionRow[] = [...LOCAL_REGION_TABLE];
+  adminRows: Form6Record[] = [];
 
   loading = true;
   error: string | null = null;
@@ -215,7 +218,11 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   private friendlyToDbKey: Record<string, string> = {};
   private filtersInitialized = false;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    private form6Service: Form6Service,
+    private regionService: RegionService
+  ) {}
 
   ngOnInit(): void {
     this.buildFriendlyMap();
@@ -300,10 +307,16 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   }
 
   loadRegionTable(): void {
-    this.http.get<any>('/api/region-table').subscribe({
-      next: (res) => {
-        const rows = Array.isArray(res?.data) && res.data.length ? res.data : LOCAL_REGION_TABLE;
-        this.regionTable = [...rows];
+    this.regionService.getAll().subscribe({
+      next: (res: Region[] | any[]) => {
+        const source = Array.isArray(res) ? res : [];
+        const mapped: RegionRow[] = source.map((item: any) => ({
+          region: item.region ?? item.Region ?? '',
+          province: item.province ?? item.Province ?? '',
+          networkEngineer: item.networkEngineer ?? item.networkengineer ?? item.NetworkEngineer ?? '',
+          lea: item.lea ?? item.leacode ?? item.leaCode ?? item.LEA ?? ''
+        }));
+        this.regionTable = mapped.length ? mapped : [...LOCAL_REGION_TABLE];
         this.initializeFilters();
       },
       error: (err) => {
@@ -315,10 +328,21 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   }
 
   loadData(): void {
-    // Assign mock data for now; swap back to HTTP call when backend is ready.
-    this.loading = false;
+    this.loading = true;
     this.error = null;
-    this.data = [...MOCK_FORM6_DATA];
+
+    this.form6Service.getAll().subscribe({
+      next: (records) => {
+        this.adminRows = Array.isArray(records) ? records : [];
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load IP NW OP admin data:', err);
+        this.adminRows = [];
+        this.loading = false;
+        this.error = 'Failed to load IP NW OP KPI data.';
+      }
+    });
   }
 
   // -------------------------
@@ -381,37 +405,13 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
 
   private initializeFilters(): void {
     if (this.filtersInitialized) return;
-    if (!this.regions.length) return;
-
-    const firstRegion = this.regions[0];
-    if (!firstRegion) return;
-
-    this.formValues.dropdown1 = firstRegion;
-    this.updateDropdown2Options(firstRegion);
-
-    const firstProvince = this.dropdown2Options[0];
-    if (!firstProvince) {
-      this.filtersInitialized = true;
-      return;
-    }
-
-    this.formValues.dropdown2 = firstProvince;
-    this.updateDropdown3Options(firstProvince);
-
-    const firstEngineer = this.dropdown3Options[0];
-    if (!firstEngineer) {
-      this.filtersInitialized = true;
-      return;
-    }
-
-    this.formValues.dropdown3 = firstEngineer;
-    this.updateDropdown4Options(firstEngineer);
-
-    const firstArea = this.dropdown4Options[0];
-    if (firstArea) {
-      this.formValues.dropdown4 = firstArea;
-    }
-
+    
+    // Don't auto-select, leave all as empty strings
+    this.formValues.dropdown1 = '';
+    this.formValues.dropdown2 = '';
+    this.formValues.dropdown3 = '';
+    this.formValues.dropdown4 = '';
+    
     this.filtersInitialized = true;
   }
 
