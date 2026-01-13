@@ -622,36 +622,17 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 	}
 
 	private initializeFilters(): void {
-		if (this.filtersInitialized) return;
-		if (!this.regions.length) return;
-
-		const firstRegion = this.regions[0];
-		this.formValues.dropdown1 = firstRegion;
-		this.updateDropdown2Options(firstRegion);
-
-		const firstProvince = this.dropdown2Options[0];
-		if (!firstProvince) {
-			this.filtersInitialized = true;
-			return;
-		}
-
-		this.formValues.dropdown2 = firstProvince;
-		this.updateDropdown3Options(firstProvince);
-
-		const firstEngineer = this.dropdown3Options[0];
-		if (!firstEngineer) {
-			this.filtersInitialized = true;
-			return;
-		}
-
-		this.formValues.dropdown3 = firstEngineer;
-		this.updateDropdown4Options(firstEngineer);
-
-		const firstArea = this.dropdown4Options[0];
-		if (firstArea) {
-			this.formValues.dropdown4 = firstArea;
-		}
-
+		// Do not auto-select any filters; keep "Select an option" as default
+		// and let the user drive all selections consistently with other pages.
+		this.formValues = {
+			dropdown1: '',
+			dropdown2: '',
+			dropdown3: '',
+			dropdown4: '',
+		};
+		this.dropdown2Options = [];
+		this.dropdown3Options = [];
+		this.dropdown4Options = [];
 		this.filtersInitialized = true;
 	}
 
