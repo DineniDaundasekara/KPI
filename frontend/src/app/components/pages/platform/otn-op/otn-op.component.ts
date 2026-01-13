@@ -6,6 +6,7 @@ import * as ExcelJS from 'exceljs';
 import { firstValueFrom, forkJoin } from 'rxjs';
 import { Form8Service } from '../../../../services/form8.service';
 import { KpiService, KpiRecord } from '../../../../services/kpi.service';
+import { RegionService, Region } from '../../../../services/region.service';
 
 type Dict<T = any> = Record<string, T>;
 
@@ -562,7 +563,8 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 	constructor(
 		private http: HttpClient,
 		private form8Service: Form8Service,
-		private kpiService: KpiService
+		private kpiService: KpiService,
+		private regionService: RegionService
 	) {}
 
 	ngOnInit(): void {
@@ -701,15 +703,16 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 	}
 
 	loadRegionTable(): void {
-		this.http.get<any>('/api/region-table').subscribe({
-			next: (res) => {
-				const rows = Array.isArray(res?.data) && res.data.length
-					? res.data
-					: Array.isArray(res) && res.length
-					? res
-					: LOCAL_REGION_TABLE;
-
-				this.regionTable = [...rows];
+		this.regionService.getAll().subscribe({
+			next: (res: Region[] | any[]) => {
+				const source = Array.isArray(res) ? res : [];
+				const mapped: RegionRow[] = source.map((item: any) => ({
+					region: item.region ?? item.Region ?? '',
+					province: item.province ?? item.Province ?? '',
+					networkEngineer: item.networkEngineer ?? item.networkengineer ?? item.NetworkEngineer ?? '',
+					lea: item.lea ?? item.leacode ?? item.leaCode ?? item.LEA ?? ''
+				}));
+				this.regionTable = mapped.length ? mapped : [...LOCAL_REGION_TABLE];
 				this.initializeFilters();
 			},
 			error: (err) => {
@@ -801,35 +804,13 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 
 	private initializeFilters(): void {
 		if (this.filtersInitialized) return;
-		if (!this.regions.length) return;
-
-		const firstRegion = this.regions[0];
-		this.formValues.dropdown1 = firstRegion;
-		this.updateDropdown2Options(firstRegion);
-
-		const firstProvince = this.dropdown2Options[0];
-		if (!firstProvince) {
-			this.filtersInitialized = true;
-			return;
-		}
-
-		this.formValues.dropdown2 = firstProvince;
-		this.updateDropdown3Options(firstProvince);
-
-		const firstEngineer = this.dropdown3Options[0];
-		if (!firstEngineer) {
-			this.filtersInitialized = true;
-			return;
-		}
-
-		this.formValues.dropdown3 = firstEngineer;
-		this.updateDropdown4Options(firstEngineer);
-
-		const firstArea = this.dropdown4Options[0];
-		if (firstArea) {
-			this.formValues.dropdown4 = firstArea;
-		}
-
+		
+		// Don't auto-select, leave all as empty strings
+		this.formValues.dropdown1 = '';
+		this.formValues.dropdown2 = '';
+		this.formValues.dropdown3 = '';
+		this.formValues.dropdown4 = '';
+		
 		this.filtersInitialized = true;
 	}
 
