@@ -26,8 +26,8 @@ namespace backend.Data
 
         // ✅ NEW: form4_2025 (Controller uses: _context.Form4_2025)
         public DbSet<Form4_2025> Form4_2025 { get; set; } = null!;
-
-        public DbSet<Form7_2025> Form7 { get; set; } = null!;
+        //bn Anw
+        public DbSet<Form7_2025> Form7_2025 { get; set; } = null!;
 
         // ✅ TM
         public DbSet<TmActivity1> TmActivity1 { get; set; } = null!;
@@ -369,7 +369,8 @@ namespace backend.Data
                       .HasColumnName("v")
                       .HasColumnType("int");
             });
-
+            //bbanw form 7 
+            // bbanw form7_2025 mapping
             modelBuilder.Entity<Form7_2025>(entity =>
             {
                 entity.ToTable("form7_2025", "dbo");
@@ -382,29 +383,55 @@ namespace backend.Data
 
                 entity.Property(x => x.No)
                       .HasColumnName("no")
-                      .HasColumnType("tinyint");
+                      .HasColumnType("int"); // DB is INT
 
                 entity.Property(x => x.NetworkEngineerKpi)
                       .HasColumnName("network_engineer_kpi")
-                      .HasMaxLength(500);
+                      .HasMaxLength(500)
+                      .IsRequired();
 
                 entity.Property(x => x.Division)
                       .HasColumnName("division")
-                      .HasMaxLength(200);
+                      .HasMaxLength(100)
+                      .IsRequired();
 
                 entity.Property(x => x.Section)
                       .HasColumnName("section")
-                      .HasMaxLength(200);
+                      .HasMaxLength(100)
+                      .IsRequired();
 
                 entity.Property(x => x.KpiPercent)
                       .HasColumnName("kpi_percent")
                       .HasColumnType("float");
 
+                entity.Property(x => x.UnavailableMinutes)
+                      .HasColumnName("unavailable_minutes")
+                      .HasColumnType("int");
+
+                entity.Property(x => x.TotalMinutes)
+                      .HasColumnName("total_minutes")
+                      .HasColumnType("int");
+
+                entity.Property(x => x.TotalNodes)
+                      .HasColumnName("total_nodes")
+                      .HasColumnType("int");
+
+                // ✅ FIX: DB is tinyint -> CLR byte
+                entity.Property(x => x.Month)
+                      .HasColumnName("month")
+                      .HasColumnType("tinyint");
+
+                // ✅ FIX: DB is smallint -> CLR short
+                entity.Property(x => x.Year)
+                      .HasColumnName("year")
+                      .HasColumnType("smallint");
+
                 entity.Property(x => x.UpdatedAt)
                       .HasColumnName("updatedAt")
-                      .HasColumnType("nvarchar(50)")
+                      .HasColumnType("nvarchar(30)")
                       .IsRequired();
             });
+
 
             // =========================
             // TM table mapping (tmtable1)

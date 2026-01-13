@@ -17,7 +17,7 @@ import { UserRegistrationComponent } from './components/pages/admin/user-registr
 import { AdminServiceFulfilmentComponent } from './components/pages/admin/service-fulfilment/service-fulfilment.component';
 import { RegionManagementComponent } from './components/pages/admin/region-management/region-management.component';
 import { AdminIpNwOpComponent } from './components/pages/admin/ip-nw-op/ip-nw-op.component';
-import { AdminBbAnwComponent } from './components/pages/admin/bb-anw/bb-anw.component';
+import { BbAnwComponent as AdminBbAnwComponent } from './components/pages/admin/bb-anw/bb-anw.component';
 import { OtnOp1Component } from './components/pages/admin/otn-op-1/otn-op-1.component';
 import { OtnOp2Component } from './components/pages/admin/otn-op-2/otn-op-2.component';
 import { AdminTowerMtceAchievementComponent } from './components/pages/admin/tower-mtce-achievement/tower-mtce-achievement.component';
