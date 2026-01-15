@@ -15,7 +15,7 @@ namespace backend.Models
         public byte No { get; set; }
 
         [Column("responsibility")]
-        [MaxLength(500)]
+        [MaxLength(100)]
         public string Responsibility { get; set; } = null!;
 
         [Column("frequency")]
@@ -23,11 +23,11 @@ namespace backend.Models
         public string Frequency { get; set; } = null!;
 
         [Column("weightage")]
-        [MaxLength(20)]
+        [MaxLength(50)]
         public string Weightage { get; set; } = null!;
 
         [Column("kpi")]
-        [MaxLength(200)]
+        [MaxLength(50)]
         public string Kpi { get; set; } = null!;
 
         [Column("month")]

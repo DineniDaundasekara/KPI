@@ -79,35 +79,44 @@ export class TowerMtceAchievementComponent implements OnInit {
   // =========================
   // CREATE / UPDATE
   // =========================
-  onSubmit(): void {
-    if (this.form.invalid) return;
+ onSubmit(): void {
+  if (this.form.invalid) return;
 
-    this.saving = true;
+  this.saving = true;
 
-    if (this.editingId) {
-      this.http.put(`${this.apiUrl}/${this.editingId}`, this.form.value).subscribe({
-        next: () => {
-          this.resetForm();
-          this.loadData();
-        },
-        error: () => {
-          this.errorMessage = 'Failed to update KPI';
-          this.saving = false;
-        }
-      });
-    } else {
-      this.http.post(this.apiUrl, this.form.value).subscribe({
-        next: () => {
-          this.resetForm();
-          this.loadData();
-        },
-        error: () => {
-          this.errorMessage = 'Failed to add KPI';
-          this.saving = false;
-        }
-      });
-    }
+  // ✅ FIX: normalize empty strings → null
+  const payload = {
+    ...this.form.value,
+    month: this.form.value.month || null,
+  year: this.form.value.year || null
+  };
+
+  if (this.editingId) {
+    this.http.put(`${this.apiUrl}/${this.editingId}`, payload).subscribe({
+      next: () => {
+        this.resetForm();
+        this.loadData();
+      },
+      error: (err) => {
+        console.error(err);
+        this.errorMessage = err?.error ?? 'Failed to update KPI';
+        this.saving = false;
+      }
+    });
+  } else {
+    this.http.post(this.apiUrl, payload).subscribe({
+      next: () => {
+        this.resetForm();
+        this.loadData();
+      },
+      error: (err) => {
+        console.error(err);
+        this.errorMessage = err?.error ?? 'Failed to add KPI';
+        this.saving = false;
+      }
+    });
   }
+}
 
   // =========================
   // EDIT
