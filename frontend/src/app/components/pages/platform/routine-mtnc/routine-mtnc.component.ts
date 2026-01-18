@@ -1,9 +1,11 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { catchError, finalize } from 'rxjs/operators';
 import { forkJoin, of } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
 import * as ExcelJS from 'exceljs';
+
+/* ================= TYPES ================= */
 
 type RoutineRecord = {
   _id?: string;
@@ -45,76 +47,21 @@ type MaintenanceRow = {
   platformKey: PlatformKey | null;
 };
 
+/* ================= CONSTANTS ================= */
+
 const PLATFORM_COLUMNS = [
-  'NW/WPC-1',
-  'NW/WPC-2',
-  'NW/WPNE',
-  'NW/WPSW',
-  'NW/WPSE',
-  'NW/WPE',
-  'NW/WPN',
-  'NW/NWPE',
-  'NW/NWPW',
-  'NW/CPN',
-  'NW/CPS',
-  'NW/NCP',
-  'NW/UVA',
-  'NW/SAB',
-  'NW/SPE',
-  'NW/SPW',
-  'NW/WPS',
-  'NW/EP',
-  'NW/NP-1',
-  'NW/NP-2'
+  'NW/WPC-1','NW/WPC-2','NW/WPNE','NW/WPSW','NW/WPSE',
+  'NW/WPE','NW/WPN','NW/NWPE','NW/NWPW','NW/CPN',
+  'NW/CPS','NW/NCP','NW/UVA','NW/SAB','NW/SPE',
+  'NW/SPW','NW/WPS','NW/EP','NW/NP-1','NW/NP-2'
 ];
 
 const MONTH_NAMES = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December'
+  'January','February','March','April','May','June',
+  'July','August','September','October','November','December'
 ];
 
-const ROUTINE_FALLBACK: RoutineRecord[] = [
-  {
-    no: 1,
-    kpi: 'Routing maintenance - IPNW (every two months)',
-    target: '100.000%',
-    calculation: '# completed nodes / Total # Nodes',
-    platform: 'IPNW',
-    responsibleDGM: 'NW Mng',
-    definedOLADetails: 'Every 2 Months',
-    dataSources: 'NW Report'
-  },
-  {
-    no: 2,
-    kpi: 'Routing maintenance - SDH/SLBN (every two months)',
-    target: '100.000%',
-    calculation: '# completed nodes / Total # Nodes',
-    platform: 'Int & NT',
-    responsibleDGM: 'NW Mng',
-    definedOLADetails: 'Every 2 Months',
-    dataSources: 'NW Report'
-  },
-  {
-    no: 3,
-    kpi: 'Routing maintenance - MSAN/OLTE (every six months)',
-    target: '100.000%',
-    calculation: '# completed nodes / Total # Nodes',
-    platform: 'BB&ANW',
-    responsibleDGM: 'NW Mng',
-    definedOLADetails: 'Every 4 Months',
-    dataSources: 'NW Report'
-  }
-];
+/* ================= COMPONENT ================= */
 
 @Component({
   selector: 'app-routine-mtnc',
@@ -127,10 +74,12 @@ export class RoutineMtncComponent implements OnInit {
   private readonly http = inject(HttpClient);
 
   pageTitle = 'Platform KPI — Routine MTNC';
+  heroSubtitle = 'Routine maintenance cadence across IPNW, INT & NT, and BB&ANW footprints.';
+
   readonly columns = PLATFORM_COLUMNS;
-  readonly heroSubtitle = 'Routine maintenance cadence across IPNW, INT & NT, and BB&ANW footprints.';
   readonly efiberSourceColumn = 'NW/WPC-1';
   readonly combinedTableStaticColumns = 8;
+
   readonly platformConfigs: PlatformTableConfig[] = [
     { key: 'msan', title: 'MSAN Data Table', monthsLimit: 6 },
     { key: 'vpn', title: 'VPN Data Table', monthsLimit: 2 },
@@ -139,27 +88,34 @@ export class RoutineMtncComponent implements OnInit {
 
   loading = false;
   errorMessage = '';
-  routineData: RoutineRecord[] = [...ROUTINE_FALLBACK];
+
+  routineData: RoutineRecord[] = [];
+
   platformDataMap: Record<PlatformKey, PlatformRecord[]> = {
     msan: [],
     vpn: [],
     slbn: []
   };
+
   placeholderMap: Record<PlatformKey, PlaceholderMap> = {
     msan: this.buildDefaultPlaceholders(),
     vpn: this.buildDefaultPlaceholders(),
     slbn: this.buildDefaultPlaceholders()
   };
+
   towerSumsMap: Record<PlatformKey, TowerSumRecord> = {
     msan: {},
     vpn: {},
     slbn: {}
   };
+
   readonly currentMonth = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(new Date());
 
   ngOnInit(): void {
     this.fetchData();
   }
+
+  /* ================= GETTERS ================= */
 
   get maintenanceRows(): MaintenanceRow[] {
     return this.routineData.map((routine, index) => ({
@@ -172,276 +128,148 @@ export class RoutineMtncComponent implements OnInit {
     return this.combinedTableStaticColumns + 1 + this.columns.length;
   }
 
+  /* ================= API ================= */
+
   fetchData(): void {
     this.loading = true;
     this.errorMessage = '';
 
     forkJoin({
-      msan: this.http.get<PlatformRecord[]>('/api/multi-table/fetchMsan').pipe(
-        catchError(err => {
-          console.error('Failed to fetch MSAN data', err);
-          this.setError('Unable to load MSAN maintenance feeds. Showing sample datas.');
-          return of([]);
-        })
-      ),
-      vpn: this.http.get<PlatformRecord[]>('/api/multi-table/fetchVpn').pipe(
-        catchError(err => {
-          console.error('Failed to fetch VPN data', err);
-          this.setError('Unable to load VPN maintenance feeds. Showing cached snapshot.');
-          return of([]);
-        })
-      ),
-      slbn: this.http.get<PlatformRecord[]>('/api/multi-table/fetchSlbn').pipe(
-        catchError(err => {
-          console.error('Failed to fetch SLBN data', err);
-          this.setError('Unable to load SLBN maintenance feeds. Showing cached snapshot.');
-          return of([]);
-        })
-      ),
+      msan: this.http.get<PlatformRecord[]>('/api/multi-table/fetchMsan').pipe(catchError(() => of([]))),
+      vpn: this.http.get<PlatformRecord[]>('/api/multi-table/fetchVpn').pipe(catchError(() => of([]))),
+      slbn: this.http.get<PlatformRecord[]>('/api/multi-table/fetchSlbn').pipe(catchError(() => of([]))),
       routine: this.http.get<RoutineRecord[]>('/api/mtnc-routine').pipe(
         catchError(err => {
-          console.error('Failed to fetch routine KPI definitions', err);
-          this.setError('Unable to load routine KPI definitions. Showing cached snapshot.');
-          return of([...ROUTINE_FALLBACK]);
+          console.error(err);
+          this.setError('Unable to load routine KPI definitions.');
+          return of([]);
         })
       )
     })
       .pipe(finalize(() => (this.loading = false)))
       .subscribe(({ msan, vpn, slbn, routine }) => {
-        this.platformDataMap = {
-          msan: msan ?? [],
-          vpn: vpn ?? [],
-          slbn: slbn ?? []
-        };
-        this.routineData = routine?.length ? routine : [...ROUTINE_FALLBACK];
+        this.platformDataMap = { msan, vpn, slbn };
+        this.routineData = routine ?? [];
 
-        (['msan', 'vpn', 'slbn'] as PlatformKey[]).forEach(key => {
+        (['msan','vpn','slbn'] as PlatformKey[]).forEach(key => {
           this.placeholderMap[key] = this.calculatePlaceholderValues(this.platformDataMap[key], key);
-          const config = this.platformConfigs.find(cfg => cfg.key === key);
-          this.towerSumsMap[key] = config
-            ? this.calculateTowerSums(this.platformDataMap[key], config.monthsLimit)
+          const cfg = this.platformConfigs.find(c => c.key === key);
+          this.towerSumsMap[key] = cfg
+            ? this.calculateTowerSums(this.platformDataMap[key], cfg.monthsLimit)
             : {};
         });
       });
+  }
+
+  /* ================= TEMPLATE METHODS ================= */
+
+  getPlatformRecords(key: PlatformKey): PlatformRecord[] {
+    return this.platformDataMap[key] ?? [];
   }
 
   exportToExcel(): void {
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet('Routine Maintenance');
 
-    const headerStyle = {
-      fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: '0070C0' } },
-      font: { color: { argb: 'FFFFFFFF' }, bold: true },
-      alignment: { horizontal: 'center', vertical: 'middle' },
-      border: {
-        top: { style: 'thin' },
-        left: { style: 'thin' },
-        bottom: { style: 'thin' },
-        right: { style: 'thin' }
-      }
-    };
-
-    const dataStyle = {
-      alignment: { horizontal: 'center', vertical: 'middle' },
-      border: {
-        top: { style: 'thin' },
-        left: { style: 'thin' },
-        bottom: { style: 'thin' },
-        right: { style: 'thin' }
-      }
-    } as const;
-
-    const combinedHeaders = [
-      'No',
-      'KPI',
-      'Target',
-      'Calculation',
-      'Platform',
-      'Responsible DGM',
-      'Defined OLA Details',
-      'Data Sources',
-      'E/Fiber',
-      ...this.columns
+    const headers = [
+      'No','KPI','Target','Calculation','Platform',
+      'Responsible DGM','Defined OLA Details','Data Sources',
+      'E/Fiber', ...this.columns
     ];
 
-    worksheet.addRow(['Multi-Platform Maintenance Tables']);
-    worksheet.addRow([]);
-    const combinedHeaderRow = worksheet.addRow(combinedHeaders);
-    combinedHeaderRow.eachCell(cell => Object.assign(cell, headerStyle));
+    worksheet.addRow(headers);
 
-    this.maintenanceRows.forEach(rowData => {
-      const placeholderCells = this.getPlaceholderValuesForExport(rowData.platformKey);
-      const row = worksheet.addRow([
-        rowData.routine.no ?? '-',
-        rowData.routine.kpi ?? 'No data',
-        rowData.routine.target ?? 'No data',
-        rowData.routine.calculation ?? 'No data',
-        rowData.routine.platform ?? 'No data',
-        rowData.routine.responsibleDGM ?? 'No data',
-        rowData.routine.definedOLADetails ?? 'No data',
-        rowData.routine.dataSources ?? 'No data',
-        ...placeholderCells
+    this.maintenanceRows.forEach(row => {
+      worksheet.addRow([
+        row.routine.no ?? '',
+        row.routine.kpi ?? '',
+        row.routine.target ?? '',
+        row.routine.calculation ?? '',
+        row.routine.platform ?? '',
+        row.routine.responsibleDGM ?? '',
+        row.routine.definedOLADetails ?? '',
+        row.routine.dataSources ?? '',
+        this.placeholderMap[row.platformKey!]?.[this.efiberSourceColumn] ?? '',
+        ...this.columns.map(c => this.placeholderMap[row.platformKey!]?.[c] ?? '')
       ]);
-      row.eachCell(cell => Object.assign(cell, dataStyle));
-    });
-
-    worksheet.addRow([]);
-
-    this.platformConfigs.forEach(config => {
-      worksheet.addRow([config.title]);
-      const dynamicHeaders = ['Month'];
-      this.columns.forEach(col => {
-        dynamicHeaders.push(`${col} Distribution`, `${col} Achievement`);
-      });
-      const dynamicHeaderRow = worksheet.addRow(dynamicHeaders);
-      dynamicHeaderRow.eachCell(cell => Object.assign(cell, headerStyle));
-
-      const towerRow = worksheet.addRow([
-        '# Towers',
-        ...this.columns.flatMap(col => [this.getTowerSum(config.key, col), ''])
-      ]);
-      towerRow.eachCell(cell => Object.assign(cell, dataStyle));
-
-      this.platformDataMap[config.key].forEach(record => {
-        const row = worksheet.addRow([
-          record.month,
-          ...this.columns.flatMap(col => [
-            this.getDetailValue(record, col, 'Column2'),
-            this.getDetailValue(record, col, 'Column3')
-          ])
-        ]);
-        row.eachCell(cell => Object.assign(cell, dataStyle));
-      });
-
-      worksheet.addRow([]);
-    });
-
-    worksheet.columns.forEach(column => {
-      column.width = 16;
     });
 
     workbook.xlsx.writeBuffer().then(buffer => {
       const blob = new Blob([buffer], {
         type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
       });
-      const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
-      link.href = url;
+      link.href = URL.createObjectURL(blob);
       link.download = 'Routine_Maintenance_KPI.xlsx';
       link.click();
-      URL.revokeObjectURL(url);
     });
   }
 
-  getPlatformRecords(key: PlatformKey): PlatformRecord[] {
-    return this.platformDataMap[key] ?? [];
+  /* ================= HELPERS ================= */
+
+  formatRoutineValue(value?: string): string {
+    return value?.trim() || 'No data';
   }
 
-  getPlaceholderValue(key: PlatformKey, column: string): string {
-    return this.placeholderMap[key]?.[column] ?? '100.00';
+  formatPlaceholderValue(platformKey: PlatformKey | null, column: string): string {
+    if (!platformKey) return 'No data';
+    return `${this.placeholderMap[platformKey]?.[column] ?? '0.00'}%`;
+  }
+
+  getDetailValue(record: PlatformRecord, column: string, field: 'Column2' | 'Column3'): string {
+    const detail = record.details?.find(d => d.Column1 === column);
+    const val = detail?.[field];
+    return val === undefined || val === null || val === '' ? 'No data' : String(val);
   }
 
   getTowerSum(key: PlatformKey, column: string): number {
     return this.towerSumsMap[key]?.[column] ?? 0;
   }
 
-  getDetailValue(record: PlatformRecord, column: string, field: 'Column2' | 'Column3'): string {
-    const detail = record.details?.find(item => item.Column1 === column);
-    const value = detail ? detail[field] : undefined;
-    if (value === undefined || value === null || value === '') {
-      return 'No data';
-    }
-    return String(value);
-  }
-
-  formatRoutineValue(value?: string): string {
-    if (!value) {
-      return 'No data';
-    }
-    return value;
-  }
-
-  trackByMaintenanceRow = (_: number, item: MaintenanceRow) => `${item.routine.no}-${item.platformKey}`;
+  trackByMaintenanceRow = (_: number, item: MaintenanceRow) =>
+    `${item.routine.no}-${item.platformKey}`;
   trackByColumn = (_: number, column: string) => column;
   trackByMonth = (_: number, record: PlatformRecord) => record.month;
 
+  /* ================= CALCULATIONS ================= */
+
   private buildDefaultPlaceholders(): PlaceholderMap {
     const map: PlaceholderMap = {};
-    PLATFORM_COLUMNS.forEach(col => {
-      map[col] = '100.00';
-    });
-    map[this.efiberSourceColumn] = '100.00';
+    PLATFORM_COLUMNS.forEach(c => (map[c] = '100.00'));
     return map;
   }
 
   private calculatePlaceholderValues(data: PlatformRecord[], platform: PlatformKey): PlaceholderMap {
-    const result: PlaceholderMap = this.buildDefaultPlaceholders();
+    const result = this.buildDefaultPlaceholders();
+    if (!data.length) return result;
 
-    if (!data.length) {
-      return result;
-    }
-
-    const targetMonths = this.getTargetMonths(platform);
-    const shouldCalculate = targetMonths.length > 0;
+    const months = this.getTargetMonths(platform);
+    if (!months.length) return result;
 
     PLATFORM_COLUMNS.forEach(column => {
-      if (!shouldCalculate) {
-        result[column] = '100.00';
-        return;
-      }
+      let achieved = 0;
+      let total = 0;
 
-      let sumAchievement = 0;
-      let denominator = 0;
-
-      targetMonths.forEach(month => {
-        const entry = data.find(item => item.month === month);
-        const detail = entry?.details?.find(item => item.Column1 === column);
+      months.forEach(m => {
+        const entry = data.find(d => d.month === m);
+        const detail = entry?.details?.find(d => d.Column1 === column);
         if (detail) {
-          sumAchievement += Number(detail.Column3) || 0;
-          const slice = platform === 'msan' ? detail.Column4 : detail.Column2;
-          denominator += Number(slice) || 0;
+          achieved += Number(detail.Column3) || 0;
+          total += Number(platform === 'msan' ? detail.Column4 : detail.Column2) || 0;
         }
       });
 
-      if (denominator > 0) {
-        result[column] = ((sumAchievement / denominator) * 100).toFixed(2);
-      } else {
-        result[column] = '0.00';
-      }
+      result[column] = total ? ((achieved / total) * 100).toFixed(2) : '0.00';
     });
 
-    result[this.efiberSourceColumn] = result[this.efiberSourceColumn] ?? '100.00';
     return result;
   }
 
-  formatPlaceholderValue(platformKey: PlatformKey | null, column: string): string {
-    if (!platformKey) {
-      return 'No data';
-    }
-    return `${this.getPlaceholderValue(platformKey, column)}%`;
-  }
-
-  private getPlaceholderValuesForExport(platformKey: PlatformKey | null): string[] {
-    if (!platformKey) {
-      return ['No data', ...this.columns.map(() => 'No data')];
-    }
-    return [
-      this.getPlaceholderValue(platformKey, this.efiberSourceColumn),
-      ...this.columns.map(col => this.getPlaceholderValue(platformKey, col))
-    ];
-  }
-
-  private calculateTowerSums(data: PlatformRecord[], monthsLimit: number): TowerSumRecord {
+  private calculateTowerSums(data: PlatformRecord[], limit: number): TowerSumRecord {
     const sums: TowerSumRecord = {};
-    if (!monthsLimit || !data.length) {
-      return sums;
-    }
-
-    data.slice(0, monthsLimit).forEach(entry => {
-      entry.details?.forEach(detail => {
-        const key = detail.Column1;
-        const value = Number(detail.Column2) || 0;
-        sums[key] = Number(((sums[key] ?? 0) + value).toFixed(2));
+    data.slice(0, limit).forEach(entry => {
+      entry.details?.forEach(d => {
+        sums[d.Column1] = (sums[d.Column1] ?? 0) + (Number(d.Column2) || 0);
       });
     });
     return sums;
@@ -449,32 +277,19 @@ export class RoutineMtncComponent implements OnInit {
 
   private getTargetMonths(platform: PlatformKey): string[] {
     if (platform === 'msan') {
-      if (this.currentMonth === 'June') {
-        return MONTH_NAMES.slice(0, 6);
-      }
-      if (this.currentMonth === 'December') {
-        return MONTH_NAMES.slice(5);
-      }
+      if (this.currentMonth === 'June') return MONTH_NAMES.slice(0, 6);
+      if (this.currentMonth === 'December') return MONTH_NAMES.slice(5);
       return [];
     }
 
-    if (platform === 'vpn' || platform === 'slbn') {
-      const calculationMonths = ['February', 'April', 'June', 'August', 'October', 'December'];
-      if (calculationMonths.includes(this.currentMonth)) {
-        const currentIndex = MONTH_NAMES.indexOf(this.currentMonth);
-        const previousMonth = currentIndex === 0 ? 'December' : MONTH_NAMES[currentIndex - 1];
-        return [previousMonth, this.currentMonth];
-      }
-      return [];
-    }
+    const valid = ['February','April','June','August','October','December'];
+    if (!valid.includes(this.currentMonth)) return [];
 
-    return [];
+    const idx = MONTH_NAMES.indexOf(this.currentMonth);
+    return [MONTH_NAMES[idx - 1], this.currentMonth];
   }
 
-  private setError(message: string): void {
-    if (!this.errorMessage) {
-      this.errorMessage = message;
-    }
+  private setError(msg: string): void {
+    if (!this.errorMessage) this.errorMessage = msg;
   }
 }
-
