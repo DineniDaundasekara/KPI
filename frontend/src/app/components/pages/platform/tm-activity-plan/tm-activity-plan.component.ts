@@ -4,6 +4,7 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { catchError, finalize } from 'rxjs/operators';
 import { forkJoin, of } from 'rxjs';
 import * as ExcelJS from 'exceljs';
+import { TmActivityService, ActivityRecord } from '../../../../services/tm-activity.service';
 
 type ProcessedDetail = {
   Column1: string;
@@ -373,6 +374,7 @@ const TABLE_TITLES = [
 })
 export class TmActivityPlanComponent implements OnInit {
   private readonly http = inject(HttpClient);
+  private readonly tmActivityService = inject(TmActivityService);
 
   pageTitle = 'Platform KPI — TM Activity Plan';
   headers: string[] = [];
@@ -393,28 +395,33 @@ export class TmActivityPlanComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
 
-    forkJoin({
-      processed: this.http.get<ProcessedRecord[]>('/api/ProcessedDataFetch1').pipe(
-        catchError(err => {
-          console.error('Failed to fetch processed TM data', err);
-          this.setError('Unable to load tower activity feeds. Showing cached snapshot.');
-          return of([...MOCK_PROCESSED_DATA]);
-        })
-      ),
-      hardcoded: this.http.get<HardcodedRecord[]>('/api/repeated-hardcode-tab1').pipe(
-        catchError(err => {
-          console.error('Failed to fetch TM KPI definitions', err);
-          this.setError('Unable to load TM KPI definitions. Showing cached snapshot.');
-          return of([...MOCK_HARDCODED_DATA]);
-        })
-      )
-    })
-      .pipe(finalize(() => (this.loading = false)))
-      .subscribe(({ processed, hardcoded }) => {
-        this.tableData = processed?.length ? this.sortByMonth(processed) : [...MOCK_PROCESSED_DATA];
-        this.hardcodedTableData = hardcoded?.length ? hardcoded : [...MOCK_HARDCODED_DATA];
-        this.processDerivedData(this.tableData);
-      });
+    // Fetch KPI definitions from TmActivityService
+    this.tmActivityService.getAll().pipe(
+      catchError(err => {
+        console.error('Failed to fetch TM Activity plans from service', err);
+        this.setError('Unable to load TM KPI definitions. Showing cached snapshot.');
+        return of([...MOCK_HARDCODED_DATA]);
+      }),
+      finalize(() => (this.loading = false))
+    ).subscribe(hardcoded => {
+      // Use processed mock data (since /api/ProcessedDataFetch1 doesn't exist)
+      this.tableData = [...MOCK_PROCESSED_DATA];
+      
+      // Convert ActivityRecord[] to HardcodedRecord[]
+      this.hardcodedTableData = (hardcoded && hardcoded.length) 
+        ? hardcoded.map(activity => ({
+            no: typeof activity.no === 'string' ? parseInt(activity.no) : activity.no,
+            kpi: activity.kpi,
+            target: activity.target,
+            calculation: activity.calculation,
+            platform: activity.platform,
+            responsibleDGM: activity.responsibleDGM,
+            definedOLADetails: activity.definedOLADetails,
+            dataSources: activity.dataSources
+          })) 
+        : [...MOCK_HARDCODED_DATA];
+      this.processDerivedData(this.tableData);
+    });
   }
 
   exportToExcel(): void {
@@ -637,4 +644,3 @@ export class TmActivityPlanComponent implements OnInit {
     }
   }
 }
-
