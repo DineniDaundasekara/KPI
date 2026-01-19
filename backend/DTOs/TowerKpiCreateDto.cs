@@ -4,7 +4,8 @@ namespace backend.Dtos
 {
     public class TowerKpiCreateDto
     {
-        [Required] public int No { get; set; }
+        [Required] [Range(0, 255)] public int No { get; set; }
+
         [Required] public string Responsibility { get; set; } = null!;
         [Required] public string Frequency { get; set; } = null!;
         [Required] public string Weightage { get; set; } = null!;
