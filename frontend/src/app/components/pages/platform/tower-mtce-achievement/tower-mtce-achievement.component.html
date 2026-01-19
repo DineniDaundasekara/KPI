@@ -1,64 +1,47 @@
 <div class="kpi-page">
-  <div class="kpi-overlay"></div>
 
   <section class="hero-panel">
-    <div class="hero-content">
-      <h1>{{ pageTitle }}</h1>
-      <p class="hero-subtitle">{{ heroSubtitle }}</p>
-    </div>
-    <div class="hero-actions">
-      <button type="button" (click)="exportToExcel()" [disabled]="loading || !kpiTowerData.length">
-        Export snapshot
-      </button>
-    </div>
+    <h1>{{ pageTitle }}</h1>
+    <p>{{ heroSubtitle }}</p>
+    <button (click)="exportToExcel()" [disabled]="loading">
+      Export snapshot
+    </button>
   </section>
 
-  <section class="table-section">
-    <div class="state" *ngIf="loading">Loading tower maintenance insights...</div>
-    <div class="state error" *ngIf="!loading && errorMessage">{{ errorMessage }}</div>
+  <div *ngIf="loading">Loading...</div>
 
-    <article class="data-card" *ngIf="!loading">
-      <header>
-        <div>
-          <h2>Network Engineer Achievement Table</h2>
-          <p>Weighted quarterly achievements computed from distribution feeds.</p>
-        </div>
-      </header>
-      <div class="table-wrapper">
-        <table class="data-table">
-          <thead>
-            <tr>
-              <th>No</th>
-              <th>Network Engineers Responsibility</th>
-              <th>Frequency</th>
-              <th>Weightage</th>
-              <th>KPI (%)</th>
-              <th *ngFor="let header of headers; trackBy: trackByHeader">{{ header }}</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngIf="!kpiTowerData.length">
-              <td [attr.colspan]="totalTableColumns">No KPI data available.</td>
-            </tr>
-            <tr *ngFor="let row of kpiTowerData; let rowIndex = index; trackBy: trackByKpiRow">
-              <td>{{ row.no ?? '-' }}</td>
-              <td>{{ formatText(row.responsibility) }}</td>
-              <td>{{ formatText(row.frequency) }}</td>
-              <td>{{ formatText(row.weightage) }}</td>
-              <td>{{ formatText(row.kpi) }}</td>
-              <td *ngFor="let header of headers; let colIndex = index; trackBy: trackByHeader">
-                {{ formatWeightedValue(rowIndex, colIndex) }}
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </article>
+  <!-- ✅ SCROLL CONTAINER (IMPORTANT) -->
+  <div class="table-scroll" *ngIf="!loading">
 
-  </section>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>No</th>
+          <th>Network Engineers Responsibility</th>
+          <th>Frequency</th>
+          <th>Weightage</th>
+          <th>KPI (%)</th>
+          <th *ngFor="let h of headers; trackBy: trackByHeader">
+            {{ h }}
+          </th>
+        </tr>
+      </thead>
 
-  <div class="loading-overlay" *ngIf="loading">
-    <div class="spinner"></div>
+      <tbody>
+        <tr *ngFor="let r of kpiTowerData; let i = index; trackBy: trackByRow">
+          <td>{{ r.no }}</td>
+          <td>{{ formatText(r.responsibility) }}</td>
+          <td>{{ formatText(r.frequency) }}</td>
+          <td>{{ formatText(r.weightage) }}</td>
+          <td>{{ formatText(r.kpi) }}</td>
+
+          <td *ngFor="let h of headers; let j = index">
+            {{ formatWeightedValue(i, j) }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
   </div>
-</div>
 
+</div>

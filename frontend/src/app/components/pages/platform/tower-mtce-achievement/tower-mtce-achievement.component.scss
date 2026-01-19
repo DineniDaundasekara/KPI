@@ -8,6 +8,7 @@
   background-position: center;
   background-attachment: fixed;
   position: relative;
+  overflow-x: auto;              // ✅ allow horizontal scrolling
 }
 
 :host::before {
@@ -24,10 +25,16 @@
   z-index: 1;
   min-height: 100vh;
   padding: 3rem 1.5rem 4rem;
-  background: linear-gradient(135deg, rgba(240, 247, 255, 0.65), rgba(198, 224, 255, 0.45));
+  background: linear-gradient(
+    135deg,
+    rgba(240, 247, 255, 0.65),
+    rgba(198, 224, 255, 0.45)
+  );
   border: 1px solid rgba(16, 33, 54, 0.08);
   backdrop-filter: blur(4px);
-  overflow: hidden;
+
+  overflow-y: visible;           // ✅ keep vertical flow
+  overflow-x: auto;              // ✅ FIX: allow left-right scroll
 }
 
 .kpi-overlay {
@@ -49,83 +56,21 @@
   border-bottom: 2px solid rgba(16, 33, 54, 0.08);
 }
 
-.hero-content h1 {
-  font-size: clamp(2.2rem, 4vw, 3rem);
-  margin: 0 0 0.65rem;
-  color: #0057a6;
-  font-weight: 600;
-}
+/* ===================== TABLE SCROLL FIX ===================== */
 
-.hero-subtitle {
-  margin: 0;
-  color: #4c5d73;
-  font-size: 1.05rem;
-}
-
-.hero-actions button {
-  border: none;
-  border-radius: 999px;
-  padding: 0.9rem 1.8rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #ffffff;
-  background: linear-gradient(135deg, #1f7ae0, #0a48a4);
-  box-shadow: 0 12px 25px rgba(15, 102, 195, 0.35);
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-
-.hero-actions button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.hero-actions button:not(:disabled):hover {
-  transform: translateY(-2px);
-}
-
-.table-section {
-  position: relative;
-  z-index: 1;
-}
-
-.data-card {
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 22px;
-  padding: 1.75rem;
-  margin-bottom: 1.75rem;
-  box-shadow: 0 25px 60px rgba(16, 33, 54, 0.18);
-  border: 1px solid rgba(16, 33, 54, 0.08);
-}
-
-.data-card header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-}
-
-.data-card h2 {
-  margin: 0;
-  font-size: 1.35rem;
-  color: #0b1f3b;
-}
-
-.data-card p {
-  margin: 0.35rem 0 0;
-  color: #4c5d73;
-  font-size: 0.95rem;
-}
-
+.table-scroll,
 .table-wrapper {
-  overflow-x: auto;
+  width: 100%;
+  overflow-x: auto;              // ✅ horizontal scrollbar
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
 }
+
+/* ===================== TABLE ===================== */
 
 .data-table {
-  width: 100%;
   border-collapse: collapse;
-  min-width: 760px;
+  min-width: max-content;        // ✅ FORCE horizontal expansion
   font-size: 0.95rem;
 }
 
@@ -135,6 +80,7 @@
   padding: 0.85rem 0.75rem;
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.12);
+  white-space: nowrap;           // ✅ prevent column shrink
 }
 
 .data-table tbody td {
@@ -142,60 +88,19 @@
   padding: 0.8rem 0.75rem;
   text-align: center;
   background: rgba(255, 255, 255, 0.85);
+  white-space: nowrap;           // ✅ prevent column shrink
 }
 
 .data-table tbody tr:nth-child(even) td {
   background: rgba(244, 248, 255, 0.9);
 }
 
-.state {
-  text-align: center;
-  padding: 1rem;
-  border-radius: 12px;
-  background: rgba(240, 247, 255, 0.9);
-  margin-bottom: 1rem;
-  color: #0a48a4;
-  font-weight: 500;
-}
-
-.state.error {
-  color: #d7263d;
-}
-
-.loading-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.35);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10;
-}
-
-.spinner {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  border: 5px solid rgba(255, 255, 255, 0.4);
-  border-top-color: #1f7ae0;
-  animation: spin 0.9s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
+/* ===================== RESPONSIVE ===================== */
 
 @media (max-width: 1024px) {
   .hero-panel {
     flex-direction: column;
     align-items: flex-start;
-  }
-
-  .hero-actions,
-  .hero-actions button {
-    width: 100%;
   }
 }
 
@@ -204,12 +109,7 @@
     padding: 2rem 1rem 3rem;
   }
 
-  .data-card {
-    padding: 1.25rem;
-  }
-
   .data-table {
-    min-width: 640px;
+    min-width: max-content;      // ✅ keep scrolling on mobile
   }
 }
-
