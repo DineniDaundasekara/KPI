@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RegionService, Region } from '../../../../services/region.service';
+import { BbAnwService, Form7Record } from '../../../../services/bb-anw.service';
 import * as ExcelJS from 'exceljs';
 import { firstValueFrom } from 'rxjs';
 
@@ -367,6 +368,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 
 	data: Form7Entry[] = [...MOCK_FORM7_DATA];
 	regionTable: RegionRow[] = [...LOCAL_REGION_TABLE];
+	adminRows: Form7Record[] = [];
 
 	loading = true;
 	error: string | null = null;
@@ -430,7 +432,8 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 
 	constructor(
 		private http: HttpClient,
-		private regionService: RegionService
+		private regionService: RegionService,
+		private bbAnwService: BbAnwService
 	) {}
 
 	ngOnInit(): void {
@@ -545,22 +548,16 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		this.loading = true;
 		this.error = null;
 
-		this.http.get<Form7Entry[]>('/form7').subscribe({
-			next: (res) => {
-				const rows = Array.isArray(res) && res.length ? res : [...MOCK_FORM7_DATA];
-				this.data = rows.map((entry) => ({ ...entry }));
+		this.bbAnwService.getAll().subscribe({
+			next: (rows) => {
+				this.adminRows = Array.isArray(rows) ? rows : [];
 				this.loading = false;
-
-				if (!res || !res.length) {
-					this.showToast('danger', 'Backend empty — showing mock BB & ANW KPIs.');
-				}
 			},
 			error: (err) => {
-				console.error('Failed to load Form7 data:', err);
-				this.data = [...MOCK_FORM7_DATA];
+				console.error('Failed to load BB & ANW admin data:', err);
+				this.adminRows = [];
 				this.loading = false;
-				this.error = null;
-				this.showToast('danger', 'Backend unreachable — mock data in use.');
+				this.error = 'Failed to load BB & ANW KPI data.';
 			},
 		});
 	}
@@ -622,36 +619,17 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 	}
 
 	private initializeFilters(): void {
-		if (this.filtersInitialized) return;
-		if (!this.regions.length) return;
-
-		const firstRegion = this.regions[0];
-		this.formValues.dropdown1 = firstRegion;
-		this.updateDropdown2Options(firstRegion);
-
-		const firstProvince = this.dropdown2Options[0];
-		if (!firstProvince) {
-			this.filtersInitialized = true;
-			return;
-		}
-
-		this.formValues.dropdown2 = firstProvince;
-		this.updateDropdown3Options(firstProvince);
-
-		const firstEngineer = this.dropdown3Options[0];
-		if (!firstEngineer) {
-			this.filtersInitialized = true;
-			return;
-		}
-
-		this.formValues.dropdown3 = firstEngineer;
-		this.updateDropdown4Options(firstEngineer);
-
-		const firstArea = this.dropdown4Options[0];
-		if (firstArea) {
-			this.formValues.dropdown4 = firstArea;
-		}
-
+		// Do not auto-select any filters; keep "Select an option" as default
+		// and let the user drive all selections consistently with other pages.
+		this.formValues = {
+			dropdown1: '',
+			dropdown2: '',
+			dropdown3: '',
+			dropdown4: '',
+		};
+		this.dropdown2Options = [];
+		this.dropdown3Options = [];
+		this.dropdown4Options = [];
 		this.filtersInitialized = true;
 	}
 
@@ -769,7 +747,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		try {
 			await Promise.all(
 				this.data.map((entry) =>
-					firstValueFrom(this.http.put(`/form7/update/${entry._id}`, entry))
+					firstValueFrom(this.http.put(`/api/form7/update/${entry._id}`, entry))
 				)
 			);
 
