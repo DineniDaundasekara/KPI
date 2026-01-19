@@ -10,7 +10,7 @@ export interface ServiceFulfilmentKpi {
   calculation: string;
   platform: string;
   responsibleDgm: string;
-  definedoladetails: string;
+  defineDoladetails: string;
   weightage: number;
   dataSources: string;
   month: number;

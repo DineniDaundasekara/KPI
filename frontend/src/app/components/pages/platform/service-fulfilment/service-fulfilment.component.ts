@@ -14,7 +14,8 @@ interface KpiData {
   calculation: string;
   platform: string;
   responsibledgm: string;
-  definedoladetails: string;
+  defineDoladetails?: string;
+  definedoladetails?: string; // legacy key from sample data
   weightage: string;
   datasources: string;
   areas?: { [key: string]: number };
@@ -72,12 +73,12 @@ export class ServiceFulfilmentComponent implements OnInit {
   // Constants
   nonEditableColumns = [
     'no', 'kpi', 'target', 'calculation', 'platform', 'responsibledgm',
-    'definedoladetails', 'weightage', 'datasources'
+    'defineDoladetails', 'weightage', 'datasources'
   ];
 
   baseColumns = [
     'no', 'kpi', 'target', 'calculation', 'platform', 'responsibledgm',
-    'definedoladetails', 'weightage', 'datasources'
+    'defineDoladetails', 'weightage', 'datasources'
   ];
 
   headerMapping: { [key: string]: string } = {
@@ -87,7 +88,7 @@ export class ServiceFulfilmentComponent implements OnInit {
     calculation: 'Calculation',
     platform: 'Platform',
     responsibledgm: 'Responsible DGM',
-    definedoladetails: 'Defined OLA Details',
+    defineDoladetails: 'Defined OLA Details',
     weightage: 'Weightage',
     datasources: 'Data Sources'
   };
