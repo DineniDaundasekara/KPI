@@ -697,15 +697,9 @@ export class ServiceFulfilmentComponent implements OnInit {
       )
     ).filter(Boolean);
     this.dropdown2Options = provinces;
-    if (provinces.length > 0) {
-      this.formValues.dropdown2 = provinces[0];
-      this.updateDropdown3Options();
-    } else {
-      this.formValues.dropdown2 = '';
-      this.dropdown3Options = [];
-      this.dropdown4Options = [];
-      this.visibleColumns = [...this.baseColumns];
-    }
+    this.dropdown3Options = [];
+    this.dropdown4Options = [];
+    this.visibleColumns = [...this.baseColumns];
   }
 
   updateDropdown3Options() {
@@ -725,14 +719,8 @@ export class ServiceFulfilmentComponent implements OnInit {
       )
     ).filter(Boolean);
     this.dropdown3Options = engineers;
-    if (engineers.length > 0) {
-      this.formValues.dropdown3 = engineers[0];
-      this.updateDropdown4Options();
-    } else {
-      this.formValues.dropdown3 = '';
-      this.dropdown4Options = [];
-      this.visibleColumns = [...this.baseColumns];
-    }
+    this.dropdown4Options = [];
+    this.visibleColumns = [...this.baseColumns];
   }
 
   updateDropdown4Options() {
@@ -758,13 +746,7 @@ export class ServiceFulfilmentComponent implements OnInit {
       )
     ).filter(Boolean);
     this.dropdown4Options = leas;
-    if (leas.length > 0) {
-      this.formValues.dropdown4 = leas[0];
-      this.updateVisibleColumns();
-    } else {
-      this.formValues.dropdown4 = '';
-      this.visibleColumns = [...this.baseColumns];
-    }
+    this.visibleColumns = [...this.baseColumns];
   }
 
   updateVisibleColumns() {
