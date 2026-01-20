@@ -146,17 +146,8 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
     this.regionService.getAll().subscribe({
       next: (res) => {
         this.regions = (res ?? []).map((r: RegionApi) => {
-          const networkEngineer =
-            (r as any).networkEngineer ??
-            (r as any).networkengineer ??
-            (r as any)['network_engineer'] ??
-            '';
-          const lea =
-            (r as any).lea ??
-            (r as any).leaCode ??
-            (r as any).leacode ??
-            (r as any)['lea_code'] ??
-            '';
+          const networkEngineer = (r as any).networkEngineer ?? (r as any).networkengineer ?? (r as any)['network_engineer'] ?? '';
+          const lea = (r as any).lea ?? (r as any).leaCode ?? (r as any).leacode ?? (r as any)['lea_code'] ?? '';
 
           return {
             id: r.id,
@@ -188,38 +179,28 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
     const regionMap = new Map<string, Map<string, Region[]>>();
 
     this.regions.forEach((item) => {
-      const provinceMap =
-        regionMap.get(item.region) ?? new Map<string, Region[]>();
+      const provinceMap = regionMap.get(item.region) ?? new Map<string, Region[]>();
       const engineers = provinceMap.get(item.province) ?? [];
       engineers.push(item);
       provinceMap.set(item.province, engineers);
       regionMap.set(item.region, provinceMap);
     });
 
-    this.regionGroups = Array.from(regionMap.entries()).map(
-      ([region, provinceMap]) => {
-        const provinces = Array.from(provinceMap.entries()).map(
-          ([province, engineers]) => ({
-            province,
-            engineers,
-          })
-        );
+    this.regionGroups = Array.from(regionMap.entries()).map(([region, provinceMap]) => {
+      const provinces = Array.from(provinceMap.entries()).map(([province, engineers]) => ({
+        province,
+        engineers,
+      }));
 
-        const totalEngineers = provinces.reduce(
-          (sum, p) => sum + p.engineers.length,
-          0
-        );
+      const totalEngineers = provinces.reduce((sum, p) => sum + p.engineers.length, 0);
 
-        return { region, provinces, totalEngineers };
-      }
-    );
+      return { region, provinces, totalEngineers };
+    });
 
-    this.engineersFlat = this.regionGroups.flatMap((g) =>
-      g.provinces.flatMap((p) => p.engineers)
-    );
+    this.engineersFlat = this.regionGroups.flatMap(g => g.provinces.flatMap(p => p.engineers));
   }
 
-  /** ✅ Fetch KPI definitions from backend (LEFT table data) */
+  /** ✅ Fetch KPI definitions from backend (real data for LEFT table) */
   private loadLeftTableFromApi(): void {
     this.loading = true;
     this.error = null;
@@ -232,14 +213,11 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
           const list = (res ?? []).sort((a, b) => a.rowNumber - b.rowNumber);
 
           this.kpiRows = list.map((row, rowIndex) => {
-            const metrics: KpiMetric[] = this.engineersFlat.map(
-              (_, colIndex) => {
-                const achieved = 100 - (rowIndex * 2 + colIndex);
-                const maximumPoints = row.pointsApplicable;
-                const pointsAchieved = +(((achieved / 100) * maximumPoints).toFixed(4));
-                return { achieved, maximumPoints, pointsAchieved };
-              }
-            );
+            const metrics: KpiMetric[] = this.engineersFlat.map((_, colIndex) => {
+              const achieved = 100 - (rowIndex * 2 + colIndex);
+              const weighted = +(row.weightage * achieved / 100).toFixed(2);
+              return { achieved, weighted };
+            });
 
             return {
               rowNumber: row.rowNumber,
@@ -273,23 +251,10 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private computeTotals(): void {
-    this.weightageSum = this.kpiRows.reduce(
-      (sum, row) => sum + (row.weightage ?? 0),
-      0
-    );
+    this.weightageSum = this.kpiRows.reduce((sum, row) => sum + (row.weightage ?? 0), 0);
 
-    // ✅ Calculate total points applicable
-    this.totalPointsApplicable = this.kpiRows.reduce(
-      (sum, row) => sum + (row.pointsApplicable ?? 0),
-      0
-    );
-
-    // ✅ Calculate total points achieved by region
-    this.totalPointsAchievedByRegion = this.engineersFlat.map((_, colIndex) =>
-      this.kpiRows.reduce(
-        (sum, row) => sum + (row.metrics[colIndex]?.pointsAchieved ?? 0),
-        0
-      )
+    this.totalWeightedByRegion = this.engineersFlat.map((_, colIndex) =>
+      this.kpiRows.reduce((sum, row) => sum + (row.metrics[colIndex]?.weighted ?? 0), 0)
     );
 
     // ✅ Normalized: percentage of total possible points

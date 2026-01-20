@@ -1,7 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Form4ApiService, ServiceFulfilmentKpi } from '../../../../services/form4api.service';
+import {
+  FormBuilder,
+  FormGroup,
+  Validators,
+  ReactiveFormsModule
+} from '@angular/forms';
+
+// ✅ update import path if needed
+import { Form4ApiService, Form4Row } from '../../../../services/form4-api.service';
 
 @Component({
   selector: 'app-admin-service-fulfilment',
@@ -11,34 +18,32 @@ import { Form4ApiService, ServiceFulfilmentKpi } from '../../../../services/form
   styleUrls: ['./service-fulfilment.component.scss']
 })
 export class AdminServiceFulfilmentComponent implements OnInit {
+  pageTitle = 'Admin — Service Fulfilment';
 
-  // Header
-  pageTitle = 'Service Fulfilment KPIs';
-
-  // Dashboard stats
+  // Statistics data
   activeKpis = 0;
-  targetsMet = 0;
+  targetsMet = 87; // (your own logic later)
   avgWeightage = 0;
   dgmCount = 0;
 
   // Form
   kpiForm!: FormGroup;
   isEditing = false;
-  editingId: string | null = null;
+  editingIndex: number | null = null;
 
-  // Table data
-  kpiList: ServiceFulfilmentKpi[] = [];
+  // DGM list
+  dgmList = [
+    'John Anderson',
+    'Sarah Mitchell',
+    'Robert Chen',
+    'Emma Wilson',
+    'Michael Brown'
+  ];
 
-  loading = false;
-  saving = false;
-  errorMessage = '';
+  // ✅ Now this is loaded from DB (not sample data)
+  kpiList: any[] = [];
 
-  constructor(
-    private fb: FormBuilder,
-    private form4Api: Form4ApiService
-  ) {}
-
-  ngOnInit(): void {
+  constructor(private fb: FormBuilder, private api: Form4ApiService) {
     this.kpiForm = this.fb.group({
       no: ['', Validators.required],
       kpi: ['', Validators.required],
@@ -52,76 +57,70 @@ export class AdminServiceFulfilmentComponent implements OnInit {
       month: [11, Validators.required],
       year: [2025, Validators.required]
     });
-
-    this.loadKpis();
   }
 
-  // ================= LOAD =================
-  loadKpis(): void {
-    this.loading = true;
+  ngOnInit() {
+    this.loadData(); // ✅ load from DB when open page
+  }
 
-    this.form4Api.getAll().subscribe({
-      next: data => {
-        this.kpiList = data;
-        this.activeKpis = data.length;
-        this.avgWeightage =
-          data.reduce((sum, k) => sum + k.weightage, 0) / (data.length || 1);
-        this.dgmCount = new Set(data.map(k => k.responsibleDgm)).size;
-        this.loading = false;
+  // ✅ GET ALL from DB
+  loadData() {
+    this.api.getAll().subscribe({
+      next: (rows) => {
+        this.kpiList = rows.map(r => ({
+          id: r.id,
+          no: r.no,
+          kpi: r.kpi,
+          target: r.target,
+          calculation: r.calculation,
+          platform: r.platform,
+          responsibleDgm: r.responsibledgm,
+          definedOla: r.definedoladetails,
+          weightage: r.weightage ?? 0,
+          dataSources: r.datasources
+        }));
+
+        this.updateStatistics();
       },
-      error: err => {
-        console.error(err);
-        this.errorMessage = 'Failed to load KPI data';
-        this.loading = false;
+      error: (err) => {
+        console.error('GET error:', err);
       }
     });
   }
 
-  // ================= ADD =================
-  addNewKpi(): void {
-    this.isEditing = false;
-    this.editingId = null;
-    this.kpiForm.reset();
-  }
+  // Update statistics
+  updateStatistics() {
+    this.activeKpis = this.kpiList.length;
 
-  // ================= SUBMIT =================
-  onSubmit(): void {
-    if (this.kpiForm.invalid) {
-      this.kpiForm.markAllAsTouched();
-      return;
+    if (this.kpiList.length > 0) {
+      const totalWeightage = this.kpiList.reduce((sum: number, kpi: any) => sum + (Number(kpi.weightage) || 0), 0);
+      this.avgWeightage = Math.round((totalWeightage / this.kpiList.length) * 10) / 10;
+
+      const uniqueDgms = new Set(this.kpiList.map((kpi: any) => kpi.responsibleDgm));
+      this.dgmCount = uniqueDgms.size;
+    } else {
+      this.avgWeightage = 0;
+      this.dgmCount = 0;
     }
-
-    const payload = {
-      ...this.kpiForm.value,
-      definedoladetails: this.kpiForm.value.definedOla
-    };
-
-    this.saving = true;
-
-    const request$ = this.isEditing && this.editingId
-      ? this.form4Api.update(this.editingId, payload)
-      : this.form4Api.add(payload);
-
-    request$.subscribe({
-      next: () => {
-        this.resetForm();
-        this.loadKpis();
-      },
-      error: err => {
-        console.error(err);
-        this.errorMessage = 'Save failed';
-        this.saving = false;
-      },
-      complete: () => this.saving = false
-    });
   }
 
-  // ================= EDIT =================
-  editKpi(index: number): void {
-    const kpi = this.kpiList[index];
-    this.isEditing = true;
-    this.editingId = kpi.id ?? (kpi as any).Id;
+  // Add new KPI
+  addNewKpi() {
+    this.isEditing = false;
+    this.editingIndex = null;
+    this.kpiForm.reset({ weightage: 0 });
 
+    // Optional scroll
+    const formElement = document.querySelector('.form-container');
+    if (formElement) formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Edit KPI
+  editKpi(index: number) {
+    this.isEditing = true;
+    this.editingIndex = index;
+
+    const kpi = this.kpiList[index];
     this.kpiForm.patchValue({
       no: kpi.no,
       kpi: kpi.kpi,
@@ -129,33 +128,110 @@ export class AdminServiceFulfilmentComponent implements OnInit {
       calculation: kpi.calculation,
       platform: kpi.platform,
       responsibleDgm: kpi.responsibleDgm,
-      definedOla: (kpi as any).definedoladetails ?? '',
+      definedOla: kpi.definedOla,
       weightage: kpi.weightage,
-      dataSources: kpi.dataSources,
-      month: kpi.month,
-      year: kpi.year
+      dataSources: kpi.dataSources
     });
+
+    const formElement = document.querySelector('.form-container');
+    if (formElement) formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  // ================= DELETE =================
-  deleteKpi(index: number): void {
-    const kpi = this.kpiList[index];
-    const id = kpi.id ?? (kpi as any).Id;
+  // ✅ DELETE from DB
+  deleteKpi(index: number) {
+    const row = this.kpiList[index];
+    if (!row?.id) return;
 
-    if (!id || !confirm('Delete this KPI?')) return;
-
-    this.form4Api.delete(id).subscribe({
-      next: () => this.loadKpis(),
-      error: err => {
-        console.error(err);
-        this.errorMessage = 'Delete failed';
-      }
-    });
+    if (confirm('Are you sure you want to delete this KPI?')) {
+      this.api.delete(row.id).subscribe({
+        next: () => this.loadData(),
+        error: (err) => console.error('DELETE error:', err)
+      });
+    }
   }
 
-  // ================= RESET =================
-  resetForm(): void {
-    this.kpiForm.reset();
+  // ✅ POST / PUT to DB
+  onSubmit() {
+    if (this.kpiForm.invalid) return;
+
+    const v = this.kpiForm.value;
+
+    const id =
+      this.isEditing && this.editingIndex !== null
+        ? this.kpiList[this.editingIndex].id
+        : `KPI-${Date.now()}`;
+
+    const payload: Form4Row = {
+      id,
+      no: Number(v.no),
+      kpi: v.kpi,
+      target: v.target,
+      calculation: v.calculation,
+      platform: v.platform,
+      responsibledgm: v.responsibleDgm,
+      definedoladetails: v.definedOla,
+      weightage: Number(v.weightage),
+      datasources: v.dataSources,
+
+      // ✅ NOT NULL string fields (default "0")
+      CENHKMD: "0", CENHKMD1: "0", GQKINTB: "0", NDRM: "0", AWHO: "0",
+      KONKX: "0", NGWT: "0", KGKLY: "0", CWPX: "0", DBKYMT: "0",
+      GPHTNW: "0", ADPR: "0", BDBWMRG: "0", KERN: "0", EBMHMBH: "0",
+      AGGL: "0", HRKTPH: "0", BCAPKLTC: "0", JA: "0", KOMLTMBVA: "0",
+
+      v: 1,
+
+      // ✅ NOT NULL numeric area fields (default 0)
+      areas_CENHKMD: 0,
+      areas_CENHKMD1: 0,
+      areas_GQKINTB: 0,
+      areas_NDRM: 0,
+      areas_AWHO: 0,
+      areas_KONKX: 0,
+      areas_NGWT: 0,
+      areas_KGKLY: 0,
+      areas_CWPX: 0,
+      areas_DBKYMT: 0,
+      areas_GPHTNW: 0,
+      areas_ADPR: 0,
+      areas_BDBWMRG: 0,
+      areas_KERN: 0,
+      areas_EBMHMBH: 0,
+      areas_AGGL: 0,
+      areas_HRKTPH: 0,
+      areas_BCAPKLTC: 0,
+      areas_JA: 0,
+      areas_KOMLTMBVA: 0,
+
+      updatedAt: new Date().toISOString().slice(0, 10),
+      year: new Date().getFullYear(),
+      month: new Date().getMonth() + 1
+    };
+
+    if (this.isEditing && this.editingIndex !== null) {
+      // ✅ PUT
+      this.api.update(payload.id, payload).subscribe({
+        next: () => {
+          this.resetForm();
+          this.loadData();
+        },
+        error: (err) => console.error('PUT error:', err)
+      });
+    } else {
+      // ✅ POST
+      this.api.create(payload).subscribe({
+        next: () => {
+          this.resetForm();
+          this.loadData();
+        },
+        error: (err) => console.error('POST error:', err)
+      });
+    }
+  }
+
+  // Reset form
+  resetForm() {
+    this.kpiForm.reset({ weightage: 0 });
     this.isEditing = false;
     this.editingId = null;
   }

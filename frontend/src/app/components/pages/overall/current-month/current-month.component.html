@@ -10,7 +10,9 @@
     </div>
 
     <div class="header-right">
-      <span class="count-pill">{{ engineersFlat.length }} NEs</span>
+      <span class="count-pill">
+        {{ engineersFlat.length }} NEs
+      </span>
       <button class="primary-btn" type="button">
         Export to Excel
       </button>
@@ -89,29 +91,32 @@
     <div class="final-table-container">
       <table class="final-distribution-table">
         <thead>
+          <!-- Row 1: R-GM (Region) -->
           <tr #rightRowRef>
             <ng-container *ngFor="let region of regionGroups">
-              <th [attr.colspan]="region.totalEngineers * 3">
+              <th [attr.colspan]="region.totalEngineers * 2">
                 {{ region.region }}
               </th>
             </ng-container>
           </tr>
 
+          <!-- Row 2: P-DGM (Province) -->
           <tr #rightRowRef>
             <ng-container *ngFor="let region of regionGroups">
               <th
                 *ngFor="let province of region.provinces"
-                [attr.colspan]="province.engineers.length * 3"
+                [attr.colspan]="province.engineers.length * 2"
               >
                 {{ province.province }}
               </th>
             </ng-container>
           </tr>
 
+          <!-- Row 3: NW EE / RTOM AREA -->
           <tr class="colSpan-header" #rightRowRef>
             <ng-container *ngFor="let region of regionGroups">
               <ng-container *ngFor="let province of region.provinces">
-                <th *ngFor="let eng of province.engineers" colspan="3">
+                <th *ngFor="let eng of province.engineers" colspan="2">
                   <span class="nw-engineer">{{ eng.networkEngineer }}</span>
                   <span class="rtom-area">({{ eng.lea }})</span>
                 </th>

@@ -1,0 +1,6 @@
+@ServiceFulfilmentKpiBackend_HostAddress = http://localhost:5139
+
+GET {{ServiceFulfilmentKpiBackend_HostAddress}}/MyWeatherForecast/
+Accept: application/json
+
+###
