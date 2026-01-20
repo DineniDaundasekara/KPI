@@ -9,6 +9,10 @@ export interface Form6Record {
   division: string;
   section: string;
   kpi_percent: number;
+
+  total_minutes?: Record<string, string | number>;
+  unavailable_minutes?: Record<string, string | number>;
+  total_nodes?: Record<string, string | number>;
 }
 
 @Injectable({

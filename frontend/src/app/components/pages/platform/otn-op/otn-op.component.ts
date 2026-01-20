@@ -48,418 +48,6 @@ interface EditCellState {
 	value: string;
 }
 
-const MOCK_FORM9_DATA: Form9Entry[] = [
-	{
-		_id: '675bf36486740514a3edc615',
-		no: 12,
-		network_engineer_kpi: 'Fiber Failures Restoration(General): <4 Hrs',
-		division: 'TRANSPORT & ACCESS',
-		section: 'INT  & NT OP',
-		kpi_percent: 0.85,
-		formType: 'form9',
-		Total_Failed_Links: {
-			cenhkmd: '0',
-			cenhkmd1: '0',
-			gqkintb: '1',
-			ndfrm: '0',
-			awho: '0',
-			konix: '0',
-			ngivt: '1',
-			kgkly: '2',
-			cwpx: '6',
-			debkymt: '1',
-			gphtnw: '6',
-			adipr: '1',
-			bddwmrg: '0',
-			keirn: '2',
-			embmbmh: '1',
-			aggl: '0',
-			hrktph: '3',
-			bcjrdkltc: '1',
-			ja: '0',
-			komltmbva: '0',
-		},
-		Links_SLA_Not_Violated: {
-			cenhkmd: '7',
-			cenhkmd1: '0',
-			gqkintb: '0',
-			ndfrm: '0',
-			awho: '0',
-			konix: '0',
-			ngivt: '1',
-			kgkly: '2',
-			cwpx: '4',
-			debkymt: '1',
-			gphtnw: '6',
-			adipr: '1',
-			bddwmrg: '0',
-			keirn: '2',
-			embmbmh: '1',
-			aggl: '0',
-			hrktph: '0',
-			bcjrdkltc: '0',
-			ja: '0',
-			komltmbva: '0',
-		},
-	},
-	{
-		_id: '675bf61e86740514a3edc621',
-		no: 13,
-		network_engineer_kpi: 'Fiber Failures Restoration(Large scale< Pole damages etc>): <8 Hrs',
-		division: 'TRANSPORT & ACCESS',
-		section: 'INT  & NT OP',
-		kpi_percent: 0.8,
-		formType: 'form9',
-		Total_Failed_Links: {
-			cenhkmd: '0',
-			cenhkmd1: '0',
-			gqkintb: '0',
-			ndfrm: '0',
-			awho: '0',
-			konix: '0',
-			ngivt: '0',
-			kgkly: '2',
-			cwpx: '2',
-			debkymt: '14',
-			gphtnw: '5',
-			adipr: '0',
-			bddwmrg: '0',
-			keirn: '1',
-			embmbmh: '1',
-			aggl: '0',
-			hrktph: '1',
-			bcjrdkltc: '0',
-			ja: '0',
-			komltmbva: '0',
-		},
-		Links_SLA_Not_Violated: {
-			cenhkmd: '1',
-			cenhkmd1: '0',
-			gqkintb: '1',
-			ndfrm: '0',
-			awho: '0',
-			konix: '0',
-			ngivt: '0',
-			kgkly: '2',
-			cwpx: '1',
-			debkymt: '8',
-			gphtnw: '4',
-			adipr: '0',
-			bddwmrg: '0',
-			keirn: '1',
-			embmbmh: '1',
-			aggl: '0',
-			hrktph: '0',
-			bcjrdkltc: '0',
-			ja: '0',
-			komltmbva: '0',
-		},
-	},
-];
-
-const MOCK_FORM8_DATA: Form8Entry[] = [
-	{
-		_id: '675bce5e86740514a3edc5e1',
-		no: 8,
-		network_engineer_kpi: 'SLBN NW Availability',
-		division: 'TRANSPORT & ACCESS',
-		section: 'BB&ANW',
-		kpi_percent: 99.999,
-		formType: 'form8',
-		unavailable_minutes: {
-			cenhkmd: '0',
-			cenhkmd1: '200',
-			gqkintb: '10',
-			ndfrm: '0',
-			awho: '0',
-			konix: '0',
-			ngivt: '0',
-			kgkly: '10',
-			cwpx: '0',
-			debkymt: '0',
-			gphtnw: '0',
-			adipr: '0',
-			bddwmrg: '0',
-			keirn: '0',
-			embmbmh: '0',
-			aggl: '0',
-			hrktph: '0',
-			bcjrdkltc: '0',
-			ja: '0',
-			komltmbva: '0',
-		},
-		total_minutes: {
-			cenhkmd: '0',
-			cenhkmd1: '223200',
-			gqkintb: '267840',
-			ndfrm: '223200',
-			awho: '133920',
-			konix: '178560',
-			ngivt: '267840',
-			kgkly: '89280',
-			cwpx: '44640',
-			debkymt: '133920',
-			gphtnw: '133921',
-			adipr: '267840',
-			bddwmrg: '133920',
-			keirn: '267840',
-			embmbmh: '178560',
-			aggl: '89280',
-			hrktph: '133920',
-			bcjrdkltc: '267840',
-			ja: '44640',
-			komltmbva: '267840',
-		},
-		total_nodes: {
-			cenhkmd: '2',
-			cenhkmd1: '5',
-			gqkintb: '6',
-			ndfrm: '5',
-			awho: '3',
-			konix: '4',
-			ngivt: '6',
-			kgkly: '2',
-			cwpx: '1',
-			debkymt: '3',
-			gphtnw: '3',
-			adipr: '6',
-			bddwmrg: '3',
-			keirn: '6',
-			embmbmh: '4',
-			aggl: '2',
-			hrktph: '3',
-			bcjrdkltc: '6',
-			ja: '1',
-			komltmbva: '6',
-		},
-	},
-	{
-		_id: '675bd3bb86740514a3edc5f6',
-		no: 9,
-		network_engineer_kpi: 'SDH NW availability',
-		division: 'TRANSPORT & ACCESS',
-		section: 'BB&ANW',
-		kpi_percent: 99.996,
-		formType: 'form8',
-		unavailable_minutes: {
-			cenhkmd: '0',
-			cenhkmd1: '0',
-			gqkintb: '0',
-			ndfrm: '0',
-			awho: '0',
-			konix: '0',
-			ngivt: '0',
-			kgkly: '10',
-			cwpx: '0',
-			debkymt: '0',
-			gphtnw: '0',
-			adipr: '0',
-			bddwmrg: '0',
-			keirn: '0',
-			embmbmh: '0',
-			aggl: '0',
-			hrktph: '0',
-			bcjrdkltc: '0',
-			ja: '0',
-			komltmbva: '0',
-		},
-		total_minutes: {
-			cenhkmd: '44640',
-			cenhkmd1: '5490720',
-			gqkintb: '2098080',
-			ndfrm: '848160',
-			awho: '580320',
-			konix: '1116000',
-			ngivt: '1026720',
-			kgkly: '1205280',
-			cwpx: '624960',
-			debkymt: '1740960',
-			gphtnw: '1026720',
-			adipr: '1785600',
-			bddwmrg: '1339200',
-			keirn: '1874880',
-			embmbmh: '2499840',
-			aggl: '982080',
-			hrktph: '892800',
-			bcjrdkltc: '2098080',
-			ja: '982080',
-			komltmbva: '178560',
-		},
-		total_nodes: {
-			cenhkmd: '1',
-			cenhkmd1: '123',
-			gqkintb: '47',
-			ndfrm: '19',
-			awho: '13',
-			konix: '25',
-			ngivt: '23',
-			kgkly: '27',
-			cwpx: '14',
-			debkymt: '39',
-			gphtnw: '23',
-			adipr: '40',
-			bddwmrg: '30',
-			keirn: '42',
-			embmbmh: '56',
-			aggl: '22',
-			hrktph: '20',
-			bcjrdkltc: '47',
-			ja: '22',
-			komltmbva: '4',
-		},
-	},
-	{
-		_id: '675bd83f86740514a3edc5ff',
-		no: 10,
-		network_engineer_kpi: 'Fiber NW availability',
-		division: 'TRANSPORT & ACCESS',
-		section: 'BB&ANW',
-		kpi_percent: 99.99,
-		formType: 'form8',
-		unavailable_minutes: {
-			cenhkmd: '0',
-			cenhkmd1: '0',
-			gqkintb: '1379',
-			ndfrm: '0',
-			awho: '0',
-			konix: '0',
-			ngivt: '59',
-			kgkly: '1161',
-			cwpx: '1131',
-			debkymt: '7308',
-			gphtnw: '2790',
-			adipr: '164',
-			bddwmrg: '0',
-			keirn: '380',
-			embmbmh: '613',
-			aggl: '0',
-			hrktph: '1471',
-			bcjrdkltc: '1019',
-			ja: '0',
-			komltmbva: '0',
-		},
-		total_minutes: {
-			cenhkmd: '133920',
-			cenhkmd1: '54996480',
-			gqkintb: '54416160',
-			ndfrm: '20712960',
-			awho: '20980800',
-			konix: '28837440',
-			ngivt: '19596960',
-			kgkly: '18704160',
-			cwpx: '6740640',
-			debkymt: '62808480',
-			gphtnw: '18614880',
-			adipr: '31828320',
-			bddwmrg: '20400480',
-			keirn: '28033920',
-			embmbmh: '33480000',
-			aggl: '24060960',
-			hrktph: '37854720',
-			bcjrdkltc: '13570560',
-			ja: '20980800',
-			komltmbva: '22052160',
-		},
-		total_nodes: {
-			cenhkmd: '3',
-			cenhkmd1: '1232',
-			gqkintb: '1219',
-			ndfrm: '464',
-			awho: '470',
-			konix: '646',
-			ngivt: '439',
-			kgkly: '419',
-			cwpx: '151',
-			debkymt: '1407',
-			gphtnw: '417',
-			adipr: '713',
-			bddwmrg: '457',
-			keirn: '628',
-			embmbmh: '750',
-			aggl: '539',
-			hrktph: '848',
-			bcjrdkltc: '304',
-			ja: '470',
-			komltmbva: '494',
-		},
-	},
-	{
-		_id: '6763cc8e3e62f54c4c94e666',
-		no: 5,
-		network_engineer_kpi: 'International BH Availability',
-		division: 'TRANSPORT & ACCESS',
-		section: 'BB&ANW',
-		kpi_percent: 99.999,
-		formType: 'form8',
-		unavailable_minutes: {
-			cenhkmd: '0',
-			cenhkmd1: '0',
-			gqkintb: '0',
-			ndfrm: '0',
-			awho: '0',
-			konix: '0',
-			ngivt: '0',
-			kgkly: '10',
-			cwpx: '0',
-			debkymt: '0',
-			gphtnw: '0',
-			adipr: '0',
-			bddwmrg: '0',
-			keirn: '0',
-			embmbmh: '0',
-			aggl: '0',
-			hrktph: '0',
-			bcjrdkltc: '0',
-			ja: '0',
-			komltmbva: '0',
-		},
-		total_minutes: {
-			cenhkmd: '267840',
-			cenhkmd1: '714240',
-			gqkintb: '44640',
-			ndfrm: '357120',
-			awho: '89280',
-			konix: '0',
-			ngivt: '0',
-			kgkly: '982080',
-			cwpx: '44640',
-			debkymt: '0',
-			gphtnw: '0',
-			adipr: '0',
-			bddwmrg: '0',
-			keirn: '89280',
-			embmbmh: '580320',
-			aggl: '178560',
-			hrktph: '133920',
-			bcjrdkltc: '0',
-			ja: '0',
-			komltmbva: '0',
-		},
-		total_nodes: {
-			cenhkmd: '6',
-			cenhkmd1: '16',
-			gqkintb: '1',
-			ndfrm: '8',
-			awho: '2',
-			konix: '0',
-			ngivt: '0',
-			kgkly: '22',
-			cwpx: '1',
-			debkymt: '0',
-			gphtnw: '0',
-			adipr: '0',
-			bddwmrg: '0',
-			keirn: '2',
-			embmbmh: '13',
-			aggl: '4',
-			hrktph: '3',
-			bcjrdkltc: '0',
-			ja: '0',
-			komltmbva: '0',
-		},
-	},
-];
-
 const LOCAL_REGION_TABLE: RegionRow[] = [
 	{ region: 'Region 3', province: 'NP', networkEngineer: 'NW/NP-2', lea: 'KOMLTMBVA' },
 	{ region: 'Region 3', province: 'NP', networkEngineer: 'NW/NP-1', lea: 'JA' },
@@ -592,6 +180,39 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 
 	get selectedKey(): string {
 		return this.formValues.dropdown4 ? this.norm(this.formValues.dropdown4) : '';
+	}
+
+	get selectedLeaLabel(): string {
+		if (!this.formValues.dropdown4) {
+			return '';
+		}
+		const key = this.formValues.dropdown4;
+		return this.optionMapping[key] || key.toUpperCase();
+	}
+
+	get hasSnapshotData(): boolean {
+		if (!this.selectedKey) {
+			return false;
+		}
+
+		return (
+			this.form8Data.some((entry) => this.hasForm8Snapshot(entry, this.selectedKey)) ||
+			this.form9Data.some((entry) => this.hasForm9Snapshot(entry, this.selectedKey))
+		);
+	}
+
+	get form8SnapshotRows(): Form8Entry[] {
+		if (!this.selectedKey) {
+			return [];
+		}
+		return this.form8Data.filter((entry) => this.hasForm8Snapshot(entry, this.selectedKey));
+	}
+
+	get form9SnapshotRows(): Form9Entry[] {
+		if (!this.selectedKey) {
+			return [];
+		}
+		return this.form9Data.filter((entry) => this.hasForm9Snapshot(entry, this.selectedKey));
 	}
 
 	get combinedData(): Array<Form8Entry | Form9Entry> {
@@ -732,18 +353,286 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 			form9: this.kpiService.getAll(),
 		}).subscribe({
 			next: ({ form8, form9 }) => {
-				this.adminForm8Rows = Array.isArray(form8) ? form8 : [];
-				this.adminForm9Rows = Array.isArray(form9) ? form9 : [];
-				this.loading = false;
+				try {
+					this.adminForm8Rows = Array.isArray(form8) ? form8 : [];
+					this.adminForm9Rows = Array.isArray(form9) ? form9 : [];
+					this.form8Data = this.transformForm8Records(this.adminForm8Rows);
+					this.form9Data = this.transformForm9Records(this.adminForm9Rows);
+					this.loading = false;
+				} catch (mappingError) {
+					console.error('Failed to transform OTN KPI payloads:', mappingError);
+					this.form8Data = [];
+					this.form9Data = [];
+					this.loading = false;
+					this.error = 'Failed to prepare OTN KPI data.';
+				}
 			},
 			error: (err) => {
 				console.error('Failed to load OTN admin data:', err);
 				this.adminForm8Rows = [];
 				this.adminForm9Rows = [];
+				this.form8Data = [];
+				this.form9Data = [];
 				this.loading = false;
 				this.error = 'Failed to load OTN KPI data.';
 			},
 		});
+	}
+
+	private transformForm8Records(records: any[]): Form8Entry[] {
+		return (Array.isArray(records) ? records : [])
+			.map((record, index) => this.mapForm8Record(record, index))
+			.filter((entry): entry is Form8Entry => Boolean(entry))
+			.sort((a, b) => a.no - b.no);
+	}
+
+	private transformForm9Records(records: any[]): Form9Entry[] {
+		return (Array.isArray(records) ? records : [])
+			.map((record, index) => this.mapForm9Record(record, index))
+			.filter((entry): entry is Form9Entry => Boolean(entry))
+			.sort((a, b) => a.no - b.no);
+	}
+
+	private mapForm8Record(record: any, index: number): Form8Entry {
+		const entry: Form8Entry = {
+			_id: this.extractId(record, index, 'form8'),
+			no: this.toNumber(this.pickFirst(record, ['no', 'No', 'NO']), index + 1),
+			network_engineer_kpi: this.toStringValue(
+				this.pickFirst(
+					record,
+					['network_engineer_kpi', 'network_Engineer_Kpi', 'networkEngineerKpi', 'NetworkEngineerKpi']
+				),
+				'—'
+			),
+			division: this.toStringValue(this.pickFirst(record, ['division', 'Division']), '—'),
+			section: this.toStringValue(this.pickFirst(record, ['section', 'Section']), '—'),
+			kpi_percent: this.toNumber(
+				this.pickFirst(record, ['kpi_percent', 'kpi_Percent', 'Kpi_Percent', 'kpiPercent', 'KpiPercent']),
+				0
+			),
+			formType: 'form8',
+			total_minutes: this.collectDict(record, 'total_minutes'),
+			unavailable_minutes: this.collectDict(record, 'unavailable_minutes'),
+			total_nodes: this.collectDict(record, 'total_nodes'),
+		};
+		return entry;
+	}
+
+	private mapForm9Record(record: any, index: number): Form9Entry {
+		const entry: Form9Entry = {
+			_id: this.extractId(record, index, 'form9'),
+			no: this.toNumber(this.pickFirst(record, ['no', 'No', 'NO']), index + 1),
+			network_engineer_kpi: this.toStringValue(
+				this.pickFirst(
+					record,
+					['network_engineer_kpi', 'network_Engineer_Kpi', 'networkEngineerKpi', 'NetworkEngineerKpi']
+				),
+				'—'
+			),
+			division: this.toStringValue(this.pickFirst(record, ['division', 'Division']), '—'),
+			section: this.toStringValue(this.pickFirst(record, ['section', 'Section']), '—'),
+			kpi_percent: this.toNumber(
+				this.pickFirst(record, ['kpi_percent', 'kpi_Percent', 'Kpi_Percent', 'kpiPercent', 'KpiPercent']),
+				0
+			),
+			formType: 'form9',
+			Total_Failed_Links: this.collectDict(record, 'total_failed_links'),
+			Links_SLA_Not_Violated: this.collectDict(record, 'links_sla_not_violated'),
+		};
+		return entry;
+	}
+
+	private pickFirst(record: any, keys: string[], fallback: any = undefined): any {
+		if (!record) {
+			return fallback;
+		}
+		for (const key of keys) {
+			if (record[key] !== undefined && record[key] !== null) {
+				return record[key];
+			}
+		}
+		return fallback;
+	}
+
+	private extractId(record: any, index: number, prefix: string): string {
+		const rawId = this.pickFirst(record, ['_id', 'id', 'Id', 'ID', 'recordId']);
+		if (rawId !== undefined && rawId !== null && rawId !== '') {
+			return String(rawId);
+		}
+		return `${prefix}-${index + 1}`;
+	}
+
+	private toNumber(value: any, fallback = 0): number {
+		const parsed = Number(value);
+		return Number.isFinite(parsed) ? parsed : fallback;
+	}
+
+	private toStringValue(value: any, fallback = ''): string {
+		if (value === undefined || value === null || value === '') {
+			return fallback;
+		}
+		return String(value);
+	}
+
+	private collectDict(record: any, baseKey: string): Dict<any> {
+		if (!record) {
+			return {};
+		}
+		const containers = [null, 'metrics', 'snapshot', 'payload', 'data', 'values', 'details'];
+		const variants = this.buildKeyVariants(baseKey);
+		for (const container of containers) {
+			const rawContainer = container ? record?.[container] : record;
+			const containerValue = this.parseContainer(rawContainer);
+			if (!containerValue || typeof containerValue !== 'object') {
+				continue;
+			}
+			for (const variant of variants) {
+				if (Object.prototype.hasOwnProperty.call(containerValue, variant)) {
+					const normalized = this.normalizeDict((containerValue as any)[variant]);
+					if (Object.keys(normalized).length) {
+						return normalized;
+					}
+				}
+			}
+		}
+		return {};
+	}
+
+	private buildKeyVariants(baseKey: string): string[] {
+		const cleaned = baseKey.replace(/[^A-Za-z0-9]/g, '').toLowerCase();
+		const camel = baseKey.replace(/_([a-z])/g, (_, char: string) => char.toUpperCase());
+		const pascal = camel.charAt(0).toUpperCase() + camel.slice(1);
+		const snakePascal = baseKey.replace(/(^|_)([a-z])/g, (_, sep: string, char: string) => `${sep}${char.toUpperCase()}`);
+		return Array.from(
+			new Set([
+				baseKey,
+				baseKey.toLowerCase(),
+				baseKey.toUpperCase(),
+				snakePascal,
+				camel,
+				camel.toLowerCase(),
+				pascal,
+				pascal.toLowerCase(),
+				cleaned,
+				`${camel}Json`,
+				`${pascal}Json`,
+				`${snakePascal}Json`,
+				`${baseKey}_json`,
+				`${cleaned}Json`,
+			])
+		);
+	}
+
+	private parseContainer(value: any): any {
+		if (value === undefined || value === null) {
+			return null;
+		}
+		if (typeof value === 'string') {
+			const trimmed = value.trim();
+			if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+				try {
+					return JSON.parse(trimmed);
+				} catch (err) {
+					console.warn('Failed to parse KPI snapshot container:', err);
+					return null;
+				}
+			}
+			return null;
+		}
+		return value;
+	}
+
+	private normalizeDict(value: any): Dict<any> {
+		if (value === undefined || value === null || value === '') {
+			return {};
+		}
+		let source = value;
+		if (typeof source === 'string') {
+			const trimmed = source.trim();
+			if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+				try {
+					source = JSON.parse(trimmed);
+				} catch (err) {
+					console.warn('Failed to parse KPI snapshot payload:', err);
+					return {};
+				}
+			} else {
+				return {};
+			}
+		}
+		if (Array.isArray(source)) {
+			return source.reduce((acc: Dict<any>, item: any) => {
+				if (!item || typeof item !== 'object') {
+					return acc;
+				}
+				const keyCandidate = item.key ?? item.area ?? item.label ?? item.name ?? item.code ?? item.id ?? '';
+				const normalizedKey = this.norm(keyCandidate);
+				if (!normalizedKey) {
+					return acc;
+				}
+				const valueCandidate =
+					item.value ??
+					item.minutes ??
+					item.total ??
+					item.count ??
+					item.amount ??
+					item.metric ??
+					item.data;
+				if (valueCandidate !== undefined && valueCandidate !== null && valueCandidate !== '') {
+					acc[normalizedKey] = valueCandidate;
+				}
+				return acc;
+			}, {} as Dict<any>);
+		}
+		if (typeof source === 'object') {
+			return Object.keys(source).reduce((acc: Dict<any>, key: string) => {
+				const normalizedKey = this.norm(key);
+				if (!normalizedKey) {
+					return acc;
+				}
+				const metricValue = (source as any)[key];
+				if (metricValue === undefined || metricValue === null || metricValue === '') {
+					return acc;
+				}
+				acc[normalizedKey] = metricValue;
+				return acc;
+			}, {} as Dict<any>);
+		}
+		return {};
+	}
+
+	hasForm8Snapshot(entry: Form8Entry, key?: string): boolean {
+		const lookup = this.norm(key || this.selectedKey);
+		if (!lookup) {
+			return false;
+		}
+		return Boolean(
+			(entry.total_minutes && entry.total_minutes[lookup] !== undefined) ||
+			(entry.unavailable_minutes && entry.unavailable_minutes[lookup] !== undefined) ||
+			(entry.total_nodes && entry.total_nodes[lookup] !== undefined)
+		);
+	}
+
+	hasForm9Snapshot(entry: Form9Entry, key?: string): boolean {
+		const lookup = this.norm(key || this.selectedKey);
+		if (!lookup) {
+			return false;
+		}
+		return Boolean(
+			(entry.Total_Failed_Links && entry.Total_Failed_Links[lookup] !== undefined) ||
+			(entry.Links_SLA_Not_Violated && entry.Links_SLA_Not_Violated[lookup] !== undefined)
+		);
+	}
+
+	formatSnapshotValue(value: any): string {
+		if (value === undefined || value === null || value === '') {
+			return '—';
+		}
+		const numeric = Number(value);
+		if (!Number.isNaN(numeric)) {
+			return Number.isInteger(numeric) ? numeric.toString() : numeric.toFixed(2);
+		}
+		return String(value);
 	}
 
 	private updateDropdown2Options(region: string): void {

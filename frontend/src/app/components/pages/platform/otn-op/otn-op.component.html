@@ -6,7 +6,7 @@
 		<div class="mt-3">
 			<small class="text-muted">
 				<i class="bi bi-info-circle me-1"></i>
-				{{ adminForm8Rows.length + adminForm9Rows.length }} KPIs loaded 
+				{{ form8Data.length + form9Data.length }} KPIs loaded
 				<span [class.text-success]="isEditingAllowed" [class.text-warning]="!isEditingAllowed">
 					<i class="bi" [ngClass]="isEditingAllowed ? 'bi-check-circle' : 'bi-exclamation-circle'"></i>
 					{{ isEditingAllowed ? 'Edit mode enabled (Platform Admin)' : 'View only mode (User)' }}
@@ -110,6 +110,26 @@
 				</div>
 			</div>
 		</form>
+		<div class="selected-filters mb-4">
+			<div class="filter-chip">
+				<span class="filter-label">R-GM:</span>
+				<span class="filter-value">{{ formValues.dropdown1 || 'Select an option' }}</span>
+			</div>
+			<div class="filter-chip">
+				<span class="filter-label">P-DGM:</span>
+				<span class="filter-value">{{ formValues.dropdown2 || 'Select an option' }}</span>
+			</div>
+			<div class="filter-chip">
+				<span class="filter-label">NW EE:</span>
+				<span class="filter-value">{{ formValues.dropdown3 || 'Select an option' }}</span>
+			</div>
+			<div class="filter-chip">
+				<span class="filter-label">RTOM AREA:</span>
+				<span class="filter-value">
+					{{ formValues.dropdown4 ? selectedLeaLabel : 'Select an option' }}
+				</span>
+			</div>
+		</div>
 		<div class="card shadow-sm border-0">
 			<div class="card-body p-0">
 				<div class="card-header bg-primary text-white">
@@ -119,7 +139,7 @@
 					</h5>
 				</div>
 
-				<div class="table-responsive" *ngIf="!loading && (adminForm8Rows.length || adminForm9Rows.length)">
+				<div class="table-responsive" *ngIf="!loading && combinedData.length">
 					<table class="table table-hover table-bordered mb-0 data-table" (keydown.space)="$event.stopPropagation()">
 						<thead class="table-dark">
 							<tr>
@@ -128,32 +148,132 @@
 								<th>Division</th>
 								<th>Section</th>
 								<th>KPI Percent</th>
+								<th *ngIf="selectedKey">{{ selectedLeaLabel || 'RTOM Area' }}</th>
 							</tr>
 						</thead>
 						<tbody>
-							<tr *ngFor="let row of adminForm8Rows">
-								<td>{{ row.no }}</td>
-								<td>{{ row.network_Engineer_Kpi }}</td>
-								<td>{{ row.division }}</td>
-								<td>{{ row.section }}</td>
-								<td>{{ row.kpi_Percent }}</td>
-							</tr>
-							<tr *ngFor="let row of adminForm9Rows">
-								<td>{{ row.no }}</td>
-								<td>{{ row.network_Engineer_Kpi }}</td>
-								<td>{{ row.division }}</td>
-								<td>{{ row.section }}</td>
-								<td>{{ row.kpi_Percent }}</td>
-							</tr>
+							<ng-container *ngFor="let row of combinedData">
+								<tr>
+									<td>{{ row.no }}</td>
+									<td>{{ row.network_engineer_kpi }}</td>
+									<td>{{ row.division }}</td>
+									<td>{{ row.section }}</td>
+									<td>{{ row.kpi_percent }}</td>
+									<td *ngIf="selectedKey">{{ selectedPercentage(row) || '—' }}</td>
+								</tr>
+								<ng-container *ngIf="row.formType === 'form8' && selectedKey">
+									<tr class="sub-row">
+										<td></td>
+										<td class="sub-label" colspan="4">Total Minutes</td>
+										<td *ngIf="selectedKey">{{ formatSnapshotValue(getTotalMinutesDisplay(row)) }}</td>
+									</tr>
+									<tr class="sub-row">
+										<td></td>
+										<td class="sub-label" colspan="4">Unavailable Minutes</td>
+										<td *ngIf="selectedKey">{{ formatSnapshotValue(getForm8Value(row, 'unavailable_minutes')) }}</td>
+									</tr>
+									<tr class="sub-row">
+										<td></td>
+										<td class="sub-label" colspan="4">Total Nodes</td>
+										<td *ngIf="selectedKey">{{ formatSnapshotValue(getForm8Value(row, 'total_nodes')) }}</td>
+									</tr>
+								</ng-container>
+								<ng-container *ngIf="row.formType === 'form9' && selectedKey">
+									<tr class="sub-row">
+										<td></td>
+										<td class="sub-label" colspan="4">Total Failed Links</td>
+										<td *ngIf="selectedKey">{{ formatSnapshotValue(getForm9Value(row, 'Total_Failed_Links')) }}</td>
+									</tr>
+									<tr class="sub-row">
+										<td></td>
+										<td class="sub-label" colspan="4">Links SLA Not Violated</td>
+										<td *ngIf="selectedKey">{{ formatSnapshotValue(getForm9Value(row, 'Links_SLA_Not_Violated')) }}</td>
+									</tr>
+								</ng-container>
+							</ng-container>
 						</tbody>
 					</table>
 				</div>
 
-				<div *ngIf="!loading && !adminForm8Rows.length && !adminForm9Rows.length" class="text-center py-5 text-muted">
+				<div *ngIf="!loading && !combinedData.length" class="text-center py-5 text-muted">
 					<i class="bi bi-folder2-open d-block mb-2"></i>
 					<span>No KPI entries yet.</span>
 				</div>
 			</div>
 		</div>
+
+			<div class="card snapshot-card mt-4" *ngIf="selectedKey">
+				<div class="card-header bg-success text-white">
+					<div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+						<span>Selected RTOM Area — {{ selectedLeaLabel }}</span>
+						<small class="text-white-50">Live KPI values</small>
+					</div>
+				</div>
+				<div class="card-body">
+					<ng-container *ngIf="hasSnapshotData; else missingSnapshot">
+						<div class="snapshot-grid">
+							<div class="snapshot-section" *ngIf="form8SnapshotRows.length">
+								<h6 class="snapshot-title">Fiber Failures Restoration (Form 8)</h6>
+								<div class="table-responsive">
+									<table class="table table-sm snapshot-table mb-0">
+										<thead>
+											<tr>
+												<th>No</th>
+												<th>KPI</th>
+												<th>Total Minutes</th>
+												<th>Unavailable Minutes</th>
+												<th>Total Nodes</th>
+												<th>Availability %</th>
+											</tr>
+										</thead>
+										<tbody>
+											<ng-container *ngFor="let entry of form8SnapshotRows">
+												<tr>
+													<td>{{ entry.no }}</td>
+													<td>{{ entry.network_engineer_kpi }}</td>
+													<td>{{ formatSnapshotValue(getTotalMinutesDisplay(entry)) }}</td>
+													<td>{{ formatSnapshotValue(getForm8Value(entry, 'unavailable_minutes')) }}</td>
+													<td>{{ formatSnapshotValue(getForm8Value(entry, 'total_nodes')) }}</td>
+													<td>{{ selectedPercentage(entry) || '—' }}</td>
+												</tr>
+											</ng-container>
+										</tbody>
+									</table>
+								</div>
+							</div>
+							<div class="snapshot-section" *ngIf="form9SnapshotRows.length">
+								<h6 class="snapshot-title">Optical Network Availability (Form 9)</h6>
+								<div class="table-responsive">
+									<table class="table table-sm snapshot-table mb-0">
+										<thead>
+											<tr>
+												<th>No</th>
+												<th>KPI</th>
+												<th>Total Failed Links</th>
+												<th>Links SLA Not Violated</th>
+												<th>Restoration %</th>
+											</tr>
+										</thead>
+										<tbody>
+											<ng-container *ngFor="let entry of form9SnapshotRows">
+												<tr>
+													<td>{{ entry.no }}</td>
+													<td>{{ entry.network_engineer_kpi }}</td>
+													<td>{{ formatSnapshotValue(getForm9Value(entry, 'Total_Failed_Links')) }}</td>
+													<td>{{ formatSnapshotValue(getForm9Value(entry, 'Links_SLA_Not_Violated')) }}</td>
+													<td>{{ selectedPercentage(entry) || '—' }}</td>
+												</tr>
+											</ng-container>
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</div>
+					</ng-container>
+					<ng-template #missingSnapshot>
+						<p class="text-muted mb-0">No KPI inputs captured yet for this RTOM area.</p>
+					</ng-template>
+				</div>
+			</div>
 	</div>
 </div>
