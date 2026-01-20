@@ -54,6 +54,7 @@ export class ServiceFulfilmentComponent implements OnInit {
   data: KpiData[] = [];
   regionTable: RegionData[] = [];
   adminKpiRows: ServiceFulfilmentKpi[] = [];
+  filteredKpiRows: ServiceFulfilmentKpi[] = [];
   editingCell: { rowId: string | number | null, key: string | null } = { rowId: null, key: null };
   
   // Dropdown options
@@ -620,11 +621,13 @@ export class ServiceFulfilmentComponent implements OnInit {
     this.form4Api.getAll().subscribe({
       next: (kpis) => {
         this.adminKpiRows = Array.isArray(kpis) ? kpis : [];
+        this.filteredKpiRows = this.adminKpiRows;  // Show all data initially
         this.loading = false;
       },
       error: (err) => {
         console.error('Failed to load Service Fulfilment admin data:', err);
         this.adminKpiRows = [];
+        this.filteredKpiRows = [];
         this.loading = false;
         this.error = 'Failed to load Service Fulfilment KPI data.';
       }
@@ -800,6 +803,53 @@ export class ServiceFulfilmentComponent implements OnInit {
       case 'dropdown4':
         this.updateVisibleColumns();
         break;
+    }
+    
+    // Apply filtering after any dropdown change
+    this.applyFilters();
+  }
+
+  applyFilters() {
+    // If all 4 filters are selected, filter the data
+    if (this.formValues.dropdown1 && this.formValues.dropdown2 && 
+        this.formValues.dropdown3 && this.formValues.dropdown4) {
+      
+      // Filter KPI rows based on all selected region criteria
+      this.filteredKpiRows = this.adminKpiRows.filter(kpi => {
+        // Check region filter
+        if (kpi.region && kpi.region !== this.formValues.dropdown1) {
+          return false;
+        }
+        
+        // Check province filter
+        if (kpi.province && kpi.province !== this.formValues.dropdown2) {
+          return false;
+        }
+        
+        // Check network engineer filter
+        if (kpi.networkEngineer && kpi.networkEngineer !== this.formValues.dropdown3) {
+          return false;
+        }
+        
+        // Check lea filter
+        if (kpi.lea) {
+          const displayLea = this.optionMapping[this.formValues.dropdown4] || this.formValues.dropdown4;
+          const kpiLea = kpi.lea;
+          const dbKey = Object.keys(this.optionMapping).find(
+            key => this.optionMapping[key] === kpiLea || key === kpiLea
+          );
+          const normalizedKpiLea = this.optionMapping[dbKey || ''] || kpiLea;
+          
+          if (normalizedKpiLea !== displayLea && kpiLea !== this.formValues.dropdown4) {
+            return false;
+          }
+        }
+        
+        return true;
+      });
+    } else {
+      // Show all data if filters are not fully selected
+      this.filteredKpiRows = this.adminKpiRows;
     }
   }
 
