@@ -233,6 +233,6 @@ export class AdminServiceFulfilmentComponent implements OnInit {
   resetForm() {
     this.kpiForm.reset({ weightage: 0 });
     this.isEditing = false;
-    this.editingId = null;
+    this.editingIndex = null;
   }
 }
