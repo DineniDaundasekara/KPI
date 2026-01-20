@@ -1,14 +1,19 @@
-// src/app/components/pages/admin/user-registration/user-registration.component.ts
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http';
-import { UserService, User, CreateUserDto, UpdateUserDto } from '../../../../services/user.service';
+
+interface User {
+  id: number;
+  username: string;
+  name: string;
+  pages: string[];
+  role: string;
+}
 
 @Component({
   selector: 'app-user-registration',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './user-registration.component.html',
   styleUrls: ['./user-registration.component.scss']
 })
@@ -17,19 +22,56 @@ export class UserRegistrationComponent implements OnInit {
   @ViewChild('formCard') formCard?: ElementRef<HTMLElement>;
   @ViewChild('nameField') nameField?: ElementRef<HTMLInputElement>;
   
-  formData: CreateUserDto = {
-    username: 0,
+  formData = {
+    username: '',
     name: '',
-    pages: [],
-    role: 'user',
-    isActive: 'true'
+    pages: [] as string[],
+    role: 'user'
   };
   
   users: User[] = [];
   error = '';
   success = '';
   editingUser: User | null = null;
-  isLoading = false;
+  
+  // Dummy user data for testing
+  dummyUsers: User[] = [
+    {
+      id: 1,
+      name: 'John Smith',
+      username: 'SN001',
+      pages: ['SERVICE FULFILMENT', 'IP NW OP', 'BB ANW'],
+      role: 'user'
+    },
+    {
+      id: 2,
+      name: 'Sarah Johnson',
+      username: 'SN002',
+      pages: ['OTN OP', 'TM Activity Plan'],
+      role: 'padmin'
+    },
+    {
+      id: 3,
+      name: 'Michael Brown',
+      username: 'SN003',
+      pages: ['ROUTINE MTNC', 'TOWER MTCE ACIEVEMENT'],
+      role: 'user'
+    },
+    {
+      id: 4,
+      name: 'Emily Davis',
+      username: 'SN004',
+      pages: ['SERVICE FULFILMENT', 'BB ANW', 'TM Activity Plan'],
+      role: 'user'
+    },
+    {
+      id: 5,
+      name: 'Robert Wilson',
+      username: 'SN005',
+      pages: ['IP NW OP', 'OTN OP', 'ROUTINE MTNC'],
+      role: 'padmin'
+    }
+  ];
   
   availablePages = [
     'SERVICE FULFILMENT',
@@ -38,39 +80,26 @@ export class UserRegistrationComponent implements OnInit {
     'OTN OP',
     'TM Activity Plan',
     'ROUTINE MTNC',
-    'TOWER MTCE ACHIEVEMENT'
+    'TOWER MTCE ACIEVEMENT'
   ];
 
-  constructor(private userService: UserService) {}
+  constructor() {}
 
   ngOnInit() {
-    this.fetchUsers();
+    // Load dummy data on init
+    this.users = [...this.dummyUsers];
   }
 
   fetchUsers() {
-    this.isLoading = true;
-    this.userService.getAllUsers().subscribe({
-      next: (users: User[]) => {
-        this.users = users;
-        this.isLoading = false;
-      },
-      error: (error: any) => {
-        this.error = 'Failed to fetch users. Please check if backend is running.';
-        console.error('Error fetching users:', error);
-        this.isLoading = false;
-        this.useDummyData();
-      }
-    });
+    // Simulate API call with setTimeout
+    setTimeout(() => {
+      this.users = [...this.dummyUsers];
+    }, 300);
   }
 
-  handleChange(event: Event, field: keyof CreateUserDto) {
+  handleChange(event: Event, field: string) {
     const input = event.target as HTMLInputElement;
-    
-    if (field === 'username') {
-      this.formData[field] = parseInt(input.value) || 0;
-    } else {
-      (this.formData as any)[field] = input.value;
-    }
+    (this.formData as any)[field] = input.value;
   }
 
   handlePageChange(page: string) {
@@ -87,55 +116,32 @@ export class UserRegistrationComponent implements OnInit {
     this.error = '';
     this.success = '';
 
-    if (!this.formData.name.trim()) {
-      this.error = 'Name is required';
-      return;
-    }
-
-    if (!this.formData.username || this.formData.username <= 0) {
-      this.error = 'Valid service number is required';
-      return;
-    }
-
-    this.isLoading = true;
-
-    if (this.editingUser) {
-      const updateData: UpdateUserDto = {
-        username: this.formData.username,
-        name: this.formData.name,
-        role: this.formData.role,
-        isActive: this.formData.isActive,
-        pages: this.formData.pages
-      };
-
-      this.userService.updateUser(this.editingUser.id, updateData).subscribe({
-        next: () => {
+    // Simulate API delay
+    setTimeout(() => {
+      if (this.editingUser) {
+        // Update existing user
+        const index = this.users.findIndex(u => u.id === this.editingUser!.id);
+        if (index > -1) {
+          this.users[index] = {
+            ...this.editingUser,
+            ...this.formData,
+            id: this.editingUser.id
+          };
           this.success = 'User updated successfully';
-          this.fetchUsers();
-          this.resetForm();
-          this.isLoading = false;
-        },
-        error: (error: any) => {
-          this.error = 'Failed to update user: ' + error.message;
-          console.error('Update error:', error);
-          this.isLoading = false;
         }
-      });
-    } else {
-      this.userService.createUser(this.formData).subscribe({
-        next: (newUser: User) => {
-          this.success = 'User created successfully';
-          this.users.push(newUser);
-          this.resetForm();
-          this.isLoading = false;
-        },
-        error: (error: any) => {
-          this.error = 'Failed to create user: ' + error.message;
-          console.error('Create error:', error);
-          this.isLoading = false;
-        }
-      });
-    }
+      } else {
+        // Create new user
+        const newUser: User = {
+          id: Date.now(), // Generate unique ID
+          ...this.formData
+        };
+        this.users.push(newUser);
+        this.success = 'User created successfully';
+      }
+      
+      this.resetForm();
+      // No need to call fetchUsers() since we're working with local data
+    }, 500);
   }
 
   handleEdit(user: User) {
@@ -144,8 +150,7 @@ export class UserRegistrationComponent implements OnInit {
       username: user.username,
       name: user.name,
       pages: [...user.pages],
-      role: user.role,
-      isActive: user.isActive
+      role: user.role
     };
 
     setTimeout(() => {
@@ -154,25 +159,22 @@ export class UserRegistrationComponent implements OnInit {
     }, 50);
   }
 
-  handleDelete(id: string) {
+  handleDelete(id: number) {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
-    this.isLoading = true;
-    this.userService.deleteUser(id).subscribe({
-      next: () => {
+    // Simulate API delay
+    setTimeout(() => {
+      const index = this.users.findIndex(u => u.id === id);
+      if (index > -1) {
+        this.users.splice(index, 1);
         this.success = 'User deleted successfully';
-        this.users = this.users.filter(u => u.id !== id);
+        
+        // If we were editing this user, reset the form
         if (this.editingUser && this.editingUser.id === id) {
           this.cancelEdit();
         }
-        this.isLoading = false;
-      },
-      error: (error: any) => {
-        this.error = 'Failed to delete user: ' + error.message;
-        console.error('Delete error:', error);
-        this.isLoading = false;
       }
-    });
+    }, 500);
   }
 
   cancelEdit() {
@@ -182,18 +184,17 @@ export class UserRegistrationComponent implements OnInit {
 
   private resetForm() {
     this.formData = {
-      username: 0,
+      username: '',
       name: '',
       pages: [],
-      role: 'user',
-      isActive: 'true'
+      role: 'user'
     };
     this.editingUser = null;
   }
 
   fillBasicTestData() {
     this.formData.name = 'Test User';
-    this.formData.username = 10000 + this.users.length;
+    this.formData.username = `SN${100 + this.users.length}`;
     this.formData.pages = this.availablePages.length ? [this.availablePages[0]] : [];
   }
 
@@ -205,37 +206,41 @@ export class UserRegistrationComponent implements OnInit {
     this.formData.pages = [];
   }
 
-  private useDummyData() {
-    console.log('Using dummy data as fallback');
-    this.users = [
-      {
-        id: '1',
-        username: 18231,
-        name: 'Pavithra',
-        role: 'padmin',
-        isActive: 'true',
-        pages: ['SERVICE FULFILMENT', 'IP NW OP'],
-        createdAt: '2025-08-13T09:42:30.083Z',
-        updatedAt: '2025-08-13T09:42:30.083Z',
-        v: true
-      }
+  // Helper method to add more dummy data
+  addDummyUser() {
+    const dummyNames = [
+      'James Miller', 'Patricia Taylor', 'David Anderson', 'Linda Thomas',
+      'William Jackson', 'Barbara White', 'Richard Harris', 'Susan Martin'
     ];
+    
+    const dummyServiceNumbers = ['SN006', 'SN007', 'SN008', 'SN009', 'SN010'];
+    
+    const randomName = dummyNames[Math.floor(Math.random() * dummyNames.length)];
+    const randomServiceNumber = dummyServiceNumbers[Math.floor(Math.random() * dummyServiceNumbers.length)];
+    const randomPages = this.getRandomPages();
+    const randomRole = Math.random() > 0.5 ? 'user' : 'padmin';
+    
+    const newUser: User = {
+      id: Date.now(),
+      name: randomName,
+      username: randomServiceNumber,
+      pages: randomPages,
+      role: randomRole
+    };
+    
+    this.users.push(newUser);
+    this.success = `Dummy user "${randomName}" added successfully`;
   }
 
-  testBackendConnection() {
-    this.error = '';
-    this.success = 'Testing backend connection...';
-    fetch('http://localhost:5043/api/users')
-      .then(response => {
-        if (response.ok) {
-          this.success = 'Backend connection successful!';
-        } else {
-          this.error = `Backend returned status: ${response.status}`;
-        }
-      })
-      .catch(err => {
-        this.error = 'Cannot connect to backend. Make sure it\'s running on http://localhost:5043';
-        console.error('Connection test failed:', err);
-      });
+  private getRandomPages(): string[] {
+    const count = Math.floor(Math.random() * 4) + 1; // 1-4 pages
+    const shuffled = [...this.availablePages].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
+  }
+
+  // Method to reset to initial dummy data
+  resetToDummyData() {
+    this.users = [...this.dummyUsers];
+    this.success = 'Reset to initial dummy data';
   }
 }

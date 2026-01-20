@@ -144,3 +144,14 @@ E:\SLT Mobitel\SLT_TMS_ALARM\KPI\backend\bin\Debug\net8.0\AutoMapper.Extensions.
 E:\SLT Mobitel\SLT_TMS_ALARM\KPI\backend\bin\Debug\net8.0\Microsoft.Extensions.DependencyInjection.Abstractions.dll
 E:\SLT Mobitel\SLT_TMS_ALARM\KPI\backend\bin\Debug\net8.0\Microsoft.Extensions.Logging.Abstractions.dll
 E:\SLT Mobitel\SLT_TMS_ALARM\KPI\backend\bin\Debug\net8.0\Microsoft.Extensions.Options.dll
+D:\KPI\KPI\backend\obj\Debug\net8.0\backend.csproj.AssemblyReference.cache
+D:\KPI\KPI\backend\obj\Debug\net8.0\backend.GeneratedMSBuildEditorConfig.editorconfig
+D:\KPI\KPI\backend\obj\Debug\net8.0\backend.AssemblyInfoInputs.cache
+D:\KPI\KPI\backend\obj\Debug\net8.0\backend.AssemblyInfo.cs
+D:\KPI\KPI\backend\obj\Debug\net8.0\backend.csproj.CoreCompileInputs.cache
+D:\KPI\KPI\backend\obj\Debug\net8.0\backend.MvcApplicationPartsAssemblyInfo.cs
+D:\KPI\KPI\backend\obj\Debug\net8.0\backend.MvcApplicationPartsAssemblyInfo.cache
+D:\KPI\KPI\backend\obj\Debug\net8.0\backend.sourcelink.json
+D:\KPI\KPI\backend\obj\Debug\net8.0\backend.dll
+D:\KPI\KPI\backend\obj\Debug\net8.0\refint\backend.dll
+D:\KPI\KPI\backend\obj\Debug\net8.0\backend.pdb

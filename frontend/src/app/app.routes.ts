@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
+import { MsalGuard } from '@azure/msal-angular';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
-
 // =====================
 // Overall KPI Components
 // =====================

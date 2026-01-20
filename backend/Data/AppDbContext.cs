@@ -129,13 +129,7 @@ namespace backend.Data
                 entity.Property(x => x.Section).HasColumnName("section");
                 entity.Property(x => x.KpiPercent).HasColumnName("kpi_percent");
             });
-
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            base.OnModelCreating(modelBuilder);
-
-            // Optional: enforce table name here instead of attribute
-            // modelBuilder.Entity<ServiceFulfilmentKpi>().ToTable("YOUR_TABLE_NAME_HERE");
         }
+        
     }
 }
