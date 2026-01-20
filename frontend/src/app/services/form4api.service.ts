@@ -13,8 +13,12 @@ export interface ServiceFulfilmentKpi {
   defineDoladetails: string;
   weightage: number;
   dataSources: string;
-  month: number;
-  year: number;
+  month?: number;
+  year?: number;
+  region?: string;
+  province?: string;
+  networkEngineer?: string;
+  lea?: string;
 }
 
 @Injectable({
