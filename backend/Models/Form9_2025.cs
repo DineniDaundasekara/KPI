@@ -22,7 +22,6 @@ namespace backend.Models
         [Column("section")]
         public string Section { get; set; } = null!;
 
-        // SQL FLOAT → C# double
         [Column("kpi_percent")]
         public double Kpi_Percent { get; set; }
 
@@ -35,8 +34,11 @@ namespace backend.Models
         [Column("updatedAt")]
         public string UpdatedAt { get; set; } = null!;
 
-        // SQL FLOAT → C# double?
         [Column("v")]
         public double? v { get; set; }
+
+        // ✅ NEW
+        [Column("metrics_id")]
+        public int Metrics_Id { get; set; }
     }
 }

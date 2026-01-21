@@ -6,94 +6,6 @@ import * as ExcelJS from 'exceljs';
 import { Form6Service, Form6Record } from '../../../../services/form6.service';
 import { RegionService, Region } from '../../../../services/region.service';
 
-const MOCK_FORM6_DATA: Form6Entry[] = [
-  {
-    _id: 'kpi-8',
-    no: 8,
-    network_engineer_kpi: 'IP Core NW Availability',
-    division: 'TRANSPORT & ACCESS',
-    section: 'IPNWOP',
-    kpi_percent: 99.999,
-    unavailable_minutes: {
-      cenhkmd: '15',
-      gqkintb: '200',
-      kgkly: '23',
-      gphtnw: '4500',
-      adipr: '102',
-    },
-    total_minutes: {
-      cenhkmd: '86400',
-      konix: '44640',
-      kgkly: '89280',
-      debkymt: '43200',
-      gphtnw: '44640',
-      adipr: '43200',
-    },
-    total_nodes: {
-      cenhkmd: '20',
-      gqkintb: '2',
-      kgkly: '2',
-      debkymt: '1',
-      gphtnw: '1',
-      adipr: '20',
-    },
-  },
-  {
-    _id: 'kpi-9',
-    no: 9,
-    network_engineer_kpi: 'BSR NW Availability',
-    division: 'TRANSPORT & ACCESS',
-    section: 'IPNWOP',
-    kpi_percent: 99.99,
-    unavailable_minutes: {
-      cenhkmd: '120',
-      ndfrm: '300',
-      awho: '65',
-      kgkly: '10',
-    },
-    total_minutes: {
-      cenhkmd: '86400',
-      ndfrm: '86400',
-      awho: '43200',
-      kgkly: '44640',
-    },
-    total_nodes: {
-      cenhkmd: '15',
-      ndfrm: '4',
-      awho: '3',
-      kgkly: '2',
-    },
-  },
-  {
-    _id: 'kpi-10',
-    no: 10,
-    network_engineer_kpi: 'Service Edge NW Availability',
-    division: 'TRANSPORT & ACCESS',
-    section: 'IPNWOP',
-    kpi_percent: 99.95,
-    unavailable_minutes: {
-      cwpx: '400',
-      debkymt: '150',
-      hrktph: '50',
-      komltmbva: '200',
-    },
-    total_minutes: {
-      cwpx: '44640',
-      debkymt: '86400',
-      hrktph: '43200',
-      komltmbva: '44640',
-    },
-    total_nodes: {
-      cwpx: '2',
-      debkymt: '3',
-      hrktph: '2',
-      komltmbva: '1',
-    },
-  },
-];
-
-type Dict<T = any> = Record<string, T>;
-
 interface RegionRow {
   region?: string;
   province?: string;
@@ -101,18 +13,6 @@ interface RegionRow {
   lea?: string; // friendly string in DB like "AD / PR"
 }
 
-interface Form6Entry {
-  _id: string;
-  no?: any;
-  network_engineer_kpi?: string;
-  division?: string;
-  section?: string;
-  kpi_percent?: any;
-
-  total_minutes?: Dict<any>;
-  unavailable_minutes?: Dict<any>;
-  total_nodes?: Dict<any>;
-}
 
 const LOCAL_REGION_TABLE: RegionRow[] = [
   { region: 'Region 3', province: 'NP', networkEngineer: 'NW/NP-2', lea: 'KOMLTMBVA' },
@@ -147,10 +47,8 @@ const LOCAL_REGION_TABLE: RegionRow[] = [
 export class IpNwOpComponent implements OnInit, OnDestroy {
   pageTitle = 'Platform KPI — IP NW OP';
 
-  // placeholder data; replace with backend payload when ready
-  data: Form6Entry[] = [...MOCK_FORM6_DATA];
+  data: Form6Record[] = [];
   regionTable: RegionRow[] = [...LOCAL_REGION_TABLE];
-  adminRows: Form6Record[] = [];
 
   loading = true;
   error: string | null = null;
@@ -275,6 +173,71 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
     return Array.from(new Set(this.regionTable.map((r) => r.region).filter(Boolean) as string[]));
   }
 
+  get hasAreaFilter(): boolean {
+    return !!this.selectedKey;
+  }
+
+  get selectedAreaLabel(): string {
+    const key = this.formValues.dropdown4;
+    if (!key) return '';
+    return this.optionMapping[key] || key.toUpperCase();
+  }
+
+  getAreaPercentage(entry: Form6Record): string {
+    const key = this.selectedKey;
+    if (!key) return '-';
+
+    const totalMinutes = entry.total_minutes?.[key];
+    const unavailableMinutes = entry.unavailable_minutes?.[key];
+    const totalNodes = entry.total_nodes?.[key];
+
+    if (
+      totalMinutes === undefined ||
+      unavailableMinutes === undefined ||
+      totalNodes === undefined
+    ) {
+      return '-';
+    }
+
+    const pct = this.calculatePercentage(totalMinutes, unavailableMinutes, totalNodes);
+    return Number.isFinite(pct) ? `${pct.toFixed(2)}%` : '-';
+  }
+
+  getAreaMetric(
+    entry: Form6Record,
+    bucket: 'total_minutes' | 'unavailable_minutes' | 'total_nodes'
+  ): string {
+    const key = this.selectedKey;
+    if (!key) return '-';
+
+    const dict = entry[bucket] as Record<string, string | number> | undefined;
+    const value = dict ? dict[key] : undefined;
+    return value === undefined || value === null || value === '' ? '-' : String(value);
+  }
+
+  private buildPayload(entry: Form6Record): Form6Record {
+    return {
+      ...entry,
+      unavailable_minutes: this.normalizeMetricDict(entry.unavailable_minutes),
+      total_minutes: this.normalizeMetricDict(entry.total_minutes),
+      total_nodes: this.normalizeMetricDict(entry.total_nodes),
+    };
+  }
+
+  private normalizeMetricDict(
+    source?: Record<string, string | number | undefined | null>
+  ): Record<string, number> {
+    if (!source) return {};
+
+    return Object.entries(source).reduce((acc, [key, value]) => {
+      if (value === undefined || value === null || value === '') return acc;
+      const numeric = typeof value === 'number' ? value : Number(value);
+      if (!Number.isFinite(numeric)) return acc;
+      acc[key] = numeric;
+      return acc;
+    }, {} as Record<string, number>);
+  }
+
   // -------------------------
   // API Calls
   // -------------------------
@@ -333,12 +296,12 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
 
     this.form6Service.getAll().subscribe({
       next: (records) => {
-        this.adminRows = Array.isArray(records) ? records : [];
+        this.data = Array.isArray(records) ? (records as Form6Record[]) : [];
         this.loading = false;
       },
       error: (err) => {
         console.error('Failed to load IP NW OP admin data:', err);
-        this.adminRows = [];
+        this.data = [];
         this.loading = false;
         this.error = 'Failed to load IP NW OP KPI data.';
       }
@@ -471,7 +434,7 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   // -------------------------
   // Editing
   // -------------------------
-  startEdit(entry: Form6Entry, key: 'unavailable_minutes' | 'total_minutes' | 'total_nodes'): void {
+  startEdit(entry: Form6Record, key: 'unavailable_minutes' | 'total_minutes' | 'total_nodes'): void {
     if (!this.isEditingAllowed || !this.selectedKey) return;
 
     const k = this.selectedKey;
@@ -503,7 +466,7 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
     this.data = this.data.map((entry) => {
       if (entry._id !== this.editCell.rowId) return entry;
 
-      const next: Form6Entry = { ...entry };
+      const next: Form6Record = { ...entry };
       const parent = (next as any)[parentKey] || {};
       (next as any)[parentKey] = { ...parent, [childKey]: newValue };
 
@@ -534,7 +497,9 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
 
     try {
       await Promise.all(
-        this.data.map((entry) => this.http.put(`/form6/update/${entry._id}`, entry).toPromise())
+        this.data.map((entry) =>
+          this.form6Service.update(entry._id, this.buildPayload(entry)).toPromise()
+        )
       );
 
       this.loadData();
