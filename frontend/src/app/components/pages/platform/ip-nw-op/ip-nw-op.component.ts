@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { firstValueFrom } from 'rxjs';
 import * as ExcelJS from 'exceljs';
 import { Form6Service, Form6Record } from '../../../../services/form6.service';
 import { RegionService, Region } from '../../../../services/region.service';
@@ -51,10 +52,12 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   regionTable: RegionRow[] = [...LOCAL_REGION_TABLE];
 
   loading = true;
+  saving = false;
   error: string | null = null;
 
   role: string | null = null;
   isEditingAllowed = false;
+  devRoleOverride: 'padmin' | 'user' | null = null;
 
   private permissionTimer: any = null;
 
@@ -177,6 +180,10 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
     return !!this.selectedKey;
   }
 
+  get canEditMetrics(): boolean {
+    return this.isEditingAllowed && this.hasAreaFilter;
+  }
+
   get selectedAreaLabel(): string {
     const key = this.formValues.dropdown4;
     if (!key) return '';
@@ -265,8 +272,27 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   }
 
   private refreshEditPermission(): void {
+    if (this.devRoleOverride) {
+      this.isEditingAllowed = this.devRoleOverride === 'padmin';
+      return;
+    }
+
     // keep same behavior: platform admin can edit
     this.isEditingAllowed = this.role === 'padmin';
+  }
+
+  toggleRoleOverride(): void {
+    if (!this.devRoleOverride) {
+      this.devRoleOverride = 'padmin';
+    } else if (this.devRoleOverride === 'padmin') {
+      this.devRoleOverride = 'user';
+    } else {
+      this.devRoleOverride = null;
+    }
+
+    this.refreshEditPermission();
+    const label = this.devRoleOverride ? this.devRoleOverride.toUpperCase() : 'LIVE ROLE';
+    this.showToast('success', `Role override: ${label}`);
   }
 
   loadRegionTable(): void {
@@ -435,7 +461,7 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   // Editing
   // -------------------------
   startEdit(entry: Form6Record, key: 'unavailable_minutes' | 'total_minutes' | 'total_nodes'): void {
-    if (!this.isEditingAllowed || !this.selectedKey) return;
+    if (!this.canEditMetrics) return;
 
     const k = this.selectedKey;
     const nestedKey = `${key}.${k}`;
@@ -458,7 +484,7 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   }
 
   doneEdit(): void {
-    if (!this.editCell.rowId || !this.editCell.key) return;
+    if (!this.canEditMetrics || !this.editCell.rowId || !this.editCell.key) return;
 
     const [parentKey, childKey] = this.editCell.key.split('.');
     const newValue = this.editCell.value;
@@ -489,16 +515,35 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
     this.editCell = { rowId: null, key: null, value: '' };
   }
 
+  isCellEditing(
+    rowId: string,
+    bucket: 'unavailable_minutes' | 'total_minutes' | 'total_nodes'
+  ): boolean {
+    if (!this.selectedKey || !this.editCell.key) return false;
+    return this.editCell.rowId === rowId && this.editCell.key === `${bucket}.${this.selectedKey}`;
+  }
+
+  handleEditKey(event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.doneEdit();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.cancelEdit();
+    }
+  }
+
   // -------------------------
   // Save All
   // -------------------------
   async saveAllChanges(): Promise<void> {
-    if (!this.isEditingAllowed) return;
+    if (!this.canEditMetrics || this.saving) return;
 
+    this.saving = true;
     try {
       await Promise.all(
         this.data.map((entry) =>
-          this.form6Service.update(entry._id, this.buildPayload(entry)).toPromise()
+          firstValueFrom(this.form6Service.update(entry._id, this.buildPayload(entry)))
         )
       );
 
@@ -507,6 +552,8 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
     } catch (e) {
       console.error('Error saving data:', e);
       this.showToast('danger', 'Failed to save changes. Please try again.');
+    } finally {
+      this.saving = false;
     }
   }
 
