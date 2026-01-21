@@ -22,18 +22,8 @@ namespace backend.Models
         [Column("section")]
         public string Section { get; set; } = null!;
 
-        // ✅ SQL FLOAT → C# double
         [Column("kpi_percent")]
         public double Kpi_Percent { get; set; }
-
-        [Column("unavailable_minutes_id")]
-        public string Unavailable_Minutes_Id { get; set; } = null!;
-
-        [Column("total_minutes_id")]
-        public string Total_Minutes_Id { get; set; } = null!;
-
-        [Column("total_nodes_id")]
-        public string Total_Nodes_Id { get; set; } = null!;
 
         [Column("month")]
         public byte Month { get; set; }
@@ -44,8 +34,11 @@ namespace backend.Models
         [Column("updatedAt")]
         public string UpdatedAt { get; set; } = null!;
 
-        // ✅ FIXED: was float?, must be double?
         [Column("v")]
         public double? v { get; set; }
+
+        // ✅ NEW
+        [Column("metrics_id")]
+        public int Metrics_Id { get; set; }
     }
 }

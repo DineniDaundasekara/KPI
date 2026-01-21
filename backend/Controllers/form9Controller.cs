@@ -1,6 +1,5 @@
 using backend.Data;
 using backend.DTOs;
-using backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -21,9 +20,25 @@ namespace backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.Form9_2025
-                .AsNoTracking()
-                .OrderBy(x => x.No)
+            var sql = @"
+                SELECT
+                    f.id,
+                    f.no,
+                    f.network_engineer_kpi,
+                    f.division,
+                    f.section,
+                    f.kpi_percent,
+                    f.month,
+                    f.year,
+                    m.incident_count AS Total_Failed_Links,
+                    m.restoration_time_hours AS Links_SLA_Not_Violated
+                FROM form9_2025 f
+                JOIN form9_2025_metrics m
+                    ON f.metrics_id = m.id
+            ";
+
+            var data = await _context.Database
+                .SqlQueryRaw<Form9Result>(sql)
                 .ToListAsync();
 
             return Ok(data);
@@ -33,7 +48,7 @@ namespace backend.Controllers
         [HttpPost("add")]
         public async Task<IActionResult> Add(Form9Dto dto)
         {
-            var record = new Form9_2025
+            var record = new backend.Models.Form9_2025
             {
                 Id = Guid.NewGuid().ToString(),
                 No = dto.No,
@@ -44,7 +59,7 @@ namespace backend.Controllers
                 Month = dto.Month == 0 ? (byte)DateTime.Now.Month : dto.Month,
                 Year = dto.Year == 0 ? (short)DateTime.Now.Year : dto.Year,
                 UpdatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                v = dto.v
+                Metrics_Id = 0
             };
 
             _context.Form9_2025.Add(record);
@@ -52,38 +67,21 @@ namespace backend.Controllers
 
             return Ok(record);
         }
+    }
 
-        // PUT /form9/update/{id}
-        [HttpPut("update/{id}")]
-        public async Task<IActionResult> Update(string id, Form9Dto dto)
-        {
-            var record = await _context.Form9_2025.FindAsync(id);
-            if (record == null) return NotFound();
+    // ✅ LOCAL RESULT TYPE (NO NEW FILE)
+    public class Form9Result
+    {
+        public string id { get; set; } = null!;
+        public byte no { get; set; }
+        public string network_engineer_kpi { get; set; } = null!;
+        public string division { get; set; } = null!;
+        public string section { get; set; } = null!;
+        public double kpi_percent { get; set; }
+        public byte month { get; set; }
+        public short year { get; set; }
 
-            record.No = dto.No;
-            record.Network_Engineer_Kpi = dto.Network_Engineer_Kpi;
-            record.Division = dto.Division;
-            record.Section = dto.Section;
-            record.Kpi_Percent = dto.Kpi_Percent;
-            record.Month = dto.Month == 0 ? record.Month : dto.Month;
-            record.Year = dto.Year == 0 ? record.Year : dto.Year;
-            record.UpdatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            record.v = dto.v;
-
-            await _context.SaveChangesAsync();
-            return Ok(record);
-        }
-
-        // DELETE /form9/delete/{id}
-        [HttpDelete("delete/{id}")]
-        public async Task<IActionResult> Delete(string id)
-        {
-            var record = await _context.Form9_2025.FindAsync(id);
-            if (record == null) return NotFound();
-
-            _context.Form9_2025.Remove(record);
-            await _context.SaveChangesAsync();
-            return Ok();
-        }
+        public int Total_Failed_Links { get; set; }
+        public int Links_SLA_Not_Violated { get; set; }
     }
 }

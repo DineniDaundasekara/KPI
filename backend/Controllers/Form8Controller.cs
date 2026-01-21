@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using backend.Data;
-using backend.Models;
 using backend.DTOs;
 
 namespace backend.Controllers
@@ -17,15 +16,32 @@ namespace backend.Controllers
             _context = context;
         }
 
-        // GET /form8/
+        // GET /form8
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.Form8Records
-                 .AsNoTracking()   // 🔥 VERY IMPORTANT
-                 .Take(100)        // 🔥 TEMP LIMIT
+            var sql = @"
+                SELECT
+                    f.id,
+                    f.no,
+                    f.network_engineer_kpi,
+                    f.division,
+                    f.section,
+                    f.kpi_percent,
+                    f.month,
+                    f.year,
+                    m.unavailable_minutes,
+                    m.total_minutes,
+                    m.total_nodes
+                FROM form8_2025 f
+                JOIN form8_2025_metrics m
+                    ON f.metrics_id = m.id
+            ";
 
+            var data = await _context.Database
+                .SqlQueryRaw<Form8Result>(sql)
                 .ToListAsync();
+
             return Ok(data);
         }
 
@@ -33,7 +49,7 @@ namespace backend.Controllers
         [HttpPost("add")]
         public async Task<IActionResult> Add(Form8Dto dto)
         {
-            var record = new Form8_2025
+            var record = new backend.Models.Form8_2025
             {
                 Id = Guid.NewGuid().ToString(),
                 No = dto.No,
@@ -41,15 +57,10 @@ namespace backend.Controllers
                 Division = dto.Division,
                 Section = dto.Section,
                 Kpi_Percent = dto.Kpi_Percent,
-
-                // DEFAULT VALUES TO SATISFY DB
-                Unavailable_Minutes_Id = Guid.NewGuid().ToString(),
-                Total_Minutes_Id = Guid.NewGuid().ToString(),
-                Total_Nodes_Id = Guid.NewGuid().ToString(),
-
                 Month = (byte)DateTime.Now.Month,
                 Year = (short)DateTime.Now.Year,
-                UpdatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                UpdatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                Metrics_Id = 0
             };
 
             _context.Form8Records.Add(record);
@@ -57,38 +68,22 @@ namespace backend.Controllers
 
             return Ok(record);
         }
+    }
 
-        // PUT /form8/update/{id}
-        [HttpPut("update/{id}")]
-        public async Task<IActionResult> Update(string id, Form8Dto dto)
-        {
-            var record = await _context.Form8Records.FindAsync(id);
-            if (record == null)
-                return NotFound();
+    // ✅ LOCAL RESULT TYPE (NO NEW FILE)
+    public class Form8Result
+    {
+        public string id { get; set; } = null!;
+        public byte no { get; set; }
+        public string network_engineer_kpi { get; set; } = null!;
+        public string division { get; set; } = null!;
+        public string section { get; set; } = null!;
+        public double kpi_percent { get; set; }
+        public byte month { get; set; }
+        public short year { get; set; }
 
-            record.No = dto.No;
-            record.Network_Engineer_Kpi = dto.Network_Engineer_Kpi;
-            record.Division = dto.Division;
-            record.Section = dto.Section;
-            record.Kpi_Percent = dto.Kpi_Percent;
-            record.UpdatedAt = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-
-            await _context.SaveChangesAsync();
-            return Ok(record);
-        }
-
-        // DELETE /form8/delete/{id}
-        [HttpDelete("delete/{id}")]
-        public async Task<IActionResult> Delete(string id)
-        {
-            var record = await _context.Form8Records.FindAsync(id);
-            if (record == null)
-                return NotFound();
-
-            _context.Form8Records.Remove(record);
-            await _context.SaveChangesAsync();
-
-            return Ok();
-        }
+        public int unavailable_minutes { get; set; }
+        public int total_minutes { get; set; }
+        public int total_nodes { get; set; }
     }
 }
