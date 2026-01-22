@@ -12,6 +12,15 @@
           {{ isEditingAllowed ? 'Edit mode enabled (Platform Admin)' : 'View only mode (User)' }}
         </span>
       </small>
+
+      <button
+        type="button"
+        class="btn btn-outline-secondary btn-sm ms-3"
+        (click)="toggleRoleOverride()"
+      >
+        Simulate Role ·
+        <strong>{{ devRoleOverride ? devRoleOverride.toUpperCase() : 'LIVE' }}</strong>
+      </button>
     </div>
   </div>
 
@@ -191,7 +200,7 @@
     <ng-template #areaView>
       <div class="card shadow-sm border-0">
         <div class="card-body p-0">
-          <div class="card-header bg-primary text-white">
+          <div class="card-header bg-primary text-white d-flex flex-wrap align-items-center gap-3">
             <h5 class="mb-0 d-flex flex-wrap align-items-center gap-2">
               <i class="bi bi-geo-alt-fill"></i>
               KPI (NW Availability - IP Core NW / BSR NW / Service Edge NW)
@@ -199,6 +208,25 @@
                 {{ selectedAreaLabel || 'Selected Area' }}
               </span>
             </h5>
+
+            <div class="ms-auto d-flex align-items-center gap-2" *ngIf="canEditMetrics">
+              <small class="text-white-50 fw-semibold">Inline editing enabled</small>
+              <button
+                type="button"
+                class="btn btn-success btn-sm"
+                (click)="saveAllChanges()"
+                [disabled]="saving"
+              >
+                <ng-container *ngIf="!saving; else savingState">
+                  <i class="bi bi-save me-1"></i>
+                  Save All Changes
+                </ng-container>
+                <ng-template #savingState>
+                  <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                  Saving...
+                </ng-template>
+              </button>
+            </div>
           </div>
 
           <div class="table-responsive">
@@ -228,17 +256,131 @@
                     <tr class="sub-row">
                       <td></td>
                       <td colspan="4" class="sub-label">Unavailable Minutes</td>
-                      <td>{{ getAreaMetric(row, 'unavailable_minutes') }}</td>
+                      <td class="metric-cell" [class.can-edit]="canEditMetrics">
+                        <ng-container *ngIf="isCellEditing(row._id, 'unavailable_minutes'); else unavailableView">
+                          <div class="edit-box">
+                            <input
+                              type="number"
+                              class="form-control form-control-sm"
+                              [ngModel]="editCell.value"
+                              (ngModelChange)="onEditInput($event)"
+                              (keydown)="handleEditKey($event)"
+                              placeholder="Enter minutes"
+                            />
+                            <div class="edit-actions">
+                              <button type="button" class="table-button" (click)="doneEdit()">
+                                Save
+                              </button>
+                              <button
+                                type="button"
+                                class="table-button btn-outline-warning"
+                                (click)="cancelEdit()"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        </ng-container>
+                        <ng-template #unavailableView>
+                          <div class="cell-view">
+                            <span>{{ getAreaMetric(row, 'unavailable_minutes') }}</span>
+                            <button
+                              *ngIf="canEditMetrics"
+                              type="button"
+                              class="table-button btn-outline-warning"
+                              (click)="startEdit(row, 'unavailable_minutes')"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        </ng-template>
+                      </td>
                     </tr>
                     <tr class="sub-row">
                       <td></td>
                       <td colspan="4" class="sub-label">Total Minutes</td>
-                      <td>{{ getAreaMetric(row, 'total_minutes') }}</td>
+                      <td class="metric-cell" [class.can-edit]="canEditMetrics">
+                        <ng-container *ngIf="isCellEditing(row._id, 'total_minutes'); else totalMinutesView">
+                          <div class="edit-box">
+                            <input
+                              type="number"
+                              class="form-control form-control-sm"
+                              [ngModel]="editCell.value"
+                              (ngModelChange)="onEditInput($event)"
+                              (keydown)="handleEditKey($event)"
+                              placeholder="Enter minutes"
+                            />
+                            <div class="edit-actions">
+                              <button type="button" class="table-button" (click)="doneEdit()">
+                                Save
+                              </button>
+                              <button
+                                type="button"
+                                class="table-button btn-outline-warning"
+                                (click)="cancelEdit()"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        </ng-container>
+                        <ng-template #totalMinutesView>
+                          <div class="cell-view">
+                            <span>{{ getAreaMetric(row, 'total_minutes') }}</span>
+                            <button
+                              *ngIf="canEditMetrics"
+                              type="button"
+                              class="table-button btn-outline-warning"
+                              (click)="startEdit(row, 'total_minutes')"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        </ng-template>
+                      </td>
                     </tr>
                     <tr class="sub-row">
                       <td></td>
                       <td colspan="4" class="sub-label">Total Nodes</td>
-                      <td>{{ getAreaMetric(row, 'total_nodes') }}</td>
+                      <td class="metric-cell" [class.can-edit]="canEditMetrics">
+                        <ng-container *ngIf="isCellEditing(row._id, 'total_nodes'); else totalNodesView">
+                          <div class="edit-box">
+                            <input
+                              type="number"
+                              class="form-control form-control-sm"
+                              [ngModel]="editCell.value"
+                              (ngModelChange)="onEditInput($event)"
+                              (keydown)="handleEditKey($event)"
+                              placeholder="Enter nodes"
+                            />
+                            <div class="edit-actions">
+                              <button type="button" class="table-button" (click)="doneEdit()">
+                                Save
+                              </button>
+                              <button
+                                type="button"
+                                class="table-button btn-outline-warning"
+                                (click)="cancelEdit()"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        </ng-container>
+                        <ng-template #totalNodesView>
+                          <div class="cell-view">
+                            <span>{{ getAreaMetric(row, 'total_nodes') }}</span>
+                            <button
+                              *ngIf="canEditMetrics"
+                              type="button"
+                              class="table-button btn-outline-warning"
+                              (click)="startEdit(row, 'total_nodes')"
+                            >
+                              Edit
+                            </button>
+                          </div>
+                        </ng-template>
+                      </td>
                     </tr>
                   </ng-container>
                 </ng-container>

@@ -2,7 +2,6 @@
 {
     public class Form6KpiMetric
     {
-        // DB: bigint IDENTITY
         public long Id { get; set; }
 
         public string Form6Id { get; set; } = null!;
@@ -12,6 +11,7 @@
         public int? TotalMinutes { get; set; }
         public int? TotalNodes { get; set; }
 
+        // Navigation
         public IpNwOpKpi Form6 { get; set; } = null!;
     }
 }
