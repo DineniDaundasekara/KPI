@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BbAnwService, Form7Record } from '../../../../services/bb-anw.service';
+import { BbAnwService, Form7HeaderDto } from '../../../../services/bb-anw.service';
 
 @Component({
   selector: 'app-bb-anw',
@@ -12,16 +12,17 @@ import { BbAnwService, Form7Record } from '../../../../services/bb-anw.service';
 })
 export class BbAnwComponent implements OnInit {
 
-  pageTitle = 'BB & ANW – Form 7';
-  data: Form7Record[] = [];
+  pageTitle = 'BB & ANW – KPI Management';
+  data: Form7HeaderDto[] = [];
 
   loading = false;
   saving = false;
   error = '';
 
   editingId: string | null = null;
+  showForm = false;
 
-  form: Form7Record = this.emptyForm();
+  form: Form7HeaderDto = this.emptyForm();
 
   constructor(private service: BbAnwService) {}
 
@@ -29,40 +30,46 @@ export class BbAnwComponent implements OnInit {
     this.loadData();
   }
 
-  private emptyForm(): Form7Record {
+  private emptyForm(): Form7HeaderDto {
     return {
-      no: 0,
+      kpiId: undefined,
+      mongoObjectId: undefined,
+      no: 1,
       networkEngineerKpi: '',
       division: '',
       section: '',
-      kpiPercent: 0,
-      unavailableMinutes: 0,
-      totalMinutes: 0,
-      totalNodes: 0,
-      month: new Date().getMonth() + 1,
-      year: new Date().getFullYear()
+      kpiPercent: null
     };
   }
 
   loadData(): void {
     this.loading = true;
-    this.service.getAll().subscribe({
-      next: res => this.data = res,
-      error: () => this.error = 'Failed to load data',
+    this.error = '';
+
+    this.service.getHeaders().subscribe({
+      next: res => this.data = Array.isArray(res) ? res : [],
+      error: () => {
+        this.error = 'Failed to load data';
+        this.data = [];
+        this.loading = false;
+      },
       complete: () => this.loading = false
     });
   }
 
   submitForm(): void {
     this.saving = true;
+    this.error = '';
+
+    const payload = this.normalizeForm();
 
     const request$ = this.editingId
-      ? this.service.update(this.editingId, this.form)
-      : this.service.add(this.form);
+      ? this.service.updateHeader(this.editingId, payload)
+      : this.service.addHeader(payload);
 
     request$.subscribe({
       next: () => {
-        this.cancelEdit();
+        this.closeForm();
         this.loadData();
       },
       error: err => {
@@ -74,13 +81,23 @@ export class BbAnwComponent implements OnInit {
     });
   }
 
-  editRow(row: Form7Record): void {
-    this.editingId = row.id!;
-    this.form = { ...row };
+  editRow(row: Form7HeaderDto): void {
+    this.showForm = true;
+    this.editingId = row.kpiId ?? null;
+
+    this.form = {
+      kpiId: row.kpiId,
+      mongoObjectId: row.mongoObjectId ?? '',
+      no: row.no,
+      networkEngineerKpi: row.networkEngineerKpi,
+      division: row.division ?? '',
+      section: row.section ?? '',
+      kpiPercent: row.kpiPercent ?? null
+    };
   }
 
   deleteRow(id?: string): void {
-    if (!id || !confirm('Delete this record?')) return;
+    if (!id || !confirm('Delete this KPI header? (This will also delete node rows in DB)')) return;
 
     this.saving = true;
     this.service.delete(id).subscribe({
@@ -90,12 +107,33 @@ export class BbAnwComponent implements OnInit {
     });
   }
 
-  cancelEdit(): void {
+  closeForm(): void {
+    this.showForm = false;
     this.editingId = null;
     this.form = this.emptyForm();
   }
 
-  trackRow(_: number, row: Form7Record): string {
-    return row.id!;
+  openForm(): void {
+    this.showForm = true;
+    this.editingId = null;
+    this.form = this.emptyForm();
+  }
+
+  trackRow(index: number, row: Form7HeaderDto): string {
+    return row.kpiId ?? `row-${index}`;
+  }
+
+  private normalizeForm(): Form7HeaderDto {
+    return {
+      kpiId: this.editingId ?? undefined,
+      mongoObjectId: this.form.mongoObjectId?.trim() || null,
+      no: Number(this.form.no) || 0,
+      networkEngineerKpi: (this.form.networkEngineerKpi || '').trim(),
+      division: this.form.division?.trim() || null,
+      section: this.form.section?.trim() || null,
+      kpiPercent: this.form.kpiPercent === null || this.form.kpiPercent === undefined
+        ? null
+        : Number(this.form.kpiPercent)
+    };
   }
 }

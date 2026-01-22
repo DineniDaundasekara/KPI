@@ -3,7 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RegionService, Region } from '../../../../services/region.service';
-import { BbAnwService, Form7Record } from '../../../../services/bb-anw.service';
+import { BbAnwService, Form7Dto } from '../../../../services/bb-anw.service';
 import * as ExcelJS from 'exceljs';
 import { firstValueFrom } from 'rxjs';
 
@@ -17,15 +17,16 @@ interface RegionRow {
 }
 
 interface Form7Entry {
-	_id: string;
+	kpiId: string;
+	mongoObjectId?: string | null;
 	no: number;
-	network_engineer_kpi: string;
-	division: string;
-	section: string;
-	kpi_percent: number;
-	total_minutes?: Dict<any>;
-	unavailable_minutes?: Dict<any>;
-	total_nodes?: Dict<any>;
+	networkEngineerKpi: string;
+	division?: string | null;
+	section?: string | null;
+	kpiPercent?: number | null;
+	totalMinutes: Dict<number | null>;
+	unavailableMinutes: Dict<number | null>;
+	totalNodes: Dict<number | null>;
 }
 
 interface EditCellState {
@@ -33,305 +34,6 @@ interface EditCellState {
 	key: string | null;
 	value: string;
 }
-
-const MOCK_FORM7_DATA: Form7Entry[] = [
-	{
-		_id: '66fcb5bcf02a02990517533a',
-		no: 8,
-		network_engineer_kpi: 'Tellabs NW Availability',
-		division: 'TRANSPORT & ACCESS',
-		section: 'BB&ANW',
-		kpi_percent: 99.99,
-		unavailable_minutes: {
-			cenhkmd: '10',
-			cenhkmd1: '20',
-			gqkintb: '15',
-			ndfrm: '8',
-			awho: '12',
-			konix: '5',
-			ngivt: '7',
-			kgkly: '6',
-			cwpx: '14',
-			debkymt: '9',
-			gphtnw: '11',
-			adipr: '4',
-			bddwmrg: '7',
-			keirn: '3',
-			embmbmh: '8',
-			aggl: '13',
-			hrktph: '6',
-			bcjrdkltc: '9',
-			ja: '2',
-			komltmbva: '1',
-		},
-		total_minutes: {
-			cenhkmd: '15000',
-			cenhkmd1: '200',
-			gqkintb: '357120',
-			ndfrm: '80',
-			awho: '120',
-			konix: '50',
-			ngivt: '70',
-			kgkly: '60',
-			cwpx: '140',
-			debkymt: '90',
-			gphtnw: '110',
-			adipr: '40',
-			bddwmrg: '70',
-			keirn: '30',
-			embmbmh: '80',
-			aggl: '130',
-			hrktph: '26784000',
-			bcjrdkltc: '90',
-			ja: '20',
-			komltmbva: '10',
-		},
-		total_nodes: {
-			cenhkmd: '3',
-			cenhkmd1: '6',
-			gqkintb: '8',
-			ndfrm: '8',
-			awho: '9',
-			konix: '4',
-			ngivt: '6',
-			kgkly: '5',
-			cwpx: '7',
-			debkymt: '6',
-			gphtnw: '8',
-			adipr: '3',
-			bddwmrg: '4',
-			keirn: '3',
-			embmbmh: '5',
-			aggl: '7',
-			hrktph: '600',
-			bcjrdkltc: '5',
-			ja: '2',
-			komltmbva: '1',
-		},
-	},
-	{
-		_id: '66fcb5f9f02a02990517533f',
-		no: 9,
-		network_engineer_kpi: 'MEN NW availability',
-		division: 'TRANSPORT & ACCESS',
-		section: 'BB&ANW',
-		kpi_percent: 99.99,
-		unavailable_minutes: {
-			cenhkmd: '15',
-			cenhkmd1: '20',
-			gqkintb: '10',
-			ndfrm: '8',
-			awho: '12',
-			konix: '5',
-			ngivt: '7',
-			kgkly: '6',
-			cwpx: '14',
-			debkymt: '9',
-			gphtnw: '11',
-			adipr: '4',
-			bddwmrg: '7',
-			keirn: '3',
-			embmbmh: '8',
-			aggl: '13',
-			hrktph: '10',
-			bcjrdkltc: '9',
-			ja: '2',
-			komltmbva: '1',
-		},
-		total_minutes: {
-			cenhkmd: '150',
-			cenhkmd1: '200',
-			gqkintb: '100',
-			ndfrm: '80',
-			awho: '120',
-			konix: '50',
-			ngivt: '70',
-			kgkly: '44640',
-			cwpx: '140',
-			debkymt: '90',
-			gphtnw: '133920',
-			adipr: '40',
-			bddwmrg: '70',
-			keirn: '30',
-			embmbmh: '80',
-			aggl: '130',
-			hrktph: '133920',
-			bcjrdkltc: '90',
-			ja: '20',
-			komltmbva: '133920',
-		},
-		total_nodes: {
-			cenhkmd: '5',
-			cenhkmd1: '6',
-			gqkintb: '7',
-			ndfrm: '8',
-			awho: '9',
-			konix: '4',
-			ngivt: '6',
-			kgkly: '1',
-			cwpx: '7',
-			debkymt: '6',
-			gphtnw: '3',
-			adipr: '3',
-			bddwmrg: '4',
-			keirn: '3',
-			embmbmh: '5',
-			aggl: '7',
-			hrktph: '3',
-			bcjrdkltc: '5',
-			ja: '2',
-			komltmbva: '3',
-		},
-	},
-	{
-		_id: '66fcb623f02a029905175344',
-		no: 10,
-		network_engineer_kpi: 'MSAN availability (Except power)',
-		division: 'TRANSPORT & ACCESS',
-		section: 'BB&ANW',
-		kpi_percent: 99.99,
-		unavailable_minutes: {
-			cenhkmd: '15',
-			cenhkmd1: '20',
-			gqkintb: '10',
-			ndfrm: '8',
-			awho: '12',
-			konix: '5',
-			ngivt: '7',
-			kgkly: '6',
-			cwpx: '14',
-			debkymt: '9',
-			gphtnw: '11',
-			adipr: '4',
-			bddwmrg: '7',
-			keirn: '3',
-			embmbmh: '8',
-			aggl: '13',
-			hrktph: '6',
-			bcjrdkltc: '9',
-			ja: '2',
-			komltmbva: '1',
-		},
-		total_minutes: {
-			cenhkmd: '150',
-			cenhkmd1: '200',
-			gqkintb: '10',
-			ndfrm: '80',
-			awho: '120',
-			konix: '50',
-			ngivt: '70',
-			kgkly: '133920',
-			cwpx: '140',
-			debkymt: '90',
-			gphtnw: '44640',
-			adipr: '40',
-			bddwmrg: '70',
-			keirn: '30',
-			embmbmh: '80',
-			aggl: '130',
-			hrktph: '44640',
-			bcjrdkltc: '90',
-			ja: '20',
-			komltmbva: '89280',
-		},
-		total_nodes: {
-			cenhkmd: '5',
-			cenhkmd1: '6',
-			gqkintb: '7',
-			ndfrm: '8',
-			awho: '9',
-			konix: '4',
-			ngivt: '6',
-			kgkly: '3',
-			cwpx: '7',
-			debkymt: '6',
-			gphtnw: '1',
-			adipr: '3',
-			bddwmrg: '4',
-			keirn: '3',
-			embmbmh: '5',
-			aggl: '7',
-			hrktph: '1',
-			bcjrdkltc: '5',
-			ja: '2',
-			komltmbva: '2',
-		},
-	},
-	{
-		_id: '66fcb649f02a029905175349',
-		no: 11,
-		network_engineer_kpi: 'MSAN availability (With power)',
-		division: 'TRANSPORT & ACCESS',
-		section: 'BB&ANW',
-		kpi_percent: 99.94,
-		unavailable_minutes: {
-			cenhkmd: '15',
-			cenhkmd1: '20',
-			gqkintb: '10',
-			ndfrm: '8',
-			awho: '12',
-			konix: '5',
-			ngivt: '7',
-			kgkly: '6',
-			cwpx: '14',
-			debkymt: '9',
-			gphtnw: '11',
-			adipr: '4',
-			bddwmrg: '7',
-			keirn: '3',
-			embmbmh: '8',
-			aggl: '13',
-			hrktph: '6',
-			bcjrdkltc: '9',
-			ja: '2',
-			komltmbva: '1',
-		},
-		total_minutes: {
-			cenhkmd: '150',
-			cenhkmd1: '200',
-			gqkintb: '267840',
-			ndfrm: '80',
-			awho: '120',
-			konix: '50',
-			ngivt: '70',
-			kgkly: '312480',
-			cwpx: '140',
-			debkymt: '90',
-			gphtnw: '312480',
-			adipr: '40',
-			bddwmrg: '70',
-			keirn: '30',
-			embmbmh: '80',
-			aggl: '223200',
-			hrktph: '60',
-			bcjrdkltc: '90',
-			ja: '20',
-			komltmbva: '89280',
-		},
-		total_nodes: {
-			cenhkmd: '5',
-			cenhkmd1: '6',
-			gqkintb: '6',
-			ndfrm: '8',
-			awho: '9',
-			konix: '4',
-			ngivt: '6',
-			kgkly: '7',
-			cwpx: '7',
-			debkymt: '6',
-			gphtnw: '7',
-			adipr: '3',
-			bddwmrg: '4',
-			keirn: '3',
-			embmbmh: '5',
-			aggl: '5',
-			hrktph: '6',
-			bcjrdkltc: '5',
-			ja: '2',
-			komltmbva: '2',
-		},
-	},
-];
 
 const LOCAL_REGION_TABLE: RegionRow[] = [
 	{ region: 'Region 3', province: 'NP', networkEngineer: 'NW/NP-2', lea: 'KOMLTMBVA' },
@@ -366,9 +68,9 @@ const LOCAL_REGION_TABLE: RegionRow[] = [
 export class BbAnwComponent implements OnInit, OnDestroy {
 	pageTitle = 'Platform KPI — BB & ANW';
 
-	data: Form7Entry[] = [...MOCK_FORM7_DATA];
+	data: Form7Entry[] = [];
 	regionTable: RegionRow[] = [...LOCAL_REGION_TABLE];
-	adminRows: Form7Record[] = [];
+	adminRows: Form7Dto[] = [];
 
 	loading = true;
 	error: string | null = null;
@@ -463,6 +165,52 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		return this.formValues.dropdown4 ? this.norm(this.formValues.dropdown4) : '';
 	}
 
+	get selectedAreaLabel(): string | null {
+		const key = this.selectedKey;
+		if (!key) {
+			return null;
+		}
+		return this.optionMapping[key] ?? key.toUpperCase();
+	}
+
+	get showAreaMetrics(): boolean {
+		return Boolean(this.selectedKey);
+	}
+
+	getSelectedAvailability(entry: Form7Entry): string {
+		const key = this.selectedKey;
+		if (!key) {
+			return '--';
+		}
+		const unavailable = entry.unavailableMinutes?.[key];
+		const total = entry.totalMinutes?.[key];
+		const nodes = entry.totalNodes?.[key];
+		const hasData = [unavailable, total, nodes].some(
+			(value) => value !== undefined && value !== null
+		);
+		if (!hasData) {
+			return '--';
+		}
+		const pct = this.calculatePercentage(total, unavailable, nodes);
+		return `${pct.toFixed(2)}%`;
+	}
+
+	getMetricDisplay(
+		entry: Form7Entry,
+		metric: 'unavailableMinutes' | 'totalMinutes' | 'totalNodes'
+	): string {
+		const key = this.selectedKey;
+		if (!key) {
+			return '--';
+		}
+		const source = (entry as any)[metric] ?? {};
+		const rawValue = source[key];
+		if (rawValue === undefined || rawValue === null || rawValue === '') {
+			return '--';
+		}
+		return typeof rawValue === 'number' ? String(rawValue) : `${rawValue}`;
+	}
+
 	private norm(value: string | null | undefined): string {
 		return value ? value.replace(/[^A-Za-z0-9]/g, '').toLowerCase() : '';
 	}
@@ -550,16 +298,79 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 
 		this.bbAnwService.getAll().subscribe({
 			next: (rows) => {
-				this.adminRows = Array.isArray(rows) ? rows : [];
+				const list = Array.isArray(rows) ? rows : [];
+				this.adminRows = list;
+				this.data = list.map((row) => this.mapDtoToEntry(row));
 				this.loading = false;
 			},
 			error: (err) => {
 				console.error('Failed to load BB & ANW admin data:', err);
 				this.adminRows = [];
+				this.data = [];
 				this.loading = false;
 				this.error = 'Failed to load BB & ANW KPI data.';
 			},
 		});
+	}
+
+	private mapDtoToEntry(dto: Form7Dto): Form7Entry {
+		const entry: Form7Entry = {
+			kpiId: dto.kpiId ?? crypto.randomUUID(),
+			mongoObjectId: dto.mongoObjectId ?? null,
+			no: dto.no,
+			networkEngineerKpi: dto.networkEngineerKpi,
+			division: dto.division ?? null,
+			section: dto.section ?? null,
+			kpiPercent: dto.kpiPercent ?? null,
+			totalMinutes: {},
+			unavailableMinutes: {},
+			totalNodes: {},
+		};
+
+		(dto.nodes ?? []).forEach((node) => {
+			const code = this.norm(node.nodeCode);
+			if (!code) return;
+			entry.unavailableMinutes[code] = node.unavailableMinutes ?? null;
+			entry.totalMinutes[code] = node.totalMinutes ?? null;
+			entry.totalNodes[code] = node.totalNodes ?? null;
+		});
+
+		return entry;
+	}
+
+	private buildDtoFromEntry(entry: Form7Entry): Form7Dto {
+		const codes = this.collectNodeCodes(entry);
+		const nodes = codes.map((code) => ({
+			nodeCode: code,
+			unavailableMinutes: this.toNullableNumber(entry.unavailableMinutes[code]),
+			totalMinutes: this.toNullableNumber(entry.totalMinutes[code]),
+			totalNodes: this.toNullableNumber(entry.totalNodes[code]),
+		}));
+
+		return {
+			kpiId: entry.kpiId,
+			mongoObjectId: entry.mongoObjectId ?? null,
+			no: entry.no,
+			networkEngineerKpi: entry.networkEngineerKpi,
+			division: entry.division ?? null,
+			section: entry.section ?? null,
+			kpiPercent: entry.kpiPercent ?? null,
+			nodes,
+		};
+	}
+
+	private collectNodeCodes(entry: Form7Entry): string[] {
+		const codes = new Set<string>();
+		Object.keys(entry.unavailableMinutes || {}).forEach((key) => codes.add(key));
+		Object.keys(entry.totalMinutes || {}).forEach((key) => codes.add(key));
+		Object.keys(entry.totalNodes || {}).forEach((key) => codes.add(key));
+		return Array.from(codes).filter((code): code is string => Boolean(code));
+	}
+
+	private toNullableNumber(value: any): number | null {
+		if (value === undefined || value === null || value === '') return null;
+		const numeric = typeof value === 'number' ? value : Number(value);
+		return Number.isFinite(numeric) ? numeric : null;
 	}
 
 	private updateDropdown2Options(region: string): void {
@@ -689,14 +500,14 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		return Math.max(0, Math.min(100, pct));
 	}
 
-	startEdit(entry: Form7Entry, key: 'unavailable_minutes' | 'total_minutes' | 'total_nodes'): void {
+	startEdit(entry: Form7Entry, key: 'unavailableMinutes' | 'totalMinutes' | 'totalNodes'): void {
 		if (!this.isEditingAllowed || !this.selectedKey) return;
 
 		const nestedKey = `${key}.${this.selectedKey}`;
 		const value = (entry as any)[key]?.[this.selectedKey];
 
 		this.editCell = {
-			rowId: entry._id,
+			rowId: entry.kpiId,
 			key: nestedKey,
 			value: value === undefined || value === null ? '' : String(value),
 		};
@@ -713,7 +524,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		const newValue = this.editCell.value;
 
 		this.data = this.data.map((entry) => {
-			if (entry._id !== this.editCell.rowId) {
+			if (entry.kpiId !== this.editCell.rowId) {
 				return entry;
 			}
 
@@ -722,11 +533,11 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 			parent[childKey] = newValue;
 			(next as any)[parentKey] = parent;
 
-			if (parentKey === 'total_nodes') {
+			if (parentKey === 'totalNodes') {
 				const nodes = Number(newValue) || 0;
 				const computed = 24 * 60 * this.daysInMonth * nodes;
-				next.total_minutes = {
-					...(next.total_minutes || {}),
+				next.totalMinutes = {
+					...(next.totalMinutes || {}),
 					[childKey]: computed,
 				};
 			}
@@ -742,12 +553,14 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 	}
 
 	async saveAllChanges(): Promise<void> {
-		if (!this.isEditingAllowed) return;
+		if (!this.isEditingAllowed || !this.data.length) return;
 
 		try {
 			await Promise.all(
 				this.data.map((entry) =>
-					firstValueFrom(this.http.put(`/api/form7/update/${entry._id}`, entry))
+					firstValueFrom(
+						this.bbAnwService.update(entry.kpiId, this.buildDtoFromEntry(entry))
+					)
 				)
 			);
 
@@ -793,17 +606,17 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		this.data.forEach((entry) => {
 			const row: any[] = [
 				entry.no,
-				entry.network_engineer_kpi,
+				entry.networkEngineerKpi,
 				entry.division,
 				entry.section,
-				entry.kpi_percent,
+				entry.kpiPercent,
 			];
 
 			areaKeys.forEach((key) => {
 				const pct = this.calculatePercentage(
-					entry.total_minutes?.[key],
-					entry.unavailable_minutes?.[key],
-					entry.total_nodes?.[key]
+					entry.totalMinutes?.[key],
+					entry.unavailableMinutes?.[key],
+					entry.totalNodes?.[key]
 				);
 				row.push(isNaN(pct) ? '' : `${pct.toFixed(2)}%`);
 			});
@@ -819,14 +632,14 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 				};
 			});
 
-			const unavailableRow = [' ', 'Unavailable Minutes', ' ', ' ', ' '];
-			const totalRow = [' ', 'Total Minutes', ' ', ' ', ' '];
-			const nodesRow = [' ', 'Total Nodes', ' ', ' ', ' '];
+			const unavailableRow: any[] = [' ', 'Unavailable Minutes', ' ', ' ', ' '];
+			const totalRow: any[] = [' ', 'Total Minutes', ' ', ' ', ' '];
+			const nodesRow: any[] = [' ', 'Total Nodes', ' ', ' ', ' '];
 
 			areaKeys.forEach((key) => {
-				unavailableRow.push(entry.unavailable_minutes?.[key] ?? '');
-				totalRow.push(entry.total_minutes?.[key] ?? '');
-				nodesRow.push(entry.total_nodes?.[key] ?? '');
+				unavailableRow.push(entry.unavailableMinutes?.[key] ?? '');
+				totalRow.push(entry.totalMinutes?.[key] ?? '');
+				nodesRow.push(entry.totalNodes?.[key] ?? '');
 			});
 
 			[unavailableRow, totalRow, nodesRow].forEach((dataRow) => {

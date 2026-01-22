@@ -2,19 +2,33 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-export interface Form7Record {
-  [x: string]: any;
-  id?: string;
+export interface Form7NodeDto {
+  nodeCode: string;
+  unavailableMinutes?: number | null;
+  totalMinutes?: number | null;
+  totalNodes?: number | null;
+}
+
+export interface Form7Dto {
+  kpiId?: string;
+  mongoObjectId?: string | null;
   no: number;
   networkEngineerKpi: string;
-  division: string;
-  section: string;
-  kpiPercent: number;
-  unavailableMinutes: number;
-  totalMinutes: number;
-  totalNodes: number;
-  month: number;
-  year: number;
+  division?: string | null;
+  section?: string | null;
+  kpiPercent?: number | null;
+  nodes: Form7NodeDto[];
+}
+
+// ✅ ADMIN HEADER ONLY
+export interface Form7HeaderDto {
+  kpiId?: string;
+  mongoObjectId?: string | null;
+  no: number;
+  networkEngineerKpi: string;
+  division?: string | null;
+  section?: string | null;
+  kpiPercent?: number | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -23,19 +37,37 @@ export class BbAnwService {
 
   constructor(private http: HttpClient) {}
 
-  getAll(): Observable<Form7Record[]> {
-    return this.http.get<Form7Record[]>(this.apiUrl);
+  // ---------------------------
+  // PLATFORM KPI (FULL)
+  // ---------------------------
+  getAll(): Observable<Form7Dto[]> {
+    return this.http.get<Form7Dto[]>(this.apiUrl);
   }
 
-  add(data: Form7Record): Observable<Form7Record> {
-    return this.http.post<Form7Record>(`${this.apiUrl}/add`, data);
+  add(data: Form7Dto): Observable<any> {
+    return this.http.post(`${this.apiUrl}/add`, data);
   }
 
-  update(id: string, data: Form7Record): Observable<Form7Record> {
-    return this.http.put<Form7Record>(`${this.apiUrl}/update/${id}`, data);
+  update(id: string, data: Form7Dto): Observable<any> {
+    return this.http.put(`${this.apiUrl}/update/${id}`, data);
   }
 
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/delete/${id}`);
+  }
+
+  // ---------------------------
+  // ADMIN PAGE (HEADER ONLY) ✅
+  // ---------------------------
+  getHeaders(): Observable<Form7HeaderDto[]> {
+    return this.http.get<Form7HeaderDto[]>(`${this.apiUrl}/headers`);
+  }
+
+  addHeader(data: Form7HeaderDto): Observable<any> {
+    return this.http.post(`${this.apiUrl}/add-header`, data);
+  }
+
+  updateHeader(id: string, data: Form7HeaderDto): Observable<any> {
+    return this.http.put(`${this.apiUrl}/update-header/${id}`, data);
   }
 }

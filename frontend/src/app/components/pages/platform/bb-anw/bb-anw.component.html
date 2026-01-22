@@ -6,7 +6,7 @@
 		<div class="mt-3">
 			<small class="text-muted">
 				<i class="bi bi-info-circle me-1"></i>
-				{{ adminRows.length }} KPIs loaded 
+				{{ data.length }} KPIs loaded
 				<span [class.text-success]="isEditingAllowed" [class.text-warning]="!isEditingAllowed">
 					<i class="bi" [ngClass]="isEditingAllowed ? 'bi-check-circle' : 'bi-exclamation-circle'"></i>
 					{{ isEditingAllowed ? 'Edit mode enabled (Platform Admin)' : 'View only mode (User)' }}
@@ -140,10 +140,13 @@
 					<h5 class="mb-0">
 						<i class="bi bi-table me-2"></i>
 						Saved BB & ANW KPI rows
+						<span *ngIf="showAreaMetrics" class="ms-2 small text-white-50">
+							(Showing metrics for {{ selectedAreaLabel }})
+						</span>
 					</h5>
 				</div>
 
-				<div class="table-responsive" *ngIf="!loading && adminRows.length">
+				<div class="table-responsive" *ngIf="!loading && data.length">
 					<table class="table table-hover table-bordered mb-0 data-table">
 						<thead class="table-dark">
 							<tr>
@@ -152,21 +155,49 @@
 								<th>Division</th>
 								<th>Section</th>
 								<th>%</th>
+								<th *ngIf="showAreaMetrics">{{ selectedAreaLabel }}</th>
 							</tr>
 						</thead>
 						<tbody>
-							<tr *ngFor="let row of adminRows">
-								<td>{{ row.no }}</td>
-								<td>{{ row.networkEngineerKpi }}</td>
-								<td>{{ row.division }}</td>
-								<td>{{ row.section }}</td>
-								<td>{{ row.kpiPercent }}</td>
-							</tr>
+							<ng-container *ngFor="let row of data">
+								<tr>
+									<td>{{ row.no }}</td>
+									<td>{{ row.networkEngineerKpi }}</td>
+									<td>{{ row.division }}</td>
+									<td>{{ row.section }}</td>
+									<td>{{ row.kpiPercent ?? '--' }}</td>
+									<td *ngIf="showAreaMetrics" class="metric-value">
+										{{ getSelectedAvailability(row) }}
+									</td>
+								</tr>
+
+								<tr class="sub-row" *ngIf="showAreaMetrics">
+									<td></td>
+									<td class="sub-label" colspan="4">Unavailable Minutes</td>
+									<td class="metric-value">
+										{{ getMetricDisplay(row, 'unavailableMinutes') }}
+									</td>
+								</tr>
+								<tr class="sub-row" *ngIf="showAreaMetrics">
+									<td></td>
+									<td class="sub-label" colspan="4">Total Minutes</td>
+									<td class="metric-value">
+										{{ getMetricDisplay(row, 'totalMinutes') }}
+									</td>
+								</tr>
+								<tr class="sub-row" *ngIf="showAreaMetrics">
+									<td></td>
+									<td class="sub-label" colspan="4">Total Nodes</td>
+									<td class="metric-value">
+										{{ getMetricDisplay(row, 'totalNodes') }}
+									</td>
+								</tr>
+							</ng-container>
 						</tbody>
 					</table>
 				</div>
 
-				<div *ngIf="!loading && !adminRows.length" class="text-center py-5 text-muted">
+				<div *ngIf="!loading && !data.length" class="text-center py-5 text-muted">
 					<i class="bi bi-folder2-open d-block mb-2"></i>
 					<span>No KPI rows have been saved yet.</span>
 				</div>

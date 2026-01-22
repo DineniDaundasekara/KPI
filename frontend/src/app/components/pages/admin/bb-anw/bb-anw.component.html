@@ -1,215 +1,215 @@
 <div class="page-container">
+  <div class="kpi-overlay"></div>
 
   <!-- HEADER -->
   <section class="page-header">
     <div class="header-left">
-      <div class="title-row">
-        <h1>{{ pageTitle }}</h1>
-        <span class="header-chip" [class.editing]="editingId">
-          <span *ngIf="editingId">Editing record</span>
-          <span *ngIf="!editingId">New entry</span>
-        </span>
-      </div>
-
-      <p class="page-subtitle">BB & ANW KPI Management (Form 7)</p>
-
-      <div class="header-meta">
-        <span class="meta-item">
-          <i class="bi bi-calendar"></i>
-          <span>Period: {{ form.month }}/{{ form.year }}</span>
-        </span>
-        <span class="meta-item" *ngIf="loading">
-          <i class="bi bi-arrow-repeat spin"></i>
-          <span>Loading data...</span>
-        </span>
-      </div>
+      <p class="eyebrow">Admin / BB & ANW</p>
+      <h1>{{ pageTitle }}</h1>
+      <p class="page-subtitle">
+        Configure KPI definitions for BB & ANW network metrics.
+        <span class="muted">Node-level metrics are managed separately.</span>
+      </p>
     </div>
 
-    <div class="header-actions">
-      <button type="button" class="ghost-button" (click)="loadData()" [disabled]="loading">
-        <i class="bi bi-arrow-clockwise"></i>
-        <span>Refresh data</span>
+    <div class="header-right">
+      <span class="count-pill">
+        <i class="bi bi-table"></i>
+        {{ data.length }} KPI headers
+      </span>
+
+      <button
+        type="button"
+        class="primary-btn add-btn"
+        (click)="showForm ? closeForm() : openForm()"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">
+          {{ showForm ? 'close' : 'add_circle' }}
+        </span>
+        {{ showForm ? 'Close form' : 'Add KPI header' }}
       </button>
     </div>
   </section>
 
-  <!-- ALERTS / STATUS -->
+  <!-- ERROR -->
   <div *ngIf="error" class="alert alert-danger">
     <i class="bi bi-exclamation-triangle-fill"></i>
-    <div class="alert-body">
-      <div class="alert-title">Operation failed</div>
+    <div>
+      <strong>Operation failed</strong>
       <div>{{ error }}</div>
     </div>
   </div>
 
-  <div *ngIf="!error && !loading && !data.length" class="alert alert-info">
-    <i class="bi bi-info-circle-fill"></i>
-    <div class="alert-body">
-      <div class="alert-title">No records yet</div>
-      <div>Add the first BB & ANW KPI row using the form on the left.</div>
-    </div>
-  </div>
-
   <!-- MAIN GRID -->
-  <div class="admin-grid">
+  <div class="admin-grid" [class.no-form]="!showForm">
 
-    <!-- FORM CARD -->
-    <div class="card">
-      <div class="card-header">
-        <div class="card-header-left">
-          <h2>
-            <span>{{ editingId ? 'Update KPI row' : 'Add KPI row' }}</span>
-          </h2>
-          <p>Maintain BB & ANW Form 7 KPI definitions.</p>
+    <!-- FORM -->
+    <section class="card form-card" *ngIf="showForm">
+      <div class="form-card-header">
+        <div>
+          <p class="eyebrow">
+            {{ editingId ? 'Editing KPI header' : 'Create KPI header' }}
+          </p>
+          <h2>{{ editingId ? 'Edit KPI Header' : 'Add KPI Header' }}</h2>
         </div>
-        <span class="status-pill" [class.editing]="editingId">
-          {{ editingId ? 'Editing existing row' : 'Creating new row' }}
-        </span>
+
+        <button
+          type="button"
+          class="ghost-icon-btn"
+          aria-label="Close form"
+          (click)="closeForm()"
+        >
+          <span class="material-symbols-outlined">close</span>
+        </button>
       </div>
 
-      <form class="form-grid" (ngSubmit)="submitForm()">
+      <p class="form-subtitle">
+        Provide KPI target metadata for BB & ANW dashboards.
+      </p>
 
-        <!-- No -->
-        <div class="form-field">
-          <div class="field-label">
-            <span>No</span>
-            <span class="mono">#</span>
+      <form class="region-form" (ngSubmit)="submitForm()">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Row No *</label>
+            <input
+              type="number"
+              [(ngModel)]="form.no"
+              name="no"
+              min="1"
+              required
+              placeholder="e.g. 12"
+            />
           </div>
-          <input
-            type="number"
-            name="no"
-            required
-            [(ngModel)]="form.no">
-          <div class="hint">Row order number in the Form 7 listing.</div>
+
+          <div class="form-group">
+            <label>KPI Target (%) *</label>
+            <input
+              type="number"
+              step="0.01"
+              min="0"
+              max="100"
+              [(ngModel)]="form.kpiPercent"
+              name="kpiPercent"
+              required
+              placeholder="e.g. 99.90"
+            />
+          </div>
         </div>
 
-        <!-- KPI -->
-        <div class="form-field">
-          <div class="field-label">
-            <span>Network Engineer KPI</span>
+        <div class="form-row">
+          <div class="form-group full-span">
+            <label>KPI Name *</label>
+            <input
+              type="text"
+              [(ngModel)]="form.networkEngineerKpi"
+              name="networkEngineerKpi"
+              required
+              placeholder="e.g. MSAN availability (With power)"
+            />
           </div>
-          <input
-            type="text"
-            name="networkEngineerKpi"
-            required
-            [(ngModel)]="form.networkEngineerKpi">
         </div>
 
-        <!-- Division -->
-        <div class="form-field">
-          <div class="field-label">
-            <span>Division</span>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Division</label>
+            <input
+              type="text"
+              [(ngModel)]="form.division"
+              name="division"
+              placeholder="e.g. TRANSPORT & ACCESS"
+            />
           </div>
-          <input
-            type="text"
-            name="division"
-            required
-            [(ngModel)]="form.division">
+
+          <div class="form-group">
+            <label>Section</label>
+            <input
+              type="text"
+              [(ngModel)]="form.section"
+              name="section"
+              placeholder="e.g. BB&ANW"
+            />
+          </div>
         </div>
 
-        <!-- Section -->
-        <div class="form-field">
-          <div class="field-label">
-            <span>Section</span>
-          </div>
-          <input
-            type="text"
-            name="section"
-            required
-            [(ngModel)]="form.section">
-        </div>
-
-        <!-- KPI Percent -->
-        <div class="form-field">
-          <div class="field-label">
-            <span>KPI Percent (%)</span>
-          </div>
-          <input
-            type="number"
-            step="0.01"
-            name="kpiPercent"
-            required
-            [(ngModel)]="form.kpiPercent">
-        </div>
-
-        <!-- ACTIONS -->
-        <div class="form-actions">
-          <button type="submit" class="btn primary" [disabled]="saving">
-            {{ editingId ? 'Update row' : 'Add row' }}
+        <div class="form-buttons">
+          <button class="primary-btn" [disabled]="saving">
+            {{ editingId ? 'Update header' : 'Add header' }}
           </button>
 
           <button
             type="button"
-            class="btn secondary"
-            *ngIf="editingId"
-            (click)="cancelEdit()">
-            Cancel edit
+            class="secondary-btn"
+            (click)="closeForm()"
+          >
+            Cancel
           </button>
         </div>
-
-        <div *ngIf="editingId" class="edit-tip">
-          <i class="bi bi-pencil-square"></i>
-          <span>You are editing an existing record. Use "Cancel edit" to switch back to adding a new row.</span>
-        </div>
-
       </form>
-    </div>
 
-    <!-- TABLE CARD -->
-    <div class="card table-card">
-      <div class="card-header">
-        <div class="card-header-left">
-          <h2>Saved BB & ANW KPI rows</h2>
-          <p>Review and manage existing Form 7 entries.</p>
+      <div *ngIf="editingId" class="edit-tip">
+        You are editing an existing KPI header. Save or cancel to exit.
+      </div>
+    </section>
+
+    <!-- TABLE -->
+    <section class="card table-card">
+      <div class="table-header-row">
+        <div>
+          <p class="eyebrow">KPI overview</p>
+          <h2>KPI Headers</h2>
         </div>
+        <p class="hint">
+          These define KPI targets only. Availability metrics are handled in Platform KPI.
+        </p>
       </div>
 
-      <div *ngIf="loading" class="table-loader">
-        <div>Loading KPI data...</div>
-      </div>
+      <div *ngIf="loading" class="table-loader">Loading KPI data…</div>
 
-      <div *ngIf="!loading && data.length" class="table-wrapper">
-        <table>
+      <div class="table-wrapper" *ngIf="!loading && data.length">
+        <table class="kpi-table">
           <thead>
             <tr>
-              <th>No</th>
+              <th style="width: 70px;">No</th>
               <th>KPI</th>
-              <th>Division</th>
-              <th>Section</th>
-              <th>%</th>
-              <th>Actions</th>
+              <th style="width: 240px;">Division</th>
+              <th style="width: 160px;">Section</th>
+              <th class="center" style="width: 120px;">Target %</th>
+              <th class="actions-col">Actions</th>
             </tr>
           </thead>
 
           <tbody>
-            <tr *ngFor="let row of data; trackBy: trackRow" [class.is-editing]="row.id === editingId">
+            <tr
+              *ngFor="let row of data; trackBy: trackRow"
+              [class.is-editing]="row.kpiId === editingId"
+            >
               <td class="mono">{{ row.no }}</td>
-              <td class="kpi-name">
-                <span>{{ row.networkEngineerKpi }}</span>
+              <td class="kpi-cell">{{ row.networkEngineerKpi }}</td>
+              <td>{{ row.division || '-' }}</td>
+              <td>{{ row.section || '-' }}</td>
+              <td class="center">
+                <span class="pct-badge">{{ row.kpiPercent ?? '-' }}%</span>
               </td>
-              <td>{{ row.division }}</td>
-              <td>{{ row.section }}</td>
-              <td>{{ row.kpiPercent }}</td>
-              <td>
-                <button type="button" class="btn text" (click)="editRow(row)">Edit</button>
-                <button type="button" class="btn danger" (click)="deleteRow(row.id)">Delete</button>
+
+              <td class="actions-col">
+                <div class="action-group">
+                  <button class="icon-btn edit" type="button" (click)="editRow(row)" title="Edit">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+
+                  <button class="icon-btn delete" type="button" (click)="deleteRow(row.kpiId)" title="Delete">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>
         </table>
-
-        <div class="table-footnote">
-          <i class="bi bi-info-circle"></i>
-          <span>KPI values are stored exactly as provided and can be updated at any time.</span>
-        </div>
       </div>
 
       <div *ngIf="!loading && !data.length" class="empty-state">
-        <i class="bi bi-folder2-open"></i>
-        <p>No KPI rows have been saved yet.</p>
+        No KPI headers created yet
       </div>
-    </div>
-
+    </section>
   </div>
-
 </div>
