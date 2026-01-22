@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import * as XLSX from 'xlsx';
-import { Form4ApiService, ServiceFulfilmentKpi } from '../../../../services/form4api.service';
+import { Form4ApiService, ServiceFulfilmentKpi, ServiceFulfilmentMetric } from '../../../../services/form4api.service';
 import { RegionService, Region } from '../../../../services/region.service';
 
 interface KpiData {
@@ -68,6 +68,7 @@ export class ServiceFulfilmentComponent implements OnInit {
   error: string | null = null;
   isEditingAllowed = true;
   userRole: string = 'user';
+  private editingMessageShown = false;
   
   // Constants
   nonEditableColumns = [
@@ -93,8 +94,8 @@ export class ServiceFulfilmentComponent implements OnInit {
   };
 
   optionMapping: { [key: string]: string } = {
-    CENHKMD: 'CEN / MD',
-    CENHKMD1: 'HK',
+    CENHKMD: 'CEN/HK/MD',
+    CENHKMD1: 'CEN/HK/MD 1',
     GQKINTB: 'GQ / KI / NTB',
     NDRM: 'ND / RM',
     AWHO: 'AW / HO',
@@ -115,467 +116,28 @@ export class ServiceFulfilmentComponent implements OnInit {
     KOMLTMBVA: 'KO / MLT / MB / VA'
   };
 
-  // Real KPI data from JSON
-  realKpiData: KpiData[] = [
-    {
-      "_id": { "$oid": "675ab58faad5ca39476a3d12" },
-      "no": 1,
-      "kpi": "Identification of proper CEA Node and customer location code creation in OSS for delivering services(IDNENTIFY FACILITIES)",
-      "target": "90%",
-      "calculation": "WOO completed within OLA/Total WOO Received",
-      "platform": "Fiber",
-      "responsibledgm": "Regional DGM/DGM SF",
-      "definedoladetails": "2 Days",
-      "weightage": "10%",
-      "datasources": "OSS Reports",
-      "CENHKMD": "96%",
-      "CENHKMD1": "95.45%",
-      "GQKINTB": "100%",
-      "NDRM": "100%",
-      "AWHO": "66.67%",
-      "KONKX": "100%",
-      "NGWT": "75%",
-      "KGKLY": "14.29%",
-      "CWPX": "0%",
-      "DBKYMT": "100%",
-      "GPHTNW": "100%",
-      "ADPR": "100%",
-      "BDBWMRG": "50%",
-      "KERN": "100%",
-      "EBMHMBH": "100%",
-      "AGGL": "100%",
-      "HRKTPH": "100%",
-      "BCAPKLTC": "100%",
-      "JA": "100%",
-      "KOMLTMBVA": "100%",
-      "__v": 0,
-      "areas": {
-        "CENHKMD": 90,
-        "CENHKMD1": 95.45,
-        "GQKINTB": 1000,
-        "NDRM": 100,
-        "AWHO": 66.67,
-        "KONKX": 100,
-        "NGWT": 75,
-        "KGKLY": 14.29,
-        "CWPX": 0,
-        "DBKYMT": 100,
-        "GPHTNW": 100,
-        "ADPR": 90,
-        "BDBWMRG": 50,
-        "KERN": 100,
-        "EBMHMBH": 100,
-        "AGGL": 100,
-        "HRKTPH": 100,
-        "BCAPKLTC": 100,
-        "JA": 100,
-        "KOMLTMBVA": 100,
-        "GQ / KI / NTB": 60,
-        "CW / PX": 12
-      },
-      "updatedAt": { "$date": "2025-10-10T08:52:31.478Z" }
-    },
-    {
-      "_id": { "$oid": "675af2109e8685204fde9390" },
-      "no": 2,
-      "kpi": "Assign fiber cores and completion of X-connections in OSS if end to end fiber available. If not inform whether finber is not available or incompete and complete other required OSS attributes. (RESERVE ACCESS FIBER)",
-      "target": "90%",
-      "calculation": "WOO completed within OLA/Total WOO Received",
-      "platform": "Fiber",
-      "responsibledgm": "Regional DGM/DGM SF",
-      "definedoladetails": "2 Days",
-      "weightage": "20%",
-      "datasources": "OSS Reports",
-      "CENHKMD": "68.75%",
-      "CENHKMD1": "68.75%",
-      "GQKINTB": "100%",
-      "NDRM": "83.33%",
-      "AWHO": "0%",
-      "KONKX": "100%",
-      "NGWT": "100%",
-      "KGKLY": "77.78%",
-      "CWPX": "100%",
-      "DBKYMT": "100%",
-      "GPHTNW": "100%",
-      "ADPR": "100%",
-      "BDBWMRG": "100%",
-      "KERN": "100%",
-      "EBMHMBH": "100%",
-      "AGGL": "100%",
-      "HRKTPH": "100%",
-      "BCAPKLTC": "100%",
-      "JA": "100%",
-      "KOMLTMBVA": "100%",
-      "__v": 0,
-      "areas": {
-        "CENHKMD": 68.75,
-        "CENHKMD1": 68.75,
-        "GQKINTB": 100,
-        "NDRM": 83.33,
-        "AWHO": 0,
-        "KONKX": 100,
-        "NGWT": 100,
-        "KGKLY": 77.78,
-        "CWPX": 100,
-        "DBKYMT": 100,
-        "GPHTNW": 100,
-        "ADPR": 100,
-        "BDBWMRG": 100,
-        "KERN": 100,
-        "EBMHMBH": 100,
-        "AGGL": 100,
-        "HRKTPH": 100,
-        "BCAPKLTC": 100,
-        "JA": 100,
-        "KOMLTMBVA": 100
-      },
-      "updatedAt": { "$date": "2025-10-10T08:52:31.796Z" }
-    },
-    {
-      "_id": { "$oid": "675af5109e8685204fde9394" },
-      "no": 3,
-      "kpi": "Completion of live joint splicing and termination. (SPLICE & TERMINATE)",
-      "target": "90%",
-      "calculation": "WOO completed within OLA/Total WOO Received",
-      "platform": "Fiber",
-      "responsibledgm": "Regional DGM/DGM SF",
-      "definedoladetails": "5 Days",
-      "weightage": "20%",
-      "datasources": "OSS Reports",
-      "CENHKMD": "100%",
-      "CENHKMD1": "100%",
-      "GQKINTB": "100%",
-      "NDRM": "100%",
-      "AWHO": "100%",
-      "KONKX": "100%",
-      "NGWT": "100%",
-      "KGKLY": "100%",
-      "CWPX": "100%",
-      "DBKYMT": "100%",
-      "GPHTNW": "100%",
-      "ADPR": "100%",
-      "BDBWMRG": "50%",
-      "KERN": "100%",
-      "EBMHMBH": "100%",
-      "AGGL": "100%",
-      "HRKTPH": "100%",
-      "BCAPKLTC": "100%",
-      "JA": "100%",
-      "KOMLTMBVA": "50%",
-      "__v": 0,
-      "areas": {
-        "CENHKMD": 100,
-        "CENHKMD1": 100,
-        "GQKINTB": 100,
-        "NDRM": 100,
-        "AWHO": 100,
-        "KONKX": 100,
-        "NGWT": 100,
-        "KGKLY": 100,
-        "CWPX": 100,
-        "DBKYMT": 100,
-        "GPHTNW": 100,
-        "ADPR": 100,
-        "BDBWMRG": 50,
-        "KERN": 100,
-        "EBMHMBH": 100,
-        "AGGL": 100,
-        "HRKTPH": 100,
-        "BCAPKLTC": 100,
-        "JA": 100,
-        "KOMLTMBVA": 50
-      },
-      "updatedAt": { "$date": "2025-10-10T08:52:31.798Z" }
-    },
-    {
-      "_id": { "$oid": "675af5a49e8685204fde9396" },
-      "no": 4,
-      "kpi": "Upload fiber information in to OSS after completing splicing. (UPLOAD FIBER IN OSS)",
-      "target": "90%",
-      "calculation": "WOO completed within OLA/Total WOO Received",
-      "platform": "Fiber",
-      "responsibledgm": "Regional DGM/DGM SF",
-      "definedoladetails": "2 Days",
-      "weightage": "10%",
-      "datasources": "OSS Reports",
-      "CENHKMD": "50%",
-      "CENHKMD1": "50%",
-      "GQKINTB": "100%",
-      "NDRM": "60%",
-      "AWHO": "100%",
-      "KONKX": "100%",
-      "NGWT": "100%",
-      "KGKLY": "100%",
-      "CWPX": "100%",
-      "DBKYMT": "100%",
-      "GPHTNW": "100%",
-      "ADPR": "50%",
-      "BDBWMRG": "100%",
-      "KERN": "0%",
-      "EBMHMBH": "100%",
-      "AGGL": "100%",
-      "HRKTPH": "100%",
-      "BCAPKLTC": "100%",
-      "JA": "100%",
-      "KOMLTMBVA": "100%",
-      "__v": 0,
-      "areas": {
-        "CENHKMD": 50,
-        "CENHKMD1": 50,
-        "GQKINTB": 100,
-        "NDRM": 60,
-        "AWHO": 100,
-        "KONKX": 100,
-        "NGWT": 100,
-        "KGKLY": 100,
-        "CWPX": 100,
-        "DBKYMT": 100,
-        "GPHTNW": 100,
-        "ADPR": 50,
-        "BDBWMRG": 100,
-        "KERN": 0,
-        "EBMHMBH": 100,
-        "AGGL": 100,
-        "HRKTPH": 100,
-        "BCAPKLTC": 100,
-        "JA": 100,
-        "KOMLTMBVA": 100,
-        "GQ / KI / NTB": 10
-      },
-      "updatedAt": { "$date": "2025-10-10T08:52:31.801Z" }
-    },
-    {
-      "_id": { "$oid": "675af63e9e8685204fde9398" },
-      "no": 5,
-      "kpi": "Assign new fiber cores and completion of X-connections in OSS after completing new fiber laying. (ASSIGN NEW ACCESS FIBER)",
-      "target": "90%",
-      "calculation": "WOO completed within OLA/Total WOO Received",
-      "platform": "Fiber",
-      "responsibledgm": "Regional DGM/DGM SF",
-      "definedoladetails": "2 Days",
-      "weightage": "10%",
-      "datasources": "OSS Reports",
-      "CENHKMD": "100%",
-      "CENHKMD1": "100%",
-      "GQKINTB": "100%",
-      "NDRM": "100%",
-      "AWHO": "0%",
-      "KONKX": "100%",
-      "NGWT": "100%",
-      "KGKLY": "100%",
-      "CWPX": "0%",
-      "DBKYMT": "100%",
-      "GPHTNW": "100%",
-      "ADPR": "100%",
-      "BDBWMRG": "100%",
-      "KERN": "100%",
-      "EBMHMBH": "100%",
-      "AGGL": "100%",
-      "HRKTPH": "100%",
-      "BCAPKLTC": "100%",
-      "JA": "100%",
-      "KOMLTMBVA": "100%",
-      "__v": 0,
-      "areas": {
-        "CENHKMD": 100,
-        "CENHKMD1": 100,
-        "GQKINTB": 100,
-        "NDRM": 100,
-        "AWHO": 0,
-        "KONKX": 100,
-        "NGWT": 100,
-        "KGKLY": 100,
-        "CWPX": 0,
-        "DBKYMT": 100,
-        "GPHTNW": 100,
-        "ADPR": 100,
-        "BDBWMRG": 100,
-        "KERN": 100,
-        "EBMHMBH": 100,
-        "AGGL": 100,
-        "HRKTPH": 100,
-        "BCAPKLTC": 100,
-        "JA": 100,
-        "KOMLTMBVA": 100,
-        "NG / WT": 10,
-        "HR /KT /PH": 90
-      },
-      "updatedAt": { "$date": "2025-10-10T08:52:31.803Z" }
-    },
-    {
-      "_id": { "$oid": "675afa7f9e8685204fde939c" },
-      "no": 6,
-      "kpi": "Verify fiber termination, set up end to end connectivity, install NTU (SS/SFP), measure end to end power levels and update OSS attributes. (ESTABLISH ACCESS LINK)",
-      "target": "90%",
-      "calculation": "WOO completed within OLA/Total WOO Received",
-      "platform": "Fiber",
-      "responsibledgm": "Regional DGM/DGM SF",
-      "definedoladetails": "3 Days",
-      "weightage": "20%",
-      "datasources": "OSS Reports",
-      "CENHKMD": "69.23%",
-      "CENHKMD1": "69.23%",
-      "GQKINTB": "100%",
-      "NDRM": "100%",
-      "AWHO": "100%",
-      "KONKX": "100%",
-      "NGWT": "60%",
-      "KGKLY": "50%",
-      "CWPX": "100%",
-      "DBKYMT": "100%",
-      "GPHTNW": "100%",
-      "ADPR": "100%",
-      "BDBWMRG": "87.5%",
-      "KERN": "100%",
-      "EBMHMBH": "100%",
-      "AGGL": "83.33%",
-      "HRKTPH": "100%",
-      "BCAPKLTC": "100%",
-      "JA": "100%",
-      "KOMLTMBVA": "100%",
-      "__v": 0,
-      "areas": {
-        "CENHKMD": 69.23,
-        "CENHKMD1": 69.23,
-        "GQKINTB": 100,
-        "NDRM": 100,
-        "AWHO": 100,
-        "KONKX": 100,
-        "NGWT": 60,
-        "KGKLY": 50,
-        "CWPX": 100,
-        "DBKYMT": 100,
-        "GPHTNW": 100,
-        "ADPR": 100,
-        "BDBWMRG": 87.5,
-        "KERN": 100,
-        "EBMHMBH": 100,
-        "AGGL": 83.33,
-        "HRKTPH": 100,
-        "BCAPKLTC": 100,
-        "JA": 100,
-        "KOMLTMBVA": 100,
-        "GQ / KI / NTB": 25
-      },
-      "updatedAt": { "$date": "2025-10-10T08:52:31.806Z" }
-    },
-    {
-      "_id": { "$oid": "675afafe9e8685204fde939e" },
-      "no": 7,
-      "kpi": "Installation of NTUs (INSTALL NTU/MODIFY NTU FO)",
-      "target": "90%",
-      "calculation": "WOO completed within OLA/Total WOO Received",
-      "platform": "Fiber",
-      "responsibledgm": "Regional DGM/DGM SF",
-      "definedoladetails": "3 Days",
-      "weightage": "5%",
-      "datasources": "OSS Reports",
-      "CENHKMD": "100%",
-      "CENHKMD1": "100%",
-      "GQKINTB": "100%",
-      "NDRM": "100%",
-      "AWHO": "100%",
-      "KONKX": "100%",
-      "NGWT": "100%",
-      "KGKLY": "100%",
-      "CWPX": "100%",
-      "DBKYMT": "100%",
-      "GPHTNW": "100%",
-      "ADPR": "100%",
-      "BDBWMRG": "100%",
-      "KERN": "100%",
-      "EBMHMBH": "100%",
-      "AGGL": "100%",
-      "HRKTPH": "100%",
-      "BCAPKLTC": "100%",
-      "JA": "100%",
-      "KOMLTMBVA": "100%",
-      "__v": 0,
-      "areas": {
-        "CENHKMD": 100,
-        "CENHKMD1": 100,
-        "GQKINTB": 100,
-        "NDRM": 100,
-        "AWHO": 100,
-        "KONKX": 100,
-        "NGWT": 100,
-        "KGKLY": 100,
-        "CWPX": 100,
-        "DBKYMT": 100,
-        "GPHTNW": 100,
-        "ADPR": 100,
-        "BDBWMRG": 100,
-        "KERN": 100,
-        "EBMHMBH": 100,
-        "AGGL": 100,
-        "HRKTPH": 100,
-        "BCAPKLTC": 100,
-        "JA": 100,
-        "KOMLTMBVA": 100,
-        "GQ / KI / NTB": 80
-      },
-      "updatedAt": { "$date": "2025-10-10T08:52:31.858Z" }
-    },
-    {
-      "_id": { "$oid": "675afb2f9e8685204fde93a0" },
-      "no": 8,
-      "kpi": "Installation of SHDSL cards",
-      "target": "90%",
-      "calculation": "WOO completed within OLA/Total WOO Received",
-      "platform": "Fiber",
-      "responsibledgm": "Regional DGM/DGM SF",
-      "definedoladetails": "3 Days",
-      "weightage": "4%",
-      "datasources": "OSS Reports",
-      "CENHKMD": "100%",
-      "CENHKMD1": "100%",
-      "GQKINTB": "100%",
-      "NDRM": "100%",
-      "AWHO": "100%",
-      "KONKX": "100%",
-      "NGWT": "100%",
-      "KGKLY": "100%",
-      "CWPX": "100%",
-      "DBKYMT": "100%",
-      "GPHTNW": "100%",
-      "ADPR": "100%",
-      "BDBWMRG": "100%",
-      "KERN": "100%",
-      "EBMHMBH": "100%",
-      "AGGL": "100%",
-      "HRKTPH": "100%",
-      "BCAPKLTC": "100%",
-      "JA": "100%",
-      "KOMLTMBVA": "100%",
-      "__v": 0,
-      "areas": {
-        "CENHKMD": 100,
-        "CENHKMD1": 100,
-        "GQKINTB": 100,
-        "NDRM": 100,
-        "AWHO": 100,
-        "KONKX": 100,
-        "NGWT": 100,
-        "KGKLY": 100,
-        "CWPX": 100,
-        "DBKYMT": 100,
-        "GPHTNW": 100,
-        "ADPR": 100,
-        "BDBWMRG": 100,
-        "KERN": 100,
-        "EBMHMBH": 100,
-        "AGGL": 100,
-        "HRKTPH": 100,
-        "BCAPKLTC": 100,
-        "JA": 100,
-        "KOMLTMBVA": 100,
-        "GQ / KI / NTB": 90,
-        "KON / KX": 1000,
-        "NG / WT": 90
-      },
-      "updatedAt": { "$date": "2025-10-10T08:52:32.133Z" }
-    }
+  metricsRows: ServiceFulfilmentMetric[] = [];
+  metricsLoading = false;
+  metricsError: string | null = null;
+
+  selectedMonth = new Date().getMonth() + 1;
+  selectedYear = new Date().getFullYear();
+  private periodLockedByUser = false;
+  readonly monthOptions = [
+    { value: 1, label: 'January' },
+    { value: 2, label: 'February' },
+    { value: 3, label: 'March' },
+    { value: 4, label: 'April' },
+    { value: 5, label: 'May' },
+    { value: 6, label: 'June' },
+    { value: 7, label: 'July' },
+    { value: 8, label: 'August' },
+    { value: 9, label: 'September' },
+    { value: 10, label: 'October' },
+    { value: 11, label: 'November' },
+    { value: 12, label: 'December' }
   ];
+  yearOptions: number[] = [];
 
   // Region data (simplified for now - in real app, this would come from API)
   regionData: RegionData[] = [
@@ -605,7 +167,18 @@ export class ServiceFulfilmentComponent implements OnInit {
     private toastr: ToastrService,
     private form4Api: Form4ApiService,
     private regionService: RegionService
-  ) {}
+  ) {
+    this.yearOptions = this.generateYearOptions();
+  }
+
+  toggleRoleSimulation() {
+    this.userRole = this.userRole === 'padmin' ? 'user' : 'padmin';
+    this.recomputeEditPermission();
+    this.toastr.info(
+      `Simulated as ${this.userRole === 'padmin' ? 'Platform Admin' : 'User'}.`,
+      'Role Simulation'
+    );
+  }
 
   ngOnInit() {
     this.loadRegionTable();
@@ -618,14 +191,71 @@ export class ServiceFulfilmentComponent implements OnInit {
     this.loading = true;
     this.form4Api.getAll().subscribe({
       next: (kpis) => {
-        this.adminKpiRows = Array.isArray(kpis) ? kpis : [];
+        const rows = Array.isArray(kpis) ? kpis : [];
+        this.adminKpiRows = rows;
+        this.syncSelectedPeriodFromData(rows);
+        this.rebuildKpiMatrix();
         this.loading = false;
+        this.loadMetrics();
       },
       error: (err) => {
         console.error('Failed to load Service Fulfilment admin data:', err);
         this.adminKpiRows = [];
         this.loading = false;
         this.error = 'Failed to load Service Fulfilment KPI data.';
+      }
+    });
+  }
+
+  loadMetrics() {
+    const month = Number(this.selectedMonth);
+    const year = Number(this.selectedYear);
+    if (!month || !year) {
+      console.warn('Service Fulfilment: Cannot load metrics - month or year not set', { month, year });
+      return;
+    }
+
+    this.metricsLoading = true;
+    this.metricsError = null;
+
+    const areaFilter = this.resolveAreaCode(this.formValues.dropdown4);
+
+    console.log('Service Fulfilment: Loading metrics', { month, year, areaFilter });
+
+    this.form4Api.getMetrics(month, year, areaFilter || undefined).subscribe({
+      next: (metrics) => {
+        console.log('Service Fulfilment: Metrics loaded', { count: metrics?.length, metrics: metrics?.slice(0, 3) });
+        this.metricsRows = Array.isArray(metrics) ? metrics : [];
+        
+        // If we got metrics, sync the period from them (in case admin rows had wrong period)
+        if (this.metricsRows.length > 0 && !this.periodLockedByUser) {
+          const firstMetric = this.metricsRows[0];
+          if (firstMetric.month && firstMetric.year) {
+            if (firstMetric.month !== this.selectedMonth || firstMetric.year !== this.selectedYear) {
+              console.log('Service Fulfilment: Syncing period from metrics', {
+                from: { month: this.selectedMonth, year: this.selectedYear },
+                to: { month: firstMetric.month, year: firstMetric.year }
+              });
+              this.selectedMonth = firstMetric.month;
+              this.selectedYear = firstMetric.year;
+            }
+          }
+        }
+        
+        this.metricsLoading = false;
+        this.rebuildKpiMatrix();
+        console.log('Service Fulfilment: KPI matrix rebuilt', { 
+          dataRows: this.data.length, 
+          areaKeys: this.getAreaKeys(),
+          visibleColumns: this.visibleColumns 
+        });
+      },
+      error: (err) => {
+        console.error('Failed to load Service Fulfilment metrics:', err);
+        this.metricsRows = [];
+        this.metricsLoading = false;
+        this.metricsError = `Failed to load KPI metrics for ${this.getMonthLabel(month)} ${year}. Please check if data exists for this period.`;
+        this.rebuildKpiMatrix();
       }
     });
   }
@@ -658,6 +288,7 @@ export class ServiceFulfilmentComponent implements OnInit {
     } else {
       this.userRole = 'user';
     }
+    this.recomputeEditPermission();
   }
 
   setupEditPermissionCheck() {
@@ -670,13 +301,236 @@ export class ServiceFulfilmentComponent implements OnInit {
 
   checkEditPermission(): boolean {
     // Only platform admins can edit
-    const canEdit = this.userRole === 'padmin';
-    this.isEditingAllowed = canEdit;
-    return canEdit;
+    this.recomputeEditPermission();
+    return this.isEditingAllowed;
+  }
+
+  private recomputeEditPermission() {
+    const roleAllowsEdit = this.userRole === 'padmin';
+    const hasAreaFilter = !!this.formValues.dropdown4;
+    this.isEditingAllowed = roleAllowsEdit && hasAreaFilter;
+  }
+
+  private generateYearOptions(span: number = 10): number[] {
+    const currentYear = new Date().getFullYear();
+    const startYear = currentYear - (span - 1);
+    const years: number[] = [];
+    for (let year = startYear; year <= currentYear; year++) {
+      years.push(year);
+    }
+    return years;
   }
 
   getUniqueRegions(): string[] {
     return Array.from(new Set(this.regionTable.map(r => r.region))).filter(Boolean);
+  }
+
+  getMonthLabel(value: number): string {
+    const month = this.monthOptions.find(option => option.value === value);
+    return month?.label ?? `M${value}`;
+  }
+
+  private rebuildKpiMatrix() {
+    if (!this.metricsRows.length) {
+      console.log('Service Fulfilment: No metrics, building base data from admin rows', { adminRows: this.adminKpiRows.length });
+      this.data = this.buildBaseKpiDataFromAdmin();
+      this.visibleColumns = [...this.baseColumns];
+      return;
+    }
+    console.log('Service Fulfilment: Building KPI matrix from metrics', { metricsCount: this.metricsRows.length });
+    this.data = this.buildKpiDataFromMetrics(this.metricsRows);
+    this.refreshColumnsFromData();
+    console.log('Service Fulfilment: Columns refreshed', { visibleColumns: this.visibleColumns.length, columns: this.visibleColumns });
+  }
+
+  private buildBaseKpiDataFromAdmin(): KpiData[] {
+    if (!this.adminKpiRows.length) {
+      return [];
+    }
+
+    return this.adminKpiRows.map((kpi, index) => ({
+      _id: kpi.id ? { $oid: kpi.id } : kpi.no ?? index + 1,
+      no: kpi.no,
+      kpi: kpi.kpi,
+      target: kpi.target,
+      calculation: kpi.calculation ?? '',
+      platform: kpi.platform ?? '',
+      responsibledgm: kpi.responsibleDgm ?? '',
+      definedoladetails: kpi.definedoladetails ?? '',
+      weightage: this.formatWeightageValue(kpi.weightage),
+      datasources: kpi.dataSources ?? '',
+      areas: {}
+    }));
+  }
+
+  private syncSelectedPeriodFromData(rows: ServiceFulfilmentKpi[]) {
+    if (this.periodLockedByUser || !rows || !rows.length) {
+      console.log('Service Fulfilment: Period sync skipped', { 
+        periodLocked: this.periodLockedByUser, 
+        rowsCount: rows?.length || 0 
+      });
+      return;
+    }
+
+    const ordered = rows
+      .filter(row => row.month > 0 && row.year > 0)
+      .sort((a, b) => {
+        if (a.year === b.year) {
+          return a.month - b.month;
+        }
+        return a.year - b.year;
+      });
+
+    console.log('Service Fulfilment: Period sync from admin rows', {
+      totalRows: rows.length,
+      rowsWithPeriod: ordered.length,
+      currentPeriod: { month: this.selectedMonth, year: this.selectedYear }
+    });
+
+    if (!ordered.length) {
+      console.warn('Service Fulfilment: No admin rows with valid month/year found');
+      return;
+    }
+
+    const latest = ordered[ordered.length - 1];
+    const periodChanged = latest.year !== this.selectedYear || latest.month !== this.selectedMonth;
+
+    if (periodChanged) {
+      console.log('Service Fulfilment: Period changed', {
+        from: { month: this.selectedMonth, year: this.selectedYear },
+        to: { month: latest.month, year: latest.year }
+      });
+      this.selectedYear = latest.year;
+      this.selectedMonth = latest.month;
+    } else {
+      console.log('Service Fulfilment: Period unchanged', {
+        month: this.selectedMonth,
+        year: this.selectedYear
+      });
+    }
+  }
+
+  private buildKpiDataFromMetrics(metrics: ServiceFulfilmentMetric[]): KpiData[] {
+    if (!metrics || !metrics.length) {
+      return [];
+    }
+
+    const masterById = new Map<string, ServiceFulfilmentKpi>();
+    const masterByNo = new Map<number, ServiceFulfilmentKpi>();
+
+    this.adminKpiRows.forEach((kpi) => {
+      if (kpi.id) {
+        masterById.set(kpi.id, kpi);
+      }
+      masterByNo.set(kpi.no, kpi);
+    });
+
+    const grouped = new Map<string, KpiData>();
+
+    metrics.forEach((metric) => {
+      const groupKey = metric.id ?? metric.no.toString();
+      if (!grouped.has(groupKey)) {
+        const master = (metric.id ? masterById.get(metric.id) : undefined) ?? masterByNo.get(metric.no);
+        grouped.set(groupKey, {
+          _id: metric.id ? { $oid: metric.id } : metric.no,
+          no: master?.no ?? metric.no,
+          kpi: master?.kpi ?? metric.kpi ?? '',
+          target: master?.target ?? metric.target ?? '',
+          calculation: master?.calculation ?? '',
+          platform: master?.platform ?? metric.platform ?? '',
+          responsibledgm: master?.responsibleDgm ?? metric.responsibleDgm ?? '',
+          definedoladetails: master?.definedoladetails ?? '',
+          weightage: this.formatWeightageValue(master?.weightage ?? metric.weightage),
+          datasources: master?.dataSources ?? '',
+          areas: {}
+        });
+      }
+
+      const row = grouped.get(groupKey)!;
+      // Use the area code directly from the metric
+      const areaCode = metric.area ? metric.area.trim().toUpperCase() : '';
+      // Normalize it to get the standard area key
+      const areaKey = this.normalizeAreaKey(areaCode);
+      
+      console.log('Service Fulfilment: Building metric row', { 
+        no: row.no, 
+        areaCode, 
+        areaKey, 
+        kpiValue: metric.kpiValue,
+        form4Dropdown4: this.formValues.dropdown4
+      });
+      
+      if (!row.areas) {
+        row.areas = {};
+      }
+      
+      // Store the value using the normalized key (this is what will be used for lookup)
+      row.areas[areaKey] = metric.kpiValue;
+      row[areaKey] = metric.kpiValue;
+      
+      // Also store with the original area code from database (in case it differs)
+      if (areaCode && areaCode !== areaKey) {
+        row.areas[areaCode] = metric.kpiValue;
+        row[areaCode] = metric.kpiValue;
+      }
+      
+      // If we have a filtered area, also store it with that exact key
+      if (this.formValues.dropdown4 && this.formValues.dropdown4 !== areaKey && this.formValues.dropdown4 !== areaCode) {
+        row.areas[this.formValues.dropdown4] = metric.kpiValue;
+        row[this.formValues.dropdown4] = metric.kpiValue;
+      }
+    });
+
+    const result = Array.from(grouped.values()).sort((a, b) => a.no - b.no);
+    console.log('Service Fulfilment: Built KPI data', { 
+      rowCount: result.length,
+      firstRowAreas: result[0]?.areas,
+      firstRowKeys: result[0] ? Object.keys(result[0]).filter(k => !this.baseColumns.includes(k) && k !== '_id' && k !== '__v') : []
+    });
+    return result;
+  }
+
+  private normalizeAreaValue(value?: string | null): string {
+    return value ? value.replace(/[^A-Za-z0-9]/g, '').toUpperCase() : '';
+  }
+
+  private resolveAreaCode(value?: string | null): string {
+    const normalized = this.normalizeAreaValue(value);
+    if (!normalized) {
+      return '';
+    }
+
+    const directMatch = Object.keys(this.optionMapping).find(
+      key => this.normalizeAreaValue(key) === normalized
+    );
+    if (directMatch) {
+      return directMatch;
+    }
+
+    const labelMatch = Object.entries(this.optionMapping).find(
+      ([key, label]) => this.normalizeAreaValue(label) === normalized
+    );
+    if (labelMatch) {
+      return labelMatch[0];
+    }
+
+    return normalized;
+  }
+
+  private normalizeAreaKey(area?: string | null): string {
+    const resolved = this.resolveAreaCode(area);
+    return resolved || 'UNKNOWN';
+  }
+
+  private formatWeightageValue(value?: number | string | null): string {
+    if (value === undefined || value === null) {
+      return '';
+    }
+    if (typeof value === 'number') {
+      return `${value}%`;
+    }
+    const clean = value.toString().trim();
+    return clean.endsWith('%') ? clean : `${clean}%`;
   }
 
   updateDropdown2Options() {
@@ -693,15 +547,12 @@ export class ServiceFulfilmentComponent implements OnInit {
       )
     ).filter(Boolean);
     this.dropdown2Options = provinces;
-    if (provinces.length > 0) {
-      this.formValues.dropdown2 = provinces[0];
-      this.updateDropdown3Options();
-    } else {
-      this.formValues.dropdown2 = '';
-      this.dropdown3Options = [];
-      this.dropdown4Options = [];
-      this.visibleColumns = [...this.baseColumns];
-    }
+    this.formValues.dropdown2 = '';
+    this.dropdown3Options = [];
+    this.formValues.dropdown3 = '';
+    this.dropdown4Options = [];
+    this.formValues.dropdown4 = '';
+    this.visibleColumns = [...this.baseColumns];
   }
 
   updateDropdown3Options() {
@@ -721,58 +572,43 @@ export class ServiceFulfilmentComponent implements OnInit {
       )
     ).filter(Boolean);
     this.dropdown3Options = engineers;
-    if (engineers.length > 0) {
-      this.formValues.dropdown3 = engineers[0];
-      this.updateDropdown4Options();
-    } else {
-      this.formValues.dropdown3 = '';
-      this.dropdown4Options = [];
-      this.visibleColumns = [...this.baseColumns];
-    }
+    this.formValues.dropdown3 = '';
+    this.dropdown4Options = [];
+    this.formValues.dropdown4 = '';
+    this.visibleColumns = [...this.baseColumns];
   }
 
   updateDropdown4Options() {
     if (!this.formValues.dropdown3 || !this.formValues.dropdown1 || !this.formValues.dropdown2) {
       this.dropdown4Options = [];
       this.formValues.dropdown4 = '';
+      this.loadMetrics();
+      this.recomputeEditPermission();
       return;
     }
-    const leas = Array.from(
-      new Set(
-        this.regionTable
-          .filter(x => 
-            x.region === this.formValues.dropdown1 &&
-            x.province === this.formValues.dropdown2 &&
-            x.networkEngineer === this.formValues.dropdown3
-          )
-          .map(x => {
-            const dbKey = Object.keys(this.optionMapping).find(
-              key => this.optionMapping[key] === x.lea || key === x.lea
-            );
-            return dbKey || x.lea;
-          })
+    const leas = this.regionTable
+      .filter(x => 
+        x.region === this.formValues.dropdown1 &&
+        x.province === this.formValues.dropdown2 &&
+        x.networkEngineer === this.formValues.dropdown3
       )
-    ).filter(Boolean);
-    this.dropdown4Options = leas;
-    if (leas.length > 0) {
-      this.formValues.dropdown4 = leas[0];
-      this.updateVisibleColumns();
-    } else {
-      this.formValues.dropdown4 = '';
-      this.visibleColumns = [...this.baseColumns];
-    }
+      .map(x => this.resolveAreaCode(x.lea))
+      .filter(code => !!code);
+
+    this.dropdown4Options = Array.from(new Set(leas));
+    this.formValues.dropdown4 = '';
+    this.visibleColumns = [...this.baseColumns];
+    this.loadMetrics();
+    this.recomputeEditPermission();
   }
 
   updateVisibleColumns() {
-    if (this.formValues.dropdown4) {
-      this.visibleColumns = [...this.baseColumns, this.formValues.dropdown4];
-    } else {
-      this.visibleColumns = [...this.baseColumns];
-    }
+    this.refreshColumnsFromData();
   }
 
   onDropdownChange(field: string, value: string) {
-    (this.formValues as any)[field] = value;
+    const normalizedValue = field === 'dropdown4' ? this.resolveAreaCode(value) : value;
+    (this.formValues as any)[field] = normalizedValue;
     
     switch (field) {
       case 'dropdown1':
@@ -783,6 +619,8 @@ export class ServiceFulfilmentComponent implements OnInit {
         this.dropdown4Options = [];
         this.visibleColumns = [...this.baseColumns];
         this.updateDropdown2Options();
+        this.loadMetrics();
+        this.recomputeEditPermission();
         break;
       case 'dropdown2':
         this.formValues.dropdown3 = '';
@@ -790,16 +628,36 @@ export class ServiceFulfilmentComponent implements OnInit {
         this.dropdown4Options = [];
         this.visibleColumns = [...this.baseColumns];
         this.updateDropdown3Options();
+        this.loadMetrics();
+        this.recomputeEditPermission();
         break;
       case 'dropdown3':
         this.formValues.dropdown4 = '';
         this.visibleColumns = [...this.baseColumns];
         this.updateDropdown4Options();
+        this.recomputeEditPermission();
         break;
       case 'dropdown4':
         this.updateVisibleColumns();
+        this.loadMetrics();
+        this.recomputeEditPermission();
         break;
     }
+  }
+
+  onPeriodChange() {
+    this.periodLockedByUser = true;
+    this.loadMetrics();
+  }
+
+  resetAreaFilter() {
+    if (!this.formValues.dropdown4) {
+      return;
+    }
+    this.formValues.dropdown4 = '';
+    this.updateVisibleColumns();
+    this.loadMetrics();
+    this.recomputeEditPermission();
   }
 
   formatPercent(val: any): string {
@@ -824,15 +682,39 @@ export class ServiceFulfilmentComponent implements OnInit {
       return item[key];
     }
     
-    // Then check areas object
+    // Then check areas object with exact key
     if (item.areas && typeof item.areas === 'object' && item.areas[key] !== undefined) {
       return item.areas[key];
     }
     
     // Try to normalize key for area lookup
-    const normalizedKey = key.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
-    if (item.areas && item.areas[normalizedKey] !== undefined) {
+    const normalizedKey = this.normalizeAreaKey(key);
+    if (normalizedKey && item.areas && item.areas[normalizedKey] !== undefined) {
       return item.areas[normalizedKey];
+    }
+    
+    // Try resolving the area code (in case key is a display label)
+    const resolvedKey = this.resolveAreaCode(key);
+    if (resolvedKey && item.areas && item.areas[resolvedKey] !== undefined) {
+      return item.areas[resolvedKey];
+    }
+    
+    // Try direct uppercase match
+    const upperKey = key.toUpperCase().trim();
+    if (upperKey && item.areas && item.areas[upperKey] !== undefined) {
+      return item.areas[upperKey];
+    }
+    
+    // Debug logging for area columns that return null
+    if (!this.baseColumns.includes(key) && item.areas) {
+      console.warn('Service Fulfilment: Could not find value for area column', {
+        key,
+        normalizedKey,
+        resolvedKey,
+        upperKey,
+        availableAreas: Object.keys(item.areas),
+        availableDirectKeys: Object.keys(item).filter(k => !this.baseColumns.includes(k) && k !== '_id' && k !== '__v' && typeof item[k] === 'number')
+      });
     }
     
     return null;
@@ -845,8 +727,38 @@ export class ServiceFulfilmentComponent implements OnInit {
     return item._id as number;
   }
 
+  isEditingCell(item: KpiData, key: string): boolean {
+    return (
+      this.editingCell.rowId === this.getRowId(item) &&
+      this.editingCell.key === key
+    );
+  }
+
+  selectMetricInput(event: Event) {
+    const target = event.target as HTMLInputElement | null;
+    if (!target) {
+      return;
+    }
+    requestAnimationFrame(() => target.select());
+  }
+
   startEdit(item: KpiData, key: string) {
-    if (!this.isEditingAllowed || this.nonEditableColumns.includes(key)) return;
+    if (this.nonEditableColumns.includes(key)) {
+      return;
+    }
+
+    if (!this.isEditingAllowed) {
+      if (!this.editingMessageShown) {
+        if (this.userRole !== 'padmin') {
+          this.toastr.error('Only Platform Admins can edit KPI values.', 'Access Denied');
+        } else {
+          this.toastr.info('Select an RTOM area to enable inline editing.', 'Filter Required');
+        }
+        this.editingMessageShown = true;
+        setTimeout(() => (this.editingMessageShown = false), 3000);
+      }
+      return;
+    }
     this.editingCell = { rowId: this.getRowId(item), key };
   }
 
@@ -943,26 +855,92 @@ export class ServiceFulfilmentComponent implements OnInit {
   }
 
   getColumnsToRender(): string[] {
-    if (this.visibleColumns.length === 0) {
-      return this.baseColumns;
+    const areaKeys = this.getAreaKeys();
+
+    // When a specific area is selected, prioritize it
+    if (this.formValues.dropdown4) {
+      return [...this.baseColumns, this.formValues.dropdown4];
     }
-    return Array.from(new Set(this.visibleColumns));
+
+    // Otherwise render all discovered area columns
+    if (areaKeys.length) {
+      return [...this.baseColumns, ...areaKeys];
+    }
+
+    // Fallback to base columns
+    return this.baseColumns;
   }
 
   getAreaKeys(): string[] {
     const keys = new Set<string>();
     this.data.forEach(item => {
-      if (item.areas) {
-        Object.keys(item.areas).forEach(key => keys.add(key));
+      // Check areas object first
+      if (item.areas && typeof item.areas === 'object') {
+        Object.keys(item.areas).forEach(key => {
+          if (key && key !== 'UNKNOWN') {
+            keys.add(key);
+          }
+        });
       }
       // Also check direct properties that look like area codes
       Object.keys(item).forEach(key => {
-        if (/^[A-Z]+$/.test(key) && key.length <= 12 && !this.baseColumns.includes(key)) {
+        // Match area codes: uppercase letters, 3-12 characters, not in base columns
+        if (/^[A-Z0-9]+$/.test(key) && key.length >= 3 && key.length <= 12 && !this.baseColumns.includes(key) && key !== '_id' && key !== '__v') {
           keys.add(key);
         }
       });
     });
-    return Array.from(keys);
+    
+    // Sort area keys for consistent display
+    const sortedKeys = Array.from(keys).sort();
+    
+    // Filter out any keys that are in optionMapping (these are valid area codes)
+    // or ensure all valid area codes from optionMapping that have data are included
+    const validAreaCodes = Object.keys(this.optionMapping);
+    const result = new Set<string>();
+    
+    // Add all keys that match valid area codes
+    sortedKeys.forEach(key => {
+      if (validAreaCodes.includes(key) || validAreaCodes.some(code => this.normalizeAreaValue(code) === this.normalizeAreaValue(key))) {
+        result.add(key);
+      }
+    });
+    
+    // Also add any keys that have actual data (non-null values)
+    this.data.forEach(item => {
+      sortedKeys.forEach(key => {
+        const value = item[key] ?? (item.areas && item.areas[key]);
+        if (value !== null && value !== undefined && value !== '') {
+          result.add(key);
+        }
+      });
+    });
+    
+    return Array.from(result).sort();
+  }
+
+  private refreshColumnsFromData() {
+    const areaKeys = this.getAreaKeys();
+    if (this.formValues.dropdown4) {
+      // When a specific area is selected, use the resolved area code
+      const selectedAreaKey = this.resolveAreaCode(this.formValues.dropdown4) || this.formValues.dropdown4;
+      console.log('Service Fulfilment: Refreshing columns with selected area', {
+        dropdown4: this.formValues.dropdown4,
+        selectedAreaKey,
+        areaKeys,
+        hasData: this.data.length > 0,
+        firstRowAreas: this.data[0]?.areas
+      });
+      this.visibleColumns = [...this.baseColumns, selectedAreaKey];
+      return;
+    }
+    if (areaKeys.length) {
+      console.log('Service Fulfilment: Refreshing columns with all area keys', { areaKeys });
+      this.visibleColumns = [...this.baseColumns, ...areaKeys];
+      return;
+    }
+    console.log('Service Fulfilment: Refreshing columns - base columns only');
+    this.visibleColumns = [...this.baseColumns];
   }
 
   getLastUpdated(item: KpiData): string {

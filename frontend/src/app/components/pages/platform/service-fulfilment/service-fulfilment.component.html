@@ -6,12 +6,17 @@
     <div class="mt-3">
       <small class="text-muted">
         <i class="bi bi-info-circle me-1"></i>
-        {{ adminKpiRows.length }} KPIs loaded • 
+        {{ data.length }} KPIs loaded • {{ metricsRows.length }} metric rows • 
         <span [class.text-success]="isEditingAllowed" [class.text-warning]="!isEditingAllowed">
           <i class="bi" [ngClass]="isEditingAllowed ? 'bi-check-circle' : 'bi-exclamation-circle'"></i>
           {{ isEditingAllowed ? 'Edit mode enabled (Platform Admin)' : 'View only mode (User)' }}
         </span>
       </small>
+      <div class="mt-2">
+        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="toggleRoleSimulation()">
+          {{ userRole === 'padmin' ? 'Simulate as User' : 'Simulate as Platform Admin' }}
+        </button>
+      </div>
     </div>
   </div>
 
@@ -36,8 +41,38 @@
     <!-- Filter Form (styled like React version) -->
     <form (submit)="$event.preventDefault()" class="filters-form mb-4">
       <div class="row g-3">
+        <!-- Month Dropdown -->
+        <div class="col-md-2">
+          <label for="monthSelect" class="form-label">Month:</label>
+          <select
+            id="monthSelect"
+            class="form-select"
+            [(ngModel)]="selectedMonth"
+            name="monthSelect"
+            (change)="onPeriodChange()">
+            <option *ngFor="let month of monthOptions" [value]="month.value">
+              {{ month.label }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Year Dropdown -->
+        <div class="col-md-2">
+          <label for="yearSelect" class="form-label">Year:</label>
+          <select
+            id="yearSelect"
+            class="form-select"
+            [(ngModel)]="selectedYear"
+            name="yearSelect"
+            (change)="onPeriodChange()">
+            <option *ngFor="let year of yearOptions" [value]="year">
+              {{ year }}
+            </option>
+          </select>
+        </div>
+
         <!-- R-GM Dropdown -->
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label for="dropdown1" class="form-label">R-GM:</label>
           <select
             id="dropdown1"
@@ -53,7 +88,7 @@
         </div>
 
         <!-- P-DGM Dropdown -->
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label for="dropdown2" class="form-label">P-DGM:</label>
           <select
             id="dropdown2"
@@ -70,7 +105,7 @@
         </div>
 
         <!-- NW EE Dropdown -->
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label for="dropdown3" class="form-label">NW EE:</label>
           <select
             id="dropdown3"
@@ -87,7 +122,7 @@
         </div>
 
         <!-- RTOM AREA Dropdown -->
-        <div class="col-md-3">
+        <div class="col-md-2">
           <label for="dropdown4" class="form-label">RTOM AREA:</label>
           <select
             id="dropdown4"
@@ -103,6 +138,7 @@
           </select>
         </div>
       </div>
+
     </form>
 
     <!-- Selected Filters Summary -->
@@ -129,45 +165,87 @@
 
     <!-- Main Table -->
     <div class="card shadow-sm border-0">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-table me-2"></i>
+          KPI (Enterprise/ SME and Whole Sales Service Delivery - Fiber)
+        </h5>
+      </div>
       <div class="card-body p-0">
-        <div class="card-header bg-primary text-white">
-          <h5 class="mb-0">
-            <i class="bi bi-table me-2"></i>
-            KPI (Enterprise/ SME and Whole Sales Service Delivery - Fiber)
-          </h5>
+        <div *ngIf="isEditingAllowed" class="edit-mode-banner">
+          <i class="bi bi-pencil-square me-2"></i>
+          Inline editing enabled for {{ optionMapping[formValues.dropdown4] || formValues.dropdown4 }}.
+          Click a metric cell to enter a new percentage and press Enter to save.
         </div>
-        
-        <div class="table-responsive">
-          <table class="table table-hover table-bordered mb-0 data-table">
-            <thead class="table-dark">
-              <tr>
-                <th>NO</th>
-                <th>KPI</th>
-                <th>Target</th>
-                <th>Platform</th>
-                <th>Responsible DGM</th>
-                <th>Weightage</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let kpi of adminKpiRows">
-                <td>{{ kpi.no }}</td>
-                <td>{{ kpi.kpi }}</td>
-                <td>{{ kpi.target }}</td>
-                <td>{{ kpi.platform }}</td>
-                <td>{{ kpi.responsibleDgm }}</td>
-                <td>{{ kpi.weightage }}</td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="table-responsive" *ngIf="data.length > 0; else noKpiData">
+          <ng-container *ngIf="getColumnsToRender() as columns">
+            <table class="table table-hover table-bordered mb-0 data-table">
+              <thead class="table-dark">
+                <tr>
+                  <th *ngFor="let column of columns">
+                    {{ headerMapping[column] || optionMapping[column] || column }}
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let row of data">
+                  <td *ngFor="let column of columns">
+                    <ng-container *ngIf="nonEditableColumns.includes(column); else metricValue">
+                      {{ getCellValue(row, column) || '-' }}
+                    </ng-container>
+                    <ng-template #metricValue>
+                      <div
+                        class="editable-cell"
+                        [class.can-edit]="isEditingAllowed"
+                        [class.is-active]="isEditingCell(row, column)"
+                        (click)="startEdit(row, column)">
+                        <ng-container *ngIf="isEditingCell(row, column); else metricDisplay">
+                          <input
+                            type="number"
+                            class="form-control form-control-sm"
+                            [value]="getCellValue(row, column) || ''"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            inputmode="decimal"
+                            autofocus
+                            (focus)="selectMetricInput($event)"
+                            (input)="handleFieldChange($event, getRowId(row), column)"
+                            (keyup.enter)="saveEdit(row, column)"
+                            (keyup.escape)="cancelEdit()"
+                          />
+                          <div class="edit-actions">
+                            <button type="button" class="btn btn-sm btn-success" (mousedown)="$event.preventDefault()" (click)="saveEdit(row, column)">
+                              Save
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" (mousedown)="$event.preventDefault()" (click)="cancelEdit()">
+                              Cancel
+                            </button>
+                          </div>
+                        </ng-container>
+                        <ng-template #metricDisplay>
+                          <span class="metric-value">{{ formatPercent(getCellValue(row, column)) }}</span>
+                          <span *ngIf="isEditingAllowed" class="edit-hint">
+                            <i class="bi bi-pencil"></i>
+                            Edit
+                          </span>
+                        </ng-template>
+                      </div>
+                    </ng-template>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </ng-container>
         </div>
-        
-        <div *ngIf="adminKpiRows.length === 0" class="text-center py-5">
-          <div class="text-muted mb-3">
-            <i class="bi bi-table fs-1 opacity-50"></i>
+        <ng-template #noKpiData>
+          <div class="text-center py-5">
+            <div class="text-muted mb-3">
+              <i class="bi bi-table fs-1 opacity-50"></i>
+            </div>
+            <p class="text-muted mb-0">No KPI data found for the selected filters.</p>
           </div>
-          <p class="text-muted">No KPI data found.</p>
-        </div>
+        </ng-template>
       </div>
     </div>
 

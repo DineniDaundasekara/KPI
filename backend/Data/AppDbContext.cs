@@ -40,7 +40,9 @@ namespace backend.Data
         // FORMS (2025)
         // =========================
         public DbSet<Form4_2025> Form4_2025 { get; set; } = null!;
+        public DbSet<Form4_2025_Metric> Form4_2025_Metrics { get; set; } = null!; 
         public DbSet<Form8_2025> Form8Records { get; set; } = null!;
+
         public DbSet<Form9_2025> Form9_2025 { get; set; } = null!;
 
         // =========================
@@ -201,6 +203,34 @@ namespace backend.Data
                 entity.Property(x => x.UnavailableMinutes).HasColumnName("UnavailableMinutes");
                 entity.Property(x => x.TotalMinutes).HasColumnName("TotalMinutes");
                 entity.Property(x => x.TotalNodes).HasColumnName("TotalNodes");
+            });
+
+            //servicefullilment
+            modelBuilder.Entity<Form4_2025_Metric>(entity =>
+            {
+                entity.ToTable("form4_2025_metrics", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("id")
+                      .ValueGeneratedOnAdd();
+
+                entity.Property(x => x.Form4Id)
+                      .HasColumnName("form4_id")
+                      .HasMaxLength(36);
+
+                entity.Property(x => x.AreaCode)
+                      .HasColumnName("area_code")
+                      .HasMaxLength(50);
+
+                entity.Property(x => x.KpiValue).HasColumnName("kpi_value");
+                entity.Property(x => x.Month).HasColumnName("month");
+                entity.Property(x => x.Year).HasColumnName("year");
+
+                entity.HasOne(x => x.Form4)
+                      .WithMany()
+                      .HasForeignKey(x => x.Form4Id)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
 

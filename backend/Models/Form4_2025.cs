@@ -27,8 +27,8 @@ namespace backend.Models
         public int Weightage { get; set; }
 
         public string DataSources { get; set; } = string.Empty;
-public byte Month { get; set; }   // tinyint
-public short Year { get; set; }   // smallint
+        public byte Month { get; set; }   // tinyint
+        public short Year { get; set; }   // smallint
 
 
         public string UpdatedAt { get; set; } = string.Empty;
