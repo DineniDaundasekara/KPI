@@ -1,6 +1,6 @@
 ﻿namespace backend.DTOs
 {
-    public class Form7Dto
+    public class Form7HeaderDto
     {
         public Guid? KpiId { get; set; }
         public string? MongoObjectId { get; set; }
@@ -9,9 +9,6 @@
         public string NetworkEngineerKpi { get; set; } = string.Empty;
         public string? Division { get; set; }
         public string? Section { get; set; }
-
-        public decimal? KpiPercent { get; set; }  // DECIMAL(6,2)
-
-        public List<Form7NodeDto> Nodes { get; set; } = new();
+        public decimal? KpiPercent { get; set; }
     }
 }

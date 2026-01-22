@@ -40,9 +40,15 @@ namespace backend.Data
         // FORMS (2025)
         // =========================
         public DbSet<Form4_2025> Form4_2025 { get; set; } = null!;
-        public DbSet<Form7_2025> Form7_2025 { get; set; } = null!; 
         public DbSet<Form8_2025> Form8Records { get; set; } = null!;
         public DbSet<Form9_2025> Form9_2025 { get; set; } = null!;
+
+        // =========================
+        // FORM 7 (BB&ANW) - NEW TABLES
+        // =========================
+        public DbSet<Form7Kpi> Form7Kpis { get; set; } = null!;
+        public DbSet<Form7KpiNode> Form7KpiNodes { get; set; } = null!;
+
 
         // =========================
         // TM ACTIVITY PLAN
@@ -154,6 +160,49 @@ namespace backend.Data
                     .HasForeignKey(x => x.Form6Id)
                     .HasConstraintName("FK_form6_metrics_form6");
             });
+
+            //bbanw
+            // =========================
+            // FORM 7 (BB&ANW)
+            // =========================
+            modelBuilder.Entity<Form7Kpi>(entity =>
+            {
+                entity.ToTable("Form7Kpi", "dbo");
+                entity.HasKey(x => x.KpiId);
+
+                entity.Property(x => x.KpiId).HasColumnName("KpiId");
+                entity.Property(x => x.MongoObjectId).HasColumnName("MongoObjectId").HasMaxLength(24);
+
+                entity.Property(x => x.No).HasColumnName("No");
+                entity.Property(x => x.NetworkEngineerKpi).HasColumnName("NetworkEngineerKpi").HasMaxLength(200);
+                entity.Property(x => x.Division).HasColumnName("Division").HasMaxLength(100);
+                entity.Property(x => x.Section).HasColumnName("Section").HasMaxLength(50);
+
+                // SQL: DECIMAL(6,2)
+                entity.Property(x => x.KpiPercent)
+                      .HasColumnName("KpiPercent")
+                      .HasColumnType("decimal(6,2)");
+
+                entity.HasMany(x => x.Nodes)
+                      .WithOne(n => n.Kpi)
+                      .HasForeignKey(n => n.KpiId);
+            });
+
+            modelBuilder.Entity<Form7KpiNode>(entity =>
+            {
+                entity.ToTable("Form7KpiNode", "dbo");
+
+                // ✅ composite primary key
+                entity.HasKey(x => new { x.KpiId, x.NodeCode });
+
+                entity.Property(x => x.KpiId).HasColumnName("KpiId");
+                entity.Property(x => x.NodeCode).HasColumnName("NodeCode").HasMaxLength(50);
+
+                entity.Property(x => x.UnavailableMinutes).HasColumnName("UnavailableMinutes");
+                entity.Property(x => x.TotalMinutes).HasColumnName("TotalMinutes");
+                entity.Property(x => x.TotalNodes).HasColumnName("TotalNodes");
+            });
+
 
             base.OnModelCreating(modelBuilder);
         }
