@@ -12,6 +12,15 @@
 					{{ isEditingAllowed ? 'Edit mode enabled (Platform Admin)' : 'View only mode (User)' }}
 				</span>
 			</small>
+
+			<button
+				type="button"
+				class="btn btn-outline-secondary btn-sm ms-3"
+				(click)="toggleRoleOverride()"
+			>
+				Simulate Role ·
+				<strong>{{ devRoleOverride ? devRoleOverride.toUpperCase() : 'LIVE' }}</strong>
+			</button>
 		</div>
 	</div>
 
@@ -136,7 +145,7 @@
 
 		<div class="card shadow-sm border-0">
 			<div class="card-body p-0">
-				<div class="card-header bg-primary text-white">
+				<div class="card-header bg-primary text-white d-flex flex-wrap align-items-center justify-content-between gap-3">
 					<h5 class="mb-0">
 						<i class="bi bi-table me-2"></i>
 						Saved BB & ANW KPI rows
@@ -144,6 +153,7 @@
 							(Showing metrics for {{ selectedAreaLabel }})
 						</span>
 					</h5>
+					<small *ngIf="isEditingAllowed" class="text-white-50 fw-semibold">Auto-saves per field</small>
 				</div>
 
 				<div class="table-responsive" *ngIf="!loading && data.length">
@@ -175,21 +185,160 @@
 									<td></td>
 									<td class="sub-label" colspan="4">Unavailable Minutes</td>
 									<td class="metric-value">
-										{{ getMetricDisplay(row, 'unavailableMinutes') }}
+										<ng-container *ngIf="isEditingAllowed; else viewUnavailable">
+											<ng-container *ngIf="isEditingCell(row, 'unavailableMinutes'); else unavailableDisplay">
+												<div class="edit-box">
+													<input
+														type="number"
+														class="form-control form-control-sm"
+														[ngModelOptions]="{ standalone: true }"
+														[(ngModel)]="editCell.value"
+														step="0.01"
+													/>
+													<div class="edit-actions">
+														<button
+															type="button"
+															class="table-button"
+															(click)="doneEdit()"
+															[disabled]="cellSaving"
+														>
+															<span
+																*ngIf="cellSaving"
+																class="spinner-border spinner-border-sm me-1"
+																role="status"
+															></span>
+															{{ cellSaving ? 'Saving...' : 'Save' }}
+														</button>
+														<button
+															type="button"
+															class="table-button btn-secondary"
+															(click)="cancelEdit()"
+															[disabled]="cellSaving"
+														>
+															Cancel
+														</button>
+													</div>
+												</div>
+											</ng-container>
+											<ng-template #unavailableDisplay>
+												<div class="cell-view">
+													<span>{{ getMetricDisplay(row, 'unavailableMinutes') }}</span>
+													<button type="button" class="table-button" (click)="startEdit(row, 'unavailableMinutes')">
+														Edit
+													</button>
+												</div>
+											</ng-template>
+										</ng-container>
+										<ng-template #viewUnavailable>
+											{{ getMetricDisplay(row, 'unavailableMinutes') }}
+										</ng-template>
 									</td>
 								</tr>
 								<tr class="sub-row" *ngIf="showAreaMetrics">
 									<td></td>
 									<td class="sub-label" colspan="4">Total Minutes</td>
 									<td class="metric-value">
-										{{ getMetricDisplay(row, 'totalMinutes') }}
+										<ng-container *ngIf="isEditingAllowed; else viewTotalMinutes">
+											<ng-container *ngIf="isEditingCell(row, 'totalMinutes'); else totalMinutesDisplay">
+												<div class="edit-box">
+													<input
+														type="number"
+														class="form-control form-control-sm"
+														[ngModelOptions]="{ standalone: true }"
+														[(ngModel)]="editCell.value"
+														step="0.01"
+													/>
+													<div class="edit-actions">
+														<button
+															type="button"
+															class="table-button"
+															(click)="doneEdit()"
+															[disabled]="cellSaving"
+														>
+															<span
+																*ngIf="cellSaving"
+																class="spinner-border spinner-border-sm me-1"
+																role="status"
+															></span>
+															{{ cellSaving ? 'Saving...' : 'Save' }}
+														</button>
+														<button
+															type="button"
+															class="table-button btn-secondary"
+															(click)="cancelEdit()"
+															[disabled]="cellSaving"
+														>
+															Cancel
+														</button>
+													</div>
+												</div>
+											</ng-container>
+											<ng-template #totalMinutesDisplay>
+												<div class="cell-view">
+													<span>{{ getMetricDisplay(row, 'totalMinutes') }}</span>
+													<button type="button" class="table-button" (click)="startEdit(row, 'totalMinutes')">
+														Edit
+													</button>
+												</div>
+											</ng-template>
+										</ng-container>
+										<ng-template #viewTotalMinutes>
+											{{ getMetricDisplay(row, 'totalMinutes') }}
+										</ng-template>
 									</td>
 								</tr>
 								<tr class="sub-row" *ngIf="showAreaMetrics">
 									<td></td>
 									<td class="sub-label" colspan="4">Total Nodes</td>
 									<td class="metric-value">
-										{{ getMetricDisplay(row, 'totalNodes') }}
+										<ng-container *ngIf="isEditingAllowed; else viewTotalNodes">
+											<ng-container *ngIf="isEditingCell(row, 'totalNodes'); else totalNodesDisplay">
+												<div class="edit-box">
+													<input
+														type="number"
+														class="form-control form-control-sm"
+														[ngModelOptions]="{ standalone: true }"
+														[(ngModel)]="editCell.value"
+														min="0"
+														step="1"
+													/>
+													<div class="edit-actions">
+														<button
+															type="button"
+															class="table-button"
+															(click)="doneEdit()"
+															[disabled]="cellSaving"
+														>
+															<span
+																*ngIf="cellSaving"
+																class="spinner-border spinner-border-sm me-1"
+																role="status"
+															></span>
+															{{ cellSaving ? 'Saving...' : 'Save' }}
+														</button>
+														<button
+															type="button"
+															class="table-button btn-secondary"
+															(click)="cancelEdit()"
+															[disabled]="cellSaving"
+														>
+															Cancel
+														</button>
+													</div>
+												</div>
+											</ng-container>
+											<ng-template #totalNodesDisplay>
+												<div class="cell-view">
+													<span>{{ getMetricDisplay(row, 'totalNodes') }}</span>
+													<button type="button" class="table-button" (click)="startEdit(row, 'totalNodes')">
+														Edit
+													</button>
+												</div>
+											</ng-template>
+										</ng-container>
+										<ng-template #viewTotalNodes>
+											{{ getMetricDisplay(row, 'totalNodes') }}
+										</ng-template>
 									</td>
 								</tr>
 							</ng-container>

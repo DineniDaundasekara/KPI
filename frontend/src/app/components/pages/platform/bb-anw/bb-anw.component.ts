@@ -35,6 +35,8 @@ interface EditCellState {
 	value: string;
 }
 
+type MetricKey = 'unavailableMinutes' | 'totalMinutes' | 'totalNodes';
+
 const LOCAL_REGION_TABLE: RegionRow[] = [
 	{ region: 'Region 3', province: 'NP', networkEngineer: 'NW/NP-2', lea: 'KOMLTMBVA' },
 	{ region: 'Region 3', province: 'NP', networkEngineer: 'NW/NP-1', lea: 'JA' },
@@ -74,9 +76,11 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 
 	loading = true;
 	error: string | null = null;
+	cellSaving = false;
 
 	role: string | null = null;
 	isEditingAllowed = false;
+	devRoleOverride: 'padmin' | 'user' | null = null;
 
 	private permissionTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -127,6 +131,12 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		bcjrdkltc: 'BC / AP / KL / TC',
 		ja: 'JA',
 		komltmbva: 'KO / MLT / MB / VA',
+	};
+
+	private metricLabelMap: Record<MetricKey, string> = {
+		unavailableMinutes: 'Unavailable minutes',
+		totalMinutes: 'Total minutes',
+		totalNodes: 'Total nodes',
 	};
 
 	private friendlyToDbKey: Record<string, string> = {};
@@ -235,7 +245,26 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 	}
 
 	private refreshEditPermission(): void {
+		if (this.devRoleOverride) {
+			this.isEditingAllowed = this.devRoleOverride === 'padmin';
+			return;
+		}
+
 		this.isEditingAllowed = this.role === 'padmin';
+	}
+
+	toggleRoleOverride(): void {
+		if (!this.devRoleOverride) {
+			this.devRoleOverride = 'padmin';
+		} else if (this.devRoleOverride === 'padmin') {
+			this.devRoleOverride = 'user';
+		} else {
+			this.devRoleOverride = null;
+		}
+
+		this.refreshEditPermission();
+		const label = this.devRoleOverride ? this.devRoleOverride.toUpperCase() : 'LIVE ROLE';
+		this.showToast('success', `Role override: ${label}`);
 	}
 
 	loadRole(): void {
@@ -500,8 +529,8 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		return Math.max(0, Math.min(100, pct));
 	}
 
-	startEdit(entry: Form7Entry, key: 'unavailableMinutes' | 'totalMinutes' | 'totalNodes'): void {
-		if (!this.isEditingAllowed || !this.selectedKey) return;
+	startEdit(entry: Form7Entry, key: MetricKey): void {
+		if (!this.isEditingAllowed || !this.selectedKey || this.cellSaving) return;
 
 		const nestedKey = `${key}.${this.selectedKey}`;
 		const value = (entry as any)[key]?.[this.selectedKey];
@@ -517,21 +546,60 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		this.editCell = { ...this.editCell, value };
 	}
 
-	doneEdit(): void {
+	async doneEdit(): Promise<void> {
 		if (!this.editCell.rowId || !this.editCell.key) return;
 
-		const [parentKey, childKey] = this.editCell.key.split('.');
+		const [rawParentKey, childKey] = this.editCell.key.split('.');
+		const parentKey = rawParentKey as MetricKey;
+		if (!childKey || !parentKey) {
+			this.cancelEdit();
+			return;
+		}
+
 		const newValue = this.editCell.value;
+		const updatedEntry = this.findAndUpdateEntry(parentKey, childKey, newValue);
+
+		if (!updatedEntry) {
+			this.cancelEdit();
+			return;
+		}
+
+		this.cellSaving = true;
+		try {
+			await firstValueFrom(
+				this.bbAnwService.update(updatedEntry.kpiId, this.buildDtoFromEntry(updatedEntry))
+			);
+			const metricLabel = this.metricLabelMap[parentKey] || 'KPI metric';
+			this.showToast('success', `${metricLabel} saved.`);
+		} catch (error) {
+			console.error('Failed to save KPI metric:', error);
+			this.showToast('danger', 'Failed to save metric. Please try again.');
+		} finally {
+			this.cellSaving = false;
+			this.cancelEdit();
+		}
+	}
+
+	private findAndUpdateEntry(
+		parentKey: MetricKey,
+		childKey: string,
+		newValue: string
+	): Form7Entry | null {
+		let updatedEntry: Form7Entry | null = null;
 
 		this.data = this.data.map((entry) => {
 			if (entry.kpiId !== this.editCell.rowId) {
 				return entry;
 			}
 
-			const next: Form7Entry = { ...entry };
-			const parent = { ...(next as any)[parentKey] };
-			parent[childKey] = newValue;
-			(next as any)[parentKey] = parent;
+			const next: Form7Entry = {
+				...entry,
+				totalMinutes: { ...entry.totalMinutes },
+				unavailableMinutes: { ...entry.unavailableMinutes },
+				totalNodes: { ...entry.totalNodes },
+			};
+
+			(next as any)[parentKey][childKey] = newValue;
 
 			if (parentKey === 'totalNodes') {
 				const nodes = Number(newValue) || 0;
@@ -542,34 +610,23 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 				};
 			}
 
+			updatedEntry = next;
 			return next;
 		});
 
-		this.cancelEdit();
+		return updatedEntry;
+	}
+
+	isEditingCell(entry: Form7Entry, key: 'unavailableMinutes' | 'totalMinutes' | 'totalNodes'): boolean {
+		const selected = this.selectedKey;
+		if (!selected) {
+			return false;
+		}
+		return this.editCell.rowId === entry.kpiId && this.editCell.key === `${key}.${selected}`;
 	}
 
 	cancelEdit(): void {
 		this.editCell = { rowId: null, key: null, value: '' };
-	}
-
-	async saveAllChanges(): Promise<void> {
-		if (!this.isEditingAllowed || !this.data.length) return;
-
-		try {
-			await Promise.all(
-				this.data.map((entry) =>
-					firstValueFrom(
-						this.bbAnwService.update(entry.kpiId, this.buildDtoFromEntry(entry))
-					)
-				)
-			);
-
-			this.loadData();
-			this.showToast('success', 'BB & ANW KPIs saved successfully.');
-		} catch (error) {
-			console.error('Failed to save BB & ANW data:', error);
-			this.showToast('danger', 'Failed to save changes. Please try again.');
-		}
 	}
 
 	async exportToExcel(): Promise<void> {
