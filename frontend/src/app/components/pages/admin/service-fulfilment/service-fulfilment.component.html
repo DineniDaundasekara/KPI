@@ -43,12 +43,29 @@
         <div class="form-header">
           <h2>Service Fulfilment KPI Configuration</h2>
           <p>Add or edit service fulfilment KPIs with details</p>
-          <button class="btn-add" (click)="addNewKpi()">
-            <span>+</span> Add New KPI
+          <button
+            type="button"
+            class="btn-add"
+            (click)="toggleForm()"
+            [attr.aria-expanded]="showForm">
+            <span *ngIf="!showForm">+</span>
+            {{ showForm ? 'Hide KPI Form' : 'Add New KPI' }}
           </button>
         </div>
 
-        <form [formGroup]="kpiForm" (ngSubmit)="onSubmit()" class="kpi-form">
+        <div class="form-placeholder" *ngIf="!showForm">
+          <p>
+            Manage service fulfilment KPIs with ease. Click <strong>Add New KPI</strong> to create a
+            record or choose <strong>Edit</strong> from the table below to modify an existing one.
+          </p>
+        </div>
+
+        <form
+          *ngIf="showForm"
+          id="service-fulfilment-form"
+          [formGroup]="kpiForm"
+          (ngSubmit)="onSubmit()"
+          class="kpi-form">
           <!-- Form Row 1 -->
           <div class="form-row">
             <div class="form-group">
@@ -192,6 +209,7 @@
           <!-- Form Actions -->
           <div class="form-actions">
             <button type="button" class="btn-cancel" (click)="resetForm()">Reset</button>
+            <button type="button" class="btn-close" (click)="closeForm()">Close</button>
             <button type="submit" class="btn-submit" [disabled]="kpiForm.invalid">
               {{ isEditing ? 'Update KPI' : 'Save KPI' }}
             </button>

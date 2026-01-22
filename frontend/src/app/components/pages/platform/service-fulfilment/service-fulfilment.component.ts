@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import * as XLSX from 'xlsx';
-import { Form4ApiService, ServiceFulfilmentKpi, ServiceFulfilmentMetric } from '../../../../services/form4api.service';
+import { ServiceFulfilmentKpiDto, ServiceFulfilmentKpiService, ServiceFulfilmentMetricDto, UpsertServiceFulfilmentMetricRequest } from '../../../../services/service-fulfilment-kpi.service';
 import { RegionService, Region } from '../../../../services/region.service';
 
 interface KpiData {
@@ -52,7 +52,7 @@ export class ServiceFulfilmentComponent implements OnInit {
   // Data
   data: KpiData[] = [];
   regionTable: RegionData[] = [];
-  adminKpiRows: ServiceFulfilmentKpi[] = [];
+  adminKpiRows: ServiceFulfilmentKpiDto[] = [];
   editingCell: { rowId: string | number | null, key: string | null } = { rowId: null, key: null };
   
   // Dropdown options
@@ -116,7 +116,7 @@ export class ServiceFulfilmentComponent implements OnInit {
     KOMLTMBVA: 'KO / MLT / MB / VA'
   };
 
-  metricsRows: ServiceFulfilmentMetric[] = [];
+  metricsRows: ServiceFulfilmentMetricDto[] = [];
   metricsLoading = false;
   metricsError: string | null = null;
 
@@ -165,7 +165,7 @@ export class ServiceFulfilmentComponent implements OnInit {
 
   constructor(
     private toastr: ToastrService,
-    private form4Api: Form4ApiService,
+    private serviceFulfilmentKpiService: ServiceFulfilmentKpiService,
     private regionService: RegionService
   ) {
     this.yearOptions = this.generateYearOptions();
@@ -189,7 +189,7 @@ export class ServiceFulfilmentComponent implements OnInit {
 
   loadData() {
     this.loading = true;
-    this.form4Api.getAll().subscribe({
+    this.serviceFulfilmentKpiService.getAll().subscribe({
       next: (kpis) => {
         const rows = Array.isArray(kpis) ? kpis : [];
         this.adminKpiRows = rows;
@@ -222,7 +222,7 @@ export class ServiceFulfilmentComponent implements OnInit {
 
     console.log('Service Fulfilment: Loading metrics', { month, year, areaFilter });
 
-    this.form4Api.getMetrics(month, year, areaFilter || undefined).subscribe({
+    this.serviceFulfilmentKpiService.getMetrics(month, year, areaFilter || undefined).subscribe({
       next: (metrics) => {
         console.log('Service Fulfilment: Metrics loaded', { count: metrics?.length, metrics: metrics?.slice(0, 3) });
         this.metricsRows = Array.isArray(metrics) ? metrics : [];
@@ -356,14 +356,14 @@ export class ServiceFulfilmentComponent implements OnInit {
       calculation: kpi.calculation ?? '',
       platform: kpi.platform ?? '',
       responsibledgm: kpi.responsibleDgm ?? '',
-      definedoladetails: kpi.definedoladetails ?? '',
+      definedoladetails: this.resolveDefinedOlaValue(kpi),
       weightage: this.formatWeightageValue(kpi.weightage),
       datasources: kpi.dataSources ?? '',
       areas: {}
     }));
   }
 
-  private syncSelectedPeriodFromData(rows: ServiceFulfilmentKpi[]) {
+  private syncSelectedPeriodFromData(rows: ServiceFulfilmentKpiDto[]) {
     if (this.periodLockedByUser || !rows || !rows.length) {
       console.log('Service Fulfilment: Period sync skipped', { 
         periodLocked: this.periodLockedByUser, 
@@ -410,13 +410,13 @@ export class ServiceFulfilmentComponent implements OnInit {
     }
   }
 
-  private buildKpiDataFromMetrics(metrics: ServiceFulfilmentMetric[]): KpiData[] {
+  private buildKpiDataFromMetrics(metrics: ServiceFulfilmentMetricDto[]): KpiData[] {
     if (!metrics || !metrics.length) {
       return [];
     }
 
-    const masterById = new Map<string, ServiceFulfilmentKpi>();
-    const masterByNo = new Map<number, ServiceFulfilmentKpi>();
+    const masterById = new Map<string, ServiceFulfilmentKpiDto>();
+    const masterByNo = new Map<number, ServiceFulfilmentKpiDto>();
 
     this.adminKpiRows.forEach((kpi) => {
       if (kpi.id) {
@@ -439,7 +439,7 @@ export class ServiceFulfilmentComponent implements OnInit {
           calculation: master?.calculation ?? '',
           platform: master?.platform ?? metric.platform ?? '',
           responsibledgm: master?.responsibleDgm ?? metric.responsibleDgm ?? '',
-          definedoladetails: master?.definedoladetails ?? '',
+          definedoladetails: this.resolveDefinedOlaValue(master) || this.resolveDefinedOlaValue(metric),
           weightage: this.formatWeightageValue(master?.weightage ?? metric.weightage),
           datasources: master?.dataSources ?? '',
           areas: {}
@@ -531,6 +531,14 @@ export class ServiceFulfilmentComponent implements OnInit {
     }
     const clean = value.toString().trim();
     return clean.endsWith('%') ? clean : `${clean}%`;
+  }
+
+  private resolveDefinedOlaValue(source?: Partial<ServiceFulfilmentKpiDto> | Partial<ServiceFulfilmentMetricDto> | null): string {
+    if (!source) {
+      return '';
+    }
+    const raw = (source as any).definedoladetails ?? (source as any).defineDoladetails ?? '';
+    return typeof raw === 'string' ? raw : '';
   }
 
   updateDropdown2Options() {
@@ -767,9 +775,57 @@ export class ServiceFulfilmentComponent implements OnInit {
   }
 
   saveEdit(item: KpiData, key: string) {
-    // In real implementation, this would update the backend
-    this.editingCell = { rowId: null, key: null };
-    this.toastr.success(`Updated ${this.headerMapping[key] || key} successfully!`, 'Success');
+    if (!this.isEditingAllowed) {
+      this.toastr.error('You do not have permission to update this KPI value.', 'Permission Denied');
+      return;
+    }
+
+    const areaCode = this.resolveAreaCode(key);
+    if (!areaCode) {
+      this.toastr.error('Unable to determine the selected RTOM area. Please pick an area and try again.', 'Invalid Area');
+      return;
+    }
+
+    const rowId = this.getRowId(item);
+    const kpiId = typeof rowId === 'string' ? rowId : (typeof item._id === 'object' && item._id.$oid ? item._id.$oid : null);
+    if (!kpiId) {
+      this.toastr.error('Unable to resolve the KPI identifier for this row.', 'Missing KPI Id');
+      return;
+    }
+
+    const latestRow = this.data.find(row => this.getRowId(row) === rowId) ?? item;
+    const rawValue = this.getCellValue(latestRow, key);
+    const numericValue = typeof rawValue === 'number'
+      ? rawValue
+      : parseFloat(String(rawValue ?? '').replace(/%/g, '').trim());
+
+    if (isNaN(numericValue)) {
+      this.toastr.error('Please enter a valid numeric value before saving.', 'Invalid Value');
+      return;
+    }
+
+    const request: UpsertServiceFulfilmentMetricRequest = {
+      serviceFulfilmentKpiId: kpiId,
+      areaCode,
+      kpiValue: numericValue,
+      month: Number(this.selectedMonth),
+      year: Number(this.selectedYear)
+    };
+
+    this.metricsLoading = true;
+    this.serviceFulfilmentKpiService.upsertMetric(request).subscribe({
+      next: () => {
+        this.metricsLoading = false;
+        this.editingCell = { rowId: null, key: null };
+        this.toastr.success(`Saved ${this.optionMapping[areaCode] || areaCode} metric successfully.`, 'Success');
+        this.loadMetrics();
+      },
+      error: (err) => {
+        this.metricsLoading = false;
+        console.error('Failed to save Service Fulfilment metric value', err);
+        this.toastr.error('Saving metric failed. Please try again.', 'Save Failed');
+      }
+    });
   }
 
   handleFieldChange(event: Event, rowId: string | number, key: string) {
@@ -792,6 +848,11 @@ export class ServiceFulfilmentComponent implements OnInit {
         updatedItem[key] = numValue;
         if (updatedItem.areas) {
           updatedItem.areas[key] = numValue;
+          const normalizedKey = this.resolveAreaCode(key);
+          if (normalizedKey && normalizedKey !== key) {
+            updatedItem.areas[normalizedKey] = numValue;
+            updatedItem[normalizedKey] = numValue;
+          }
         }
       } else {
         updatedItem[key] = value;

@@ -39,8 +39,9 @@ namespace backend.Data
         // =========================
         // FORMS (2025)
         // =========================
-        public DbSet<Form4_2025> Form4_2025 { get; set; } = null!;
-        public DbSet<Form4_2025_Metric> Form4_2025_Metrics { get; set; } = null!; 
+        public DbSet<ServiceFulfilmentKpi> ServiceFulfilmentKpis { get; set; } = null!;
+        public DbSet<ServiceFulfilmentKpiMetric> ServiceFulfilmentKpiMetrics { get; set; } = null!;
+
         public DbSet<Form8_2025> Form8Records { get; set; } = null!;
 
         public DbSet<Form9_2025> Form9_2025 { get; set; } = null!;
@@ -206,18 +207,18 @@ namespace backend.Data
             });
 
             //servicefullilment
-            modelBuilder.Entity<Form4_2025_Metric>(entity =>
+            modelBuilder.Entity<ServiceFulfilmentKpiMetric>(entity =>
             {
-                entity.ToTable("form4_2025_metrics", "dbo");
+                entity.ToTable("ServiceFulfilmentKpiMetrics", "dbo");
                 entity.HasKey(x => x.Id);
 
                 entity.Property(x => x.Id)
                       .HasColumnName("id")
                       .ValueGeneratedOnAdd();
 
-                entity.Property(x => x.Form4Id)
-                      .HasColumnName("form4_id")
-                      .HasMaxLength(36);
+                        entity.Property(x => x.ServiceFulfilmentKpiId)
+                            .HasColumnName("service_fulfilment_kpi_id")
+                            .HasMaxLength(50);
 
                 entity.Property(x => x.AreaCode)
                       .HasColumnName("area_code")
@@ -227,11 +228,37 @@ namespace backend.Data
                 entity.Property(x => x.Month).HasColumnName("month");
                 entity.Property(x => x.Year).HasColumnName("year");
 
-                entity.HasOne(x => x.Form4)
-                      .WithMany()
-                      .HasForeignKey(x => x.Form4Id)
+                entity.HasOne(x => x.ServiceFulfilmentKpi)
+                      .WithMany(k => k.Metrics) // only if you add ICollection navigation
+                      .HasForeignKey(x => x.ServiceFulfilmentKpiId)
+                      .HasConstraintName("FK_ServiceFulfilmentKpiMetrics_ServiceFulfilmentKpi")
                       .OnDelete(DeleteBehavior.Cascade);
             });
+
+            modelBuilder.Entity<ServiceFulfilmentKpi>(entity =>
+            {
+                entity.ToTable("ServiceFulfilmentKpi", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id).HasColumnName("id").HasMaxLength(36);
+
+                entity.Property(x => x.No).HasColumnName("no");
+                entity.Property(x => x.Kpi).HasColumnName("kpi");
+                entity.Property(x => x.Target).HasColumnName("target");
+                entity.Property(x => x.Calculation).HasColumnName("calculation");
+                entity.Property(x => x.Platform).HasColumnName("platform");
+                entity.Property(x => x.ResponsibleDgm).HasColumnName("responsibleDgm");
+                entity.Property(x => x.DefineDoladetails).HasColumnName("definedOLADetails");
+                entity.Property(x => x.Weightage).HasColumnName("weightage");
+                entity.Property(x => x.DataSources).HasColumnName("dataSources");
+
+                entity.Property(x => x.Month).HasColumnName("month");
+                entity.Property(x => x.Year).HasColumnName("year");
+
+                entity.Property(x => x.UpdatedAt).HasColumnName("updatedAt");
+                entity.Property(x => x.V).HasColumnName("v");
+            });
+
 
 
             base.OnModelCreating(modelBuilder);

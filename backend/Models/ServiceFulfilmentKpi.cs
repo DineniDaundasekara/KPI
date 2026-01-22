@@ -1,16 +1,44 @@
-﻿namespace backend.Models
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace backend.Models
 {
+    [Table("ServiceFulfilmentKpi")]
     public class ServiceFulfilmentKpi
     {
-        public int Id { get; set; }
-        public string No { get; set; }
-        public string Kpi { get; set; }
-        public string Target { get; set; }
-        public string Calculation { get; set; }
-        public string Platform { get; set; }
-        public string ResponsibleDgm { get; set; }
-        public string DefinedOla { get; set; }
+        [Key]
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+
+        public int No { get; set; }
+
+        public string Kpi { get; set; } = string.Empty;
+
+        public string Target { get; set; } = string.Empty;
+
+        public string Calculation { get; set; } = string.Empty;
+
+        public string Platform { get; set; } = string.Empty;
+
+        public string ResponsibleDgm { get; set; } = string.Empty;
+
+        public string DefineDoladetails { get; set; } = string.Empty;
+
         public int Weightage { get; set; }
-        public string DataSources { get; set; }
+
+        public string DataSources { get; set; } = string.Empty;
+
+        public byte Month { get; set; }
+
+        public short Year { get; set; }
+
+        public string UpdatedAt { get; set; } = string.Empty;
+
+        public int? V { get; set; }
+
+        // 🔗 Navigation
+        public ICollection<ServiceFulfilmentKpiMetric> Metrics { get; set; }
+            = new List<ServiceFulfilmentKpiMetric>();
     }
 }

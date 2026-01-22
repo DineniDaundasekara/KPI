@@ -1,7 +1,7 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject } from '@angular/core';
+import { CommonModule, DOCUMENT } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Form4ApiService, ServiceFulfilmentKpi } from '../../../../services/form4api.service';
+import { ServiceFulfilmentKpiDto, ServiceFulfilmentKpiService } from '../../../../services/service-fulfilment-kpi.service';
 
 @Component({
   selector: 'app-admin-service-fulfilment',
@@ -11,6 +11,9 @@ import { Form4ApiService, ServiceFulfilmentKpi } from '../../../../services/form
   styleUrls: ['./service-fulfilment.component.scss']
 })
 export class AdminServiceFulfilmentComponent implements OnInit {
+  private readonly defaultMonth = 11;
+  private readonly defaultYear = 2025;
+  private readonly document = inject(DOCUMENT);
 
   // Header
   pageTitle = 'Service Fulfilment KPIs';
@@ -25,9 +28,10 @@ export class AdminServiceFulfilmentComponent implements OnInit {
   kpiForm!: FormGroup;
   isEditing = false;
   editingId: string | null = null;
+  showForm = false;
 
   // Table data
-  kpiList: ServiceFulfilmentKpi[] = [];
+  kpiList: ServiceFulfilmentKpiDto[] = [];
 
   loading = false;
   saving = false;
@@ -35,7 +39,7 @@ export class AdminServiceFulfilmentComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private form4Api: Form4ApiService
+    private serviceFulfilmentKpiService: ServiceFulfilmentKpiService
   ) {}
 
   ngOnInit(): void {
@@ -49,8 +53,8 @@ export class AdminServiceFulfilmentComponent implements OnInit {
       definedOla: ['', Validators.required],
       weightage: ['', Validators.required],
       dataSources: ['', Validators.required],
-      month: [11, Validators.required],
-      year: [2025, Validators.required]
+      month: [this.defaultMonth, Validators.required],
+      year: [this.defaultYear, Validators.required]
     });
 
     this.loadKpis();
@@ -60,7 +64,7 @@ export class AdminServiceFulfilmentComponent implements OnInit {
   loadKpis(): void {
     this.loading = true;
 
-    this.form4Api.getAll().subscribe({
+    this.serviceFulfilmentKpiService.getAll().subscribe({
       next: data => {
         this.kpiList = data;
         this.activeKpis = data.length;
@@ -81,7 +85,9 @@ export class AdminServiceFulfilmentComponent implements OnInit {
   addNewKpi(): void {
     this.isEditing = false;
     this.editingId = null;
-    this.kpiForm.reset();
+    this.resetForm();
+    this.showForm = true;
+    this.scrollFormIntoView();
   }
 
   // ================= SUBMIT =================
@@ -91,21 +97,34 @@ export class AdminServiceFulfilmentComponent implements OnInit {
       return;
     }
 
-    const payload = {
-      ...this.kpiForm.value,
-      definedoladetails: this.kpiForm.value.definedOla
+    const formValue = this.kpiForm.value;
+    const definedOlaValue = (formValue.definedOla ?? '').toString().trim();
+
+    const payload: ServiceFulfilmentKpiDto = {
+      no: formValue.no,
+      kpi: formValue.kpi,
+      target: formValue.target,
+      calculation: formValue.calculation,
+      platform: formValue.platform,
+      responsibleDgm: formValue.responsibleDgm,
+      definedoladetails: definedOlaValue,
+      dataSources: formValue.dataSources,
+      weightage: formValue.weightage,
+      month: formValue.month,
+      year: formValue.year
     };
 
     this.saving = true;
 
     const request$ = this.isEditing && this.editingId
-      ? this.form4Api.update(this.editingId, payload)
-      : this.form4Api.add(payload);
+      ? this.serviceFulfilmentKpiService.update(this.editingId, payload)
+      : this.serviceFulfilmentKpiService.add(payload);
 
     request$.subscribe({
       next: () => {
         this.resetForm();
         this.loadKpis();
+        this.showForm = false;
       },
       error: err => {
         console.error(err);
@@ -121,6 +140,7 @@ export class AdminServiceFulfilmentComponent implements OnInit {
     const kpi = this.kpiList[index];
     this.isEditing = true;
     this.editingId = kpi.id ?? (kpi as any).Id;
+    const definedOlaValue = this.resolveDefinedOlaValue(kpi);
 
     this.kpiForm.patchValue({
       no: kpi.no,
@@ -129,12 +149,14 @@ export class AdminServiceFulfilmentComponent implements OnInit {
       calculation: kpi.calculation,
       platform: kpi.platform,
       responsibleDgm: kpi.responsibleDgm,
-      definedOla: (kpi as any).definedoladetails ?? '',
+      definedOla: definedOlaValue,
       weightage: kpi.weightage,
       dataSources: kpi.dataSources,
       month: kpi.month,
       year: kpi.year
     });
+    this.showForm = true;
+    this.scrollFormIntoView();
   }
 
   // ================= DELETE =================
@@ -144,7 +166,7 @@ export class AdminServiceFulfilmentComponent implements OnInit {
 
     if (!id || !confirm('Delete this KPI?')) return;
 
-    this.form4Api.delete(id).subscribe({
+    this.serviceFulfilmentKpiService.delete(id).subscribe({
       next: () => this.loadKpis(),
       error: err => {
         console.error(err);
@@ -155,8 +177,42 @@ export class AdminServiceFulfilmentComponent implements OnInit {
 
   // ================= RESET =================
   resetForm(): void {
-    this.kpiForm.reset();
+    this.kpiForm.reset({
+      month: this.defaultMonth,
+      year: this.defaultYear
+    });
     this.isEditing = false;
     this.editingId = null;
+  }
+
+  toggleForm(): void {
+    if (this.showForm) {
+      this.closeForm();
+    } else {
+      this.addNewKpi();
+    }
+  }
+
+  closeForm(): void {
+    this.showForm = false;
+    this.resetForm();
+  }
+
+  private scrollFormIntoView(): void {
+    setTimeout(() => {
+      if (!this.showForm) {
+        return;
+      }
+      const element = this.document?.getElementById('service-fulfilment-form');
+      element?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
+
+  private resolveDefinedOlaValue(kpi?: Partial<ServiceFulfilmentKpiDto>): string {
+    if (!kpi) {
+      return '';
+    }
+    const direct = (kpi as any).definedoladetails ?? (kpi as any).defineDoladetails;
+    return typeof direct === 'string' ? direct : '';
   }
 }
