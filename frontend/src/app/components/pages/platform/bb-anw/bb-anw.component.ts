@@ -3,7 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RegionService, Region } from '../../../../services/region.service';
-import { BbAnwService, Form7Dto } from '../../../../services/bb-anw.service';
+import { BbAnwService, BbAnwDto } from '../../../../services/bb-anw.service';
 import * as ExcelJS from 'exceljs';
 import { firstValueFrom } from 'rxjs';
 
@@ -16,7 +16,7 @@ interface RegionRow {
 	lea?: string;
 }
 
-interface Form7Entry {
+interface BbAnwEntry {
 	kpiId: string;
 	mongoObjectId?: string | null;
 	no: number;
@@ -70,9 +70,9 @@ const LOCAL_REGION_TABLE: RegionRow[] = [
 export class BbAnwComponent implements OnInit, OnDestroy {
 	pageTitle = 'Platform KPI — BB & ANW';
 
-	data: Form7Entry[] = [];
+	data: BbAnwEntry[] = [];
 	regionTable: RegionRow[] = [...LOCAL_REGION_TABLE];
-	adminRows: Form7Dto[] = [];
+	adminRows: BbAnwDto[] = [];
 
 	loading = true;
 	error: string | null = null;
@@ -187,7 +187,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		return Boolean(this.selectedKey);
 	}
 
-	getSelectedAvailability(entry: Form7Entry): string {
+	getSelectedAvailability(entry: BbAnwEntry): string {
 		const key = this.selectedKey;
 		if (!key) {
 			return '--';
@@ -206,7 +206,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 	}
 
 	getMetricDisplay(
-		entry: Form7Entry,
+		entry: BbAnwEntry,
 		metric: 'unavailableMinutes' | 'totalMinutes' | 'totalNodes'
 	): string {
 		const key = this.selectedKey;
@@ -342,8 +342,8 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		});
 	}
 
-	private mapDtoToEntry(dto: Form7Dto): Form7Entry {
-		const entry: Form7Entry = {
+	private mapDtoToEntry(dto: BbAnwDto): BbAnwEntry {
+		const entry: BbAnwEntry = {
 			kpiId: dto.kpiId ?? crypto.randomUUID(),
 			mongoObjectId: dto.mongoObjectId ?? null,
 			no: dto.no,
@@ -367,7 +367,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		return entry;
 	}
 
-	private buildDtoFromEntry(entry: Form7Entry): Form7Dto {
+	private buildDtoFromEntry(entry: BbAnwEntry): BbAnwDto {
 		const codes = this.collectNodeCodes(entry);
 		const nodes = codes.map((code) => ({
 			nodeCode: code,
@@ -388,7 +388,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		};
 	}
 
-	private collectNodeCodes(entry: Form7Entry): string[] {
+	private collectNodeCodes(entry: BbAnwEntry): string[] {
 		const codes = new Set<string>();
 		Object.keys(entry.unavailableMinutes || {}).forEach((key) => codes.add(key));
 		Object.keys(entry.totalMinutes || {}).forEach((key) => codes.add(key));
@@ -529,7 +529,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		return Math.max(0, Math.min(100, pct));
 	}
 
-	startEdit(entry: Form7Entry, key: MetricKey): void {
+	startEdit(entry: BbAnwEntry, key: MetricKey): void {
 		if (!this.isEditingAllowed || !this.selectedKey || this.cellSaving) return;
 
 		const nestedKey = `${key}.${this.selectedKey}`;
@@ -584,15 +584,15 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		parentKey: MetricKey,
 		childKey: string,
 		newValue: string
-	): Form7Entry | null {
-		let updatedEntry: Form7Entry | null = null;
+	): BbAnwEntry | null {
+		let updatedEntry: BbAnwEntry | null = null;
 
 		this.data = this.data.map((entry) => {
 			if (entry.kpiId !== this.editCell.rowId) {
 				return entry;
 			}
 
-			const next: Form7Entry = {
+			const next: BbAnwEntry = {
 				...entry,
 				totalMinutes: { ...entry.totalMinutes },
 				unavailableMinutes: { ...entry.unavailableMinutes },
@@ -617,7 +617,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		return updatedEntry;
 	}
 
-	isEditingCell(entry: Form7Entry, key: 'unavailableMinutes' | 'totalMinutes' | 'totalNodes'): boolean {
+	isEditingCell(entry: BbAnwEntry, key: 'unavailableMinutes' | 'totalMinutes' | 'totalNodes'): boolean {
 		const selected = this.selectedKey;
 		if (!selected) {
 			return false;

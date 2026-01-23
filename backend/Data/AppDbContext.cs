@@ -47,10 +47,10 @@ namespace backend.Data
         public DbSet<Form9_2025> Form9_2025 { get; set; } = null!;
 
         // =========================
-        // FORM 7 (BB&ANW) - NEW TABLES
+        // BB&ANW (FORM 7 renamed)
         // =========================
-        public DbSet<Form7Kpi> Form7Kpis { get; set; } = null!;
-        public DbSet<Form7KpiNode> Form7KpiNodes { get; set; } = null!;
+        public DbSet<BbAnwKpi> BbAnwKpis { get; set; } = null!;
+        public DbSet<BbAnwKpiNode> BbAnwKpiNodes { get; set; } = null!;
 
 
         // =========================
@@ -164,13 +164,12 @@ namespace backend.Data
                     .HasConstraintName("FK_form6_metrics_form6");
             });
 
-            //bbanw
             // =========================
-            // FORM 7 (BB&ANW)
+            // BB&ANW KPI (Form7 renamed tables)
             // =========================
-            modelBuilder.Entity<Form7Kpi>(entity =>
+            modelBuilder.Entity<BbAnwKpi>(entity =>
             {
-                entity.ToTable("Form7Kpi", "dbo");
+                entity.ToTable("BbAnwKpi", "dbo");
                 entity.HasKey(x => x.KpiId);
 
                 entity.Property(x => x.KpiId).HasColumnName("KpiId");
@@ -181,21 +180,21 @@ namespace backend.Data
                 entity.Property(x => x.Division).HasColumnName("Division").HasMaxLength(100);
                 entity.Property(x => x.Section).HasColumnName("Section").HasMaxLength(50);
 
-                // SQL: DECIMAL(6,2)
                 entity.Property(x => x.KpiPercent)
                       .HasColumnName("KpiPercent")
                       .HasColumnType("decimal(6,2)");
 
                 entity.HasMany(x => x.Nodes)
                       .WithOne(n => n.Kpi)
-                      .HasForeignKey(n => n.KpiId);
+                      .HasForeignKey(n => n.KpiId)
+                      .HasConstraintName("FK_BbAnwKpiNode_BbAnwKpi");
             });
 
-            modelBuilder.Entity<Form7KpiNode>(entity =>
+            modelBuilder.Entity<BbAnwKpiNode>(entity =>
             {
-                entity.ToTable("Form7KpiNode", "dbo");
+                entity.ToTable("BbAnwKpiNode", "dbo");
 
-                // ✅ composite primary key
+                // composite primary key
                 entity.HasKey(x => new { x.KpiId, x.NodeCode });
 
                 entity.Property(x => x.KpiId).HasColumnName("KpiId");

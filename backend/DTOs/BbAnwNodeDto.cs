@@ -1,6 +1,6 @@
 ﻿namespace backend.DTOs
 {
-    public class Form7NodeDto
+    public class BbAnwNodeDto
     {
         public string NodeCode { get; set; } = string.Empty;
         public int? UnavailableMinutes { get; set; }

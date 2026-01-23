@@ -3,15 +3,15 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace backend.Models
 {
-    [Table("Form7Kpi", Schema = "dbo")]
-    public class Form7Kpi
+    [Table("BbAnwKpi", Schema = "dbo")]
+    public class BbAnwKpi
     {
         [Key]
         [Column("KpiId")]
         public Guid KpiId { get; set; } = Guid.NewGuid();
 
         [Column("MongoObjectId")]
-        public string? MongoObjectId { get; set; }  // varchar(24)
+        public string? MongoObjectId { get; set; }
 
         [Column("No")]
         public int No { get; set; }
@@ -25,11 +25,9 @@ namespace backend.Models
         [Column("Section")]
         public string? Section { get; set; }
 
-        // DECIMAL(6,2)
         [Column("KpiPercent")]
         public decimal? KpiPercent { get; set; }
 
-        // Navigation
-        public List<Form7KpiNode> Nodes { get; set; } = new();
+        public List<BbAnwKpiNode> Nodes { get; set; } = new();
     }
 }

@@ -1,4 +1,7 @@
-﻿using backend.Data;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
+using backend.Data;
 using backend.DTOs;
 using backend.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -7,12 +10,12 @@ using Microsoft.EntityFrameworkCore;
 namespace backend.Controllers
 {
     [ApiController]
-    [Route("api/form7")]
-    public class Form7Controller : ControllerBase
+    [Route("api/bb-anw")]
+    public class BbAnwController : ControllerBase
     {
         private readonly AppDbContext _context;
 
-        public Form7Controller(AppDbContext context)
+        public BbAnwController(AppDbContext context)
         {
             _context = context;
         }
@@ -21,15 +24,15 @@ namespace backend.Controllers
         // PLATFORM KPI PAGE (FULL DATA: HEADERS + NODES)
         // =========================================================
 
-        // GET: /api/form7  (FULL)
+        // GET: /api/bb-anw  (FULL)
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var data = await _context.Form7Kpis
+            var data = await _context.BbAnwKpis
                 .AsNoTracking()
                 .Include(x => x.Nodes)
                 .OrderBy(x => x.No)
-                .Select(x => new Form7Dto
+                .Select(x => new BbAnwDto
                 {
                     KpiId = x.KpiId,
                     MongoObjectId = x.MongoObjectId,
@@ -38,7 +41,7 @@ namespace backend.Controllers
                     Division = x.Division,
                     Section = x.Section,
                     KpiPercent = x.KpiPercent,
-                    Nodes = x.Nodes.Select(n => new Form7NodeDto
+                    Nodes = x.Nodes.Select(n => new BbAnwNodeDto
                     {
                         NodeCode = n.NodeCode,
                         UnavailableMinutes = n.UnavailableMinutes,
@@ -51,15 +54,15 @@ namespace backend.Controllers
             return Ok(data);
         }
 
-        // GET: /api/form7/{kpiId} (FULL)
+        // GET: /api/bb-anw/{kpiId} (FULL)
         [HttpGet("{kpiId:guid}")]
         public async Task<IActionResult> GetById(Guid kpiId)
         {
-            var item = await _context.Form7Kpis
+            var item = await _context.BbAnwKpis
                 .AsNoTracking()
                 .Include(x => x.Nodes)
                 .Where(x => x.KpiId == kpiId)
-                .Select(x => new Form7Dto
+                .Select(x => new BbAnwDto
                 {
                     KpiId = x.KpiId,
                     MongoObjectId = x.MongoObjectId,
@@ -68,7 +71,7 @@ namespace backend.Controllers
                     Division = x.Division,
                     Section = x.Section,
                     KpiPercent = x.KpiPercent,
-                    Nodes = x.Nodes.Select(n => new Form7NodeDto
+                    Nodes = x.Nodes.Select(n => new BbAnwNodeDto
                     {
                         NodeCode = n.NodeCode,
                         UnavailableMinutes = n.UnavailableMinutes,
@@ -82,32 +85,32 @@ namespace backend.Controllers
             return Ok(item);
         }
 
-        // POST: /api/form7/add  (FULL INSERT header + nodes)
+        // POST: /api/bb-anw/add  (FULL INSERT header + nodes)
         [HttpPost("add")]
-        public async Task<IActionResult> Add([FromBody] Form7Dto dto)
+        public async Task<IActionResult> Add([FromBody] BbAnwDto dto)
         {
             if (dto == null) return BadRequest("Body is empty.");
 
             // guard: duplicate node codes
-            var duplicateNode = (dto.Nodes ?? new List<Form7NodeDto>())
+            var duplicateNode = (dto.Nodes ?? new())
                 .GroupBy(n => n.NodeCode?.Trim().ToLower())
                 .FirstOrDefault(g => !string.IsNullOrWhiteSpace(g.Key) && g.Count() > 1);
 
             if (duplicateNode != null)
                 return BadRequest($"Duplicate NodeCode found: {duplicateNode.Key}");
 
-            var header = new Form7Kpi
+            var header = new BbAnwKpi
             {
                 KpiId = Guid.NewGuid(),
                 MongoObjectId = dto.MongoObjectId,
                 No = dto.No,
                 NetworkEngineerKpi = dto.NetworkEngineerKpi,
-                Division = dto.Division ?? "",
-                Section = dto.Section ?? "",
-                KpiPercent = dto.KpiPercent ?? 0
+                Division = dto.Division,
+                Section = dto.Section,
+                KpiPercent = dto.KpiPercent
             };
 
-            header.Nodes = (dto.Nodes ?? new List<Form7NodeDto>()).Select(n => new Form7KpiNode
+            header.Nodes = (dto.Nodes ?? new()).Select(n => new BbAnwKpiNode
             {
                 KpiId = header.KpiId,
                 NodeCode = (n.NodeCode ?? "").Trim(),
@@ -116,26 +119,26 @@ namespace backend.Controllers
                 TotalNodes = n.TotalNodes
             }).ToList();
 
-            _context.Form7Kpis.Add(header);
+            _context.BbAnwKpis.Add(header);
             await _context.SaveChangesAsync();
 
             return Ok(new { header.KpiId });
         }
 
-        // PUT: /api/form7/update/{kpiId}  (FULL replace nodes)
+        // PUT: /api/bb-anw/update/{kpiId}  (FULL replace nodes)
         [HttpPut("update/{kpiId:guid}")]
-        public async Task<IActionResult> Update(Guid kpiId, [FromBody] Form7Dto dto)
+        public async Task<IActionResult> Update(Guid kpiId, [FromBody] BbAnwDto dto)
         {
             if (dto == null) return BadRequest("Body is empty.");
 
-            var header = await _context.Form7Kpis
+            var header = await _context.BbAnwKpis
                 .Include(x => x.Nodes)
                 .FirstOrDefaultAsync(x => x.KpiId == kpiId);
 
             if (header == null) return NotFound();
 
             // guard: duplicate node codes
-            var duplicateNode = (dto.Nodes ?? new List<Form7NodeDto>())
+            var duplicateNode = (dto.Nodes ?? new())
                 .GroupBy(n => n.NodeCode?.Trim().ToLower())
                 .FirstOrDefault(g => !string.IsNullOrWhiteSpace(g.Key) && g.Count() > 1);
 
@@ -145,13 +148,14 @@ namespace backend.Controllers
             header.MongoObjectId = dto.MongoObjectId;
             header.No = dto.No;
             header.NetworkEngineerKpi = dto.NetworkEngineerKpi;
-            header.Division = dto.Division ?? "";
-            header.Section = dto.Section ?? "";
-            header.KpiPercent = dto.KpiPercent ?? header.KpiPercent;
+            header.Division = dto.Division;
+            header.Section = dto.Section;
+            header.KpiPercent = dto.KpiPercent;
 
-            _context.Form7KpiNodes.RemoveRange(header.Nodes);
+            // remove old nodes then add new nodes
+            _context.BbAnwKpiNodes.RemoveRange(header.Nodes);
 
-            header.Nodes = (dto.Nodes ?? new List<Form7NodeDto>()).Select(n => new Form7KpiNode
+            header.Nodes = (dto.Nodes ?? new()).Select(n => new BbAnwKpiNode
             {
                 KpiId = header.KpiId,
                 NodeCode = (n.NodeCode ?? "").Trim(),
@@ -164,18 +168,18 @@ namespace backend.Controllers
             return Ok(new { header.KpiId });
         }
 
-        // DELETE: /api/form7/delete/{kpiId} (delete nodes + header)
+        // DELETE: /api/bb-anw/delete/{kpiId}
         [HttpDelete("delete/{kpiId:guid}")]
         public async Task<IActionResult> Delete(Guid kpiId)
         {
-            var header = await _context.Form7Kpis
+            var header = await _context.BbAnwKpis
                 .Include(x => x.Nodes)
                 .FirstOrDefaultAsync(x => x.KpiId == kpiId);
 
             if (header == null) return NotFound();
 
-            _context.Form7KpiNodes.RemoveRange(header.Nodes);
-            _context.Form7Kpis.Remove(header);
+            _context.BbAnwKpiNodes.RemoveRange(header.Nodes);
+            _context.BbAnwKpis.Remove(header);
 
             await _context.SaveChangesAsync();
             return Ok();
@@ -185,14 +189,14 @@ namespace backend.Controllers
         // ADMIN PAGE (HEADER ONLY CRUD) ✅ DOES NOT TOUCH NODES
         // =========================================================
 
-        // GET: /api/form7/headers (header-only list)
+        // GET: /api/bb-anw/headers
         [HttpGet("headers")]
         public async Task<IActionResult> GetHeaders()
         {
-            var headers = await _context.Form7Kpis
+            var headers = await _context.BbAnwKpis
                 .AsNoTracking()
                 .OrderBy(x => x.No)
-                .Select(x => new Form7HeaderDto
+                .Select(x => new BbAnwHeaderDto
                 {
                     KpiId = x.KpiId,
                     MongoObjectId = x.MongoObjectId,
@@ -207,44 +211,44 @@ namespace backend.Controllers
             return Ok(headers);
         }
 
-        // POST: /api/form7/add-header (insert header only)
+        // POST: /api/bb-anw/add-header
         [HttpPost("add-header")]
-        public async Task<IActionResult> AddHeader([FromBody] Form7HeaderDto dto)
+        public async Task<IActionResult> AddHeader([FromBody] BbAnwHeaderDto dto)
         {
             if (dto == null) return BadRequest("Body is empty.");
 
-            var header = new Form7Kpi
+            var header = new BbAnwKpi
             {
                 KpiId = Guid.NewGuid(),
                 MongoObjectId = dto.MongoObjectId,
                 No = dto.No,
                 NetworkEngineerKpi = dto.NetworkEngineerKpi,
-                Division = dto.Division ?? "",
-                Section = dto.Section ?? "",
-                KpiPercent = dto.KpiPercent ?? 0
+                Division = dto.Division,
+                Section = dto.Section,
+                KpiPercent = dto.KpiPercent
             };
 
-            _context.Form7Kpis.Add(header);
+            _context.BbAnwKpis.Add(header);
             await _context.SaveChangesAsync();
 
             return Ok(new { header.KpiId });
         }
 
-        // PUT: /api/form7/update-header/{kpiId} (update header only)
+        // PUT: /api/bb-anw/update-header/{kpiId}
         [HttpPut("update-header/{kpiId:guid}")]
-        public async Task<IActionResult> UpdateHeader(Guid kpiId, [FromBody] Form7HeaderDto dto)
+        public async Task<IActionResult> UpdateHeader(Guid kpiId, [FromBody] BbAnwHeaderDto dto)
         {
             if (dto == null) return BadRequest("Body is empty.");
 
-            var header = await _context.Form7Kpis.FirstOrDefaultAsync(x => x.KpiId == kpiId);
+            var header = await _context.BbAnwKpis.FirstOrDefaultAsync(x => x.KpiId == kpiId);
             if (header == null) return NotFound();
 
             header.MongoObjectId = dto.MongoObjectId;
             header.No = dto.No;
             header.NetworkEngineerKpi = dto.NetworkEngineerKpi;
-            header.Division = dto.Division ?? "";
-            header.Section = dto.Section ?? "";
-            header.KpiPercent = dto.KpiPercent ?? header.KpiPercent;
+            header.Division = dto.Division;
+            header.Section = dto.Section;
+            header.KpiPercent = dto.KpiPercent;
 
             await _context.SaveChangesAsync();
             return Ok(new { header.KpiId });

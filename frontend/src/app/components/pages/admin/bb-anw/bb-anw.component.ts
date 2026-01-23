@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { BbAnwService, Form7HeaderDto } from '../../../../services/bb-anw.service';
+import { BbAnwService, BbAnwHeaderDto } from '../../../../services/bb-anw.service';
 
 @Component({
   selector: 'app-bb-anw',
@@ -13,7 +13,7 @@ import { BbAnwService, Form7HeaderDto } from '../../../../services/bb-anw.servic
 export class BbAnwComponent implements OnInit {
 
   pageTitle = 'BB & ANW – KPI Management';
-  data: Form7HeaderDto[] = [];
+  data: BbAnwHeaderDto[] = [];
 
   loading = false;
   saving = false;
@@ -22,7 +22,7 @@ export class BbAnwComponent implements OnInit {
   editingId: string | null = null;
   showForm = false;
 
-  form: Form7HeaderDto = this.emptyForm();
+  form: BbAnwHeaderDto = this.emptyForm();
 
   constructor(private service: BbAnwService) {}
 
@@ -30,7 +30,7 @@ export class BbAnwComponent implements OnInit {
     this.loadData();
   }
 
-  private emptyForm(): Form7HeaderDto {
+  private emptyForm(): BbAnwHeaderDto {
     return {
       kpiId: undefined,
       mongoObjectId: undefined,
@@ -81,7 +81,7 @@ export class BbAnwComponent implements OnInit {
     });
   }
 
-  editRow(row: Form7HeaderDto): void {
+  editRow(row: BbAnwHeaderDto): void {
     this.showForm = true;
     this.editingId = row.kpiId ?? null;
 
@@ -119,11 +119,11 @@ export class BbAnwComponent implements OnInit {
     this.form = this.emptyForm();
   }
 
-  trackRow(index: number, row: Form7HeaderDto): string {
+  trackRow(index: number, row: BbAnwHeaderDto): string {
     return row.kpiId ?? `row-${index}`;
   }
 
-  private normalizeForm(): Form7HeaderDto {
+  private normalizeForm(): BbAnwHeaderDto {
     return {
       kpiId: this.editingId ?? undefined,
       mongoObjectId: this.form.mongoObjectId?.trim() || null,

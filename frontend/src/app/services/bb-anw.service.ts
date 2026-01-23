@@ -2,14 +2,14 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-export interface Form7NodeDto {
+export interface BbAnwNodeDto {
   nodeCode: string;
   unavailableMinutes?: number | null;
   totalMinutes?: number | null;
   totalNodes?: number | null;
 }
 
-export interface Form7Dto {
+export interface BbAnwDto {
   kpiId?: string;
   mongoObjectId?: string | null;
   no: number;
@@ -17,11 +17,11 @@ export interface Form7Dto {
   division?: string | null;
   section?: string | null;
   kpiPercent?: number | null;
-  nodes: Form7NodeDto[];
+  nodes: BbAnwNodeDto[];
 }
 
 // ✅ ADMIN HEADER ONLY
-export interface Form7HeaderDto {
+export interface BbAnwHeaderDto {
   kpiId?: string;
   mongoObjectId?: string | null;
   no: number;
@@ -33,22 +33,22 @@ export interface Form7HeaderDto {
 
 @Injectable({ providedIn: 'root' })
 export class BbAnwService {
-  private readonly apiUrl = 'http://localhost:5043/api/form7';
+  private readonly apiUrl = 'http://localhost:5043/api/bb-anw';
 
   constructor(private http: HttpClient) {}
 
   // ---------------------------
   // PLATFORM KPI (FULL)
   // ---------------------------
-  getAll(): Observable<Form7Dto[]> {
-    return this.http.get<Form7Dto[]>(this.apiUrl);
+  getAll(): Observable<BbAnwDto[]> {
+    return this.http.get<BbAnwDto[]>(this.apiUrl);
   }
 
-  add(data: Form7Dto): Observable<any> {
+  add(data: BbAnwDto): Observable<any> {
     return this.http.post(`${this.apiUrl}/add`, data);
   }
 
-  update(id: string, data: Form7Dto): Observable<any> {
+  update(id: string, data: BbAnwDto): Observable<any> {
     return this.http.put(`${this.apiUrl}/update/${id}`, data);
   }
 
@@ -59,15 +59,15 @@ export class BbAnwService {
   // ---------------------------
   // ADMIN PAGE (HEADER ONLY) ✅
   // ---------------------------
-  getHeaders(): Observable<Form7HeaderDto[]> {
-    return this.http.get<Form7HeaderDto[]>(`${this.apiUrl}/headers`);
+  getHeaders(): Observable<BbAnwHeaderDto[]> {
+    return this.http.get<BbAnwHeaderDto[]>(`${this.apiUrl}/headers`);
   }
 
-  addHeader(data: Form7HeaderDto): Observable<any> {
+  addHeader(data: BbAnwHeaderDto): Observable<any> {
     return this.http.post(`${this.apiUrl}/add-header`, data);
   }
 
-  updateHeader(id: string, data: Form7HeaderDto): Observable<any> {
+  updateHeader(id: string, data: BbAnwHeaderDto): Observable<any> {
     return this.http.put(`${this.apiUrl}/update-header/${id}`, data);
   }
 }
