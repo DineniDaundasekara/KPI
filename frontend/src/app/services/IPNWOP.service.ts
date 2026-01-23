@@ -19,7 +19,7 @@ export interface Form6Record {
   providedIn: 'root'
 })
 export class Form6Service {
-  private apiBase = 'http://localhost:5043/form6';
+  private apiBase = 'http://localhost:5043/form';
 
   constructor(private http: HttpClient) {}
 

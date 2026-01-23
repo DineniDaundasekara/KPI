@@ -3,7 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import * as ExcelJS from 'exceljs';
-import { Form6Service, Form6Record } from '../../../../services/form6.service';
+import { Form6Service, Form6Record } from '../../../../services/IPNWOP.service';
 import { RegionService, Region } from '../../../../services/region.service';
 
 interface RegionRow {

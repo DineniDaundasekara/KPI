@@ -52,7 +52,7 @@ export class AdminIpNwOpComponent implements OnInit {
     this.loading = true;
     this.error = null;
 
-    this.http.get<Form6Row[]>(`${this.apiBase}/form6/`).subscribe({
+    this.http.get<Form6Row[]>(`${this.apiBase}/form/`).subscribe({
       next: (res) => {
         this.data = Array.isArray(res) ? res : [];
         this.sortData();
@@ -106,7 +106,7 @@ export class AdminIpNwOpComponent implements OnInit {
       if (this.editingId) {
         // UPDATE
         await firstValueFrom(
-          this.http.put(`${this.apiBase}/form6/update/${this.editingId}`, payload)
+          this.http.put(`${this.apiBase}/form/update/${this.editingId}`, payload)
         );
 
         // 🔥 update local array instantly
@@ -118,7 +118,7 @@ export class AdminIpNwOpComponent implements OnInit {
       } else {
         // ADD
         const res: any = await firstValueFrom(
-          this.http.post(`${this.apiBase}/form6/add`, payload)
+          this.http.post(`${this.apiBase}/form/add`, payload)
         );
 
         // 🔥 insert locally instantly
@@ -155,7 +155,7 @@ export class AdminIpNwOpComponent implements OnInit {
     if (!ok) return;
 
     try {
-      await firstValueFrom(this.http.delete(`${this.apiBase}/form6/delete/${id}`));
+      await firstValueFrom(this.http.delete(`${this.apiBase}/form/delete/${id}`));
 
       // 🔥 remove locally instantly
       this.data = this.data.filter((x) => x._id !== id);
