@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using backend.Data;
 using backend.DTOs;
 using backend.Models;
@@ -10,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace backend.Controllers
 {
     [ApiController]
-    [Route("form6")]
+    [Route("ip-nw-op")]
     public class IpNwOpKpiController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -20,122 +21,131 @@ namespace backend.Controllers
             _db = db;
         }
 
-        // ? GET: /form6
-        // Returns KPI rows + metrics dictionaries from form6_kpi_metrics
+        // =========================================================
+        // GET ALL (KPI + Metrics)
+        // GET: /form6?month=11&year=2025&area=cenhkmd
+        // =========================================================
         [HttpGet("")]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll([FromQuery] byte? month, [FromQuery] short? year, [FromQuery] string? area)
         {
-            var baseRows = await _db.IpNwOpKpis
+            var query = _db.IpNwOpKpis
                 .AsNoTracking()
+                .Include(x => x.Metrics)
+                .AsQueryable();
+
+            if (month.HasValue)
+                query = query.Where(x => x.Month == month.Value);
+
+            if (year.HasValue)
+                query = query.Where(x => x.Year == year.Value);
+
+            var normalizedArea = NormalizeAreaCode(area);
+
+            var rows = await query
                 .OrderBy(x => x.No)
-                .Select(x => new
-                {
-                    x.Id,
-                    x.No,
-                    x.NetworkEngineerKpi,
-                    x.Division,
-                    x.Section,
-                    x.KpiPercent
-                })
                 .ToListAsync();
 
-            var ids = baseRows.Select(x => x.Id).ToList();
+            var data = rows
+                .Select(x => MapToDto(x, normalizedArea))
+                .ToList();
 
-            var metrics = await _db.Form6KpiMetrics
-                .AsNoTracking()
-                .Where(m => ids.Contains(m.Form6Id))
-                .ToListAsync();
-
-            var metricsByForm6 = metrics
-                .GroupBy(m => m.Form6Id)
-                .ToDictionary(
-                    g => g.Key,
-                    g => new
-                    {
-                        unavailable_minutes = BuildMetricDictionary(g, m => m.UnavailableMinutes),
-                        total_minutes = BuildMetricDictionary(g, m => m.TotalMinutes),
-                        total_nodes = BuildMetricDictionary(g, m => m.TotalNodes)
-                    }
-                );
-
-            var result = baseRows.Select(x =>
-            {
-                metricsByForm6.TryGetValue(x.Id, out var m);
-
-                return new
-                {
-                    _id = x.Id,
-                    no = x.No,
-                    network_engineer_kpi = x.NetworkEngineerKpi,
-                    division = x.Division,
-                    section = x.Section,
-                    kpi_percent = x.KpiPercent,
-
-                    unavailable_minutes = m?.unavailable_minutes ?? new Dictionary<string, int?>(),
-                    total_minutes = m?.total_minutes ?? new Dictionary<string, int?>(),
-                    total_nodes = m?.total_nodes ?? new Dictionary<string, int?>()
-                };
-            });
-
-            return Ok(result);
+            return Ok(data);
         }
 
-        // ? POST: /form6/add
+        // =========================================================
+        // GET BY ID (KPI + Metrics)
+        // GET: /form6/{id}
+        // =========================================================
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(string id)
+        {
+            var entity = await _db.IpNwOpKpis
+                .AsNoTracking()
+                .Include(x => x.Metrics)
+                .FirstOrDefaultAsync(x => x.Id == id);
+
+            if (entity == null) return NotFound();
+
+            return Ok(MapToDto(entity, string.Empty));
+        }
+
+        // =========================================================
+        // ADD (KPI + optional Metrics list)
+        // POST: /form6/add
+        // =========================================================
         [HttpPost("add")]
         public async Task<IActionResult> Add([FromBody] IpNwOpKpiDto dto)
         {
+            if (dto == null) return BadRequest("Body is empty.");
+
             var entity = new IpNwOpKpi
             {
-                Id = Guid.NewGuid().ToString("N"), // fits nvarchar(64)
-                No = dto.no,
-                NetworkEngineerKpi = dto.network_engineer_kpi,
-                Division = dto.division,
-                Section = dto.section,
-                KpiPercent = dto.kpi_percent
+                Id = Guid.NewGuid().ToString("N"), // nvarchar(64)
+                No = dto.No,
+                NetworkEngineerKpi = dto.NetworkEngineerKpi ?? "",
+                Division = dto.Division ?? "",
+                Section = dto.Section ?? "",
+                KpiPercent = dto.KpiPercent,
+
+                Month = dto.Month ?? (byte)DateTime.UtcNow.Month,
+                Year = dto.Year ?? (short)DateTime.UtcNow.Year,
+                UpdatedAt = DateTime.UtcNow
             };
 
-            ApplyMetricDictionaries(entity, dto);
+            foreach (var area in CollectMetricAreas(dto))
+            {
+                entity.Metrics.Add(new IpNwOpKpiMetric
+                {
+                    IpNwOpKpiId = entity.Id,
+                    AreaCode = area,
+                    UnavailableMinutes = TryGetMetricValue(dto.UnavailableMinutes, area),
+                    TotalMinutes = TryGetMetricValue(dto.TotalMinutes, area),
+                    TotalNodes = TryGetMetricValue(dto.TotalNodes, area)
+                });
+            }
+
             _db.IpNwOpKpis.Add(entity);
             await _db.SaveChangesAsync();
 
             return Ok(new { message = "Created", id = entity.Id });
         }
 
-        // ? PUT: /form6/update/{id}
+        // =========================================================
+        // UPDATE (KPI fields only)
+        // PUT: /form6/update/{id}
+        // =========================================================
         [HttpPut("update/{id}")]
         public async Task<IActionResult> Update(string id, [FromBody] IpNwOpKpiDto dto)
         {
-            var entity = await _db.IpNwOpKpis
-                .Include(x => x.Metrics)
-                .FirstOrDefaultAsync(x => x.Id == id);
+            if (dto == null) return BadRequest("Body is empty.");
+
+            var entity = await _db.IpNwOpKpis.FirstOrDefaultAsync(x => x.Id == id);
             if (entity == null) return NotFound();
 
-            entity.No = dto.no;
-            entity.NetworkEngineerKpi = dto.network_engineer_kpi;
-            entity.Division = dto.division;
-            entity.Section = dto.section;
-            entity.KpiPercent = dto.kpi_percent;
+            entity.No = dto.No;
+            entity.NetworkEngineerKpi = dto.NetworkEngineerKpi ?? "";
+            entity.Division = dto.Division ?? "";
+            entity.Section = dto.Section ?? "";
+            entity.KpiPercent = dto.KpiPercent;
 
-            ApplyMetricDictionaries(entity, dto);
+            if (dto.Month.HasValue) entity.Month = dto.Month.Value;
+            if (dto.Year.HasValue) entity.Year = dto.Year.Value;
+
+            entity.UpdatedAt = DateTime.UtcNow;
 
             await _db.SaveChangesAsync();
             return Ok(new { message = "Updated" });
         }
 
-        // ? DELETE: /form6/delete/{id}
+        // =========================================================
+        // DELETE KPI (metrics deleted by FK cascade OR manual safe delete)
+        // DELETE: /form6/delete/{id}
+        // =========================================================
         [HttpDelete("delete/{id}")]
         public async Task<IActionResult> Delete(string id)
         {
             var entity = await _db.IpNwOpKpis.FirstOrDefaultAsync(x => x.Id == id);
             if (entity == null) return NotFound();
-
-            // remove metrics first (safe with FK)
-            var metrics = await _db.Form6KpiMetrics
-                .Where(m => m.Form6Id == id)
-                .ToListAsync();
-
-            if (metrics.Count > 0)
-                _db.Form6KpiMetrics.RemoveRange(metrics);
 
             _db.IpNwOpKpis.Remove(entity);
             await _db.SaveChangesAsync();
@@ -143,115 +153,129 @@ namespace backend.Controllers
             return Ok(new { message = "Deleted" });
         }
 
-        // ? PUT: /form6/metrics/{form6Id}/{areaCode}
-        [HttpPut("metrics/{form6Id}/{areaCode}")]
-        public async Task<IActionResult> UpsertMetric(
-            string form6Id,
-            string areaCode,
-            [FromBody] Form6MetricUpsertDto dto
-        )
+        // =========================================================
+        // UPSERT SINGLE METRIC
+        // PUT: /form6/metrics/{kpiId}/{areaCode}
+        // =========================================================
+        [HttpPut("metrics/{kpiId}/{areaCode}")]
+        public async Task<IActionResult> UpsertMetric(string kpiId, string areaCode, [FromBody] IpNwOpMetricUpsertDto dto)
         {
-            var exists = await _db.IpNwOpKpis.AnyAsync(x => x.Id == form6Id);
-            if (!exists) return NotFound(new { message = "form6_id not found" });
+            var exists = await _db.IpNwOpKpis.AnyAsync(x => x.Id == kpiId);
+            if (!exists) return NotFound(new { message = "kpiId not found" });
 
             var code = NormalizeAreaCode(areaCode);
             if (string.IsNullOrEmpty(code))
-            {
                 return BadRequest(new { message = "areaCode is required" });
-            }
 
-            var row = await _db.Form6KpiMetrics
-                .FirstOrDefaultAsync(x => x.Form6Id == form6Id && x.AreaCode != null && x.AreaCode.ToLower() == code);
+            var row = await _db.IpNwOpKpiMetrics
+                .FirstOrDefaultAsync(x => x.IpNwOpKpiId == kpiId && x.AreaCode.ToLower() == code);
 
             if (row == null)
             {
-                row = new Form6KpiMetric
+                row = new IpNwOpKpiMetric
                 {
-                    Form6Id = form6Id,
-                    AreaCode = code,
-                    UnavailableMinutes = dto.unavailable_minutes,
-                    TotalMinutes = dto.total_minutes,
-                    TotalNodes = dto.total_nodes
+                    IpNwOpKpiId = kpiId,
+                    AreaCode = code
                 };
-                _db.Form6KpiMetrics.Add(row);
+                _db.IpNwOpKpiMetrics.Add(row);
             }
-            else
-            {
-                row.UnavailableMinutes = dto.unavailable_minutes;
-                row.TotalMinutes = dto.total_minutes;
-                row.TotalNodes = dto.total_nodes;
-            }
+
+            row.UnavailableMinutes = dto.UnavailableMinutes;
+            row.TotalMinutes = dto.TotalMinutes;
+            row.TotalNodes = dto.TotalNodes;
 
             await _db.SaveChangesAsync();
             return Ok(new { message = "Metric saved" });
         }
 
+        // =========================
+        // helpers
+        // =========================
         private static string NormalizeAreaCode(string? areaCode)
             => string.IsNullOrWhiteSpace(areaCode) ? string.Empty : areaCode.Trim().ToLowerInvariant();
 
-        private static Dictionary<string, int?> BuildMetricDictionary(
-            IEnumerable<Form6KpiMetric> metrics,
-            Func<Form6KpiMetric, int?> selector)
+        private static IpNwOpKpiDto MapToDto(IpNwOpKpi entity, string normalizedArea)
         {
-            var dict = new Dictionary<string, int?>(StringComparer.OrdinalIgnoreCase);
+            var metrics = entity.Metrics ?? new List<IpNwOpKpiMetric>();
+
+            return new IpNwOpKpiDto
+            {
+                Id = entity.Id,
+                No = entity.No,
+                NetworkEngineerKpi = entity.NetworkEngineerKpi,
+                Division = entity.Division,
+                Section = entity.Section,
+                KpiPercent = entity.KpiPercent,
+                Month = entity.Month,
+                Year = entity.Year,
+                UpdatedAt = entity.UpdatedAt,
+                UnavailableMinutes = BuildMetricDictionary(metrics, normalizedArea, m => m.UnavailableMinutes),
+                TotalMinutes = BuildMetricDictionary(metrics, normalizedArea, m => m.TotalMinutes),
+                TotalNodes = BuildMetricDictionary(metrics, normalizedArea, m => m.TotalNodes)
+            };
+        }
+
+        private static Dictionary<string, int?> BuildMetricDictionary(
+            IEnumerable<IpNwOpKpiMetric> metrics,
+            string normalizedArea,
+            Func<IpNwOpKpiMetric, int?> selector)
+        {
+            var result = new Dictionary<string, int?>();
 
             foreach (var metric in metrics)
             {
                 var key = NormalizeAreaCode(metric.AreaCode);
                 if (string.IsNullOrEmpty(key)) continue;
+                if (!string.IsNullOrEmpty(normalizedArea) && key != normalizedArea) continue;
 
-                dict[key] = selector(metric);
+                result[key] = selector(metric);
             }
 
-            return dict;
+            return result;
         }
 
-        private void ApplyMetricDictionaries(IpNwOpKpi entity, IpNwOpKpiDto dto)
+        private static IEnumerable<string> CollectMetricAreas(IpNwOpKpiDto dto)
         {
-            if (entity.Metrics == null)
-            {
-                entity.Metrics = new List<Form6KpiMetric>();
-            }
+            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            var existing = entity.Metrics
-                .Where(m => !string.IsNullOrWhiteSpace(m.AreaCode))
-                .ToDictionary(m => NormalizeAreaCode(m.AreaCode), m => m, StringComparer.OrdinalIgnoreCase);
-
-            void apply(Dictionary<string, int?>? source, Action<Form6KpiMetric, int?> setter)
+            void AddKeys(Dictionary<string, int?>? source)
             {
                 if (source == null) return;
-
-                foreach (var kvp in source)
+                foreach (var key in source.Keys)
                 {
-                    var key = NormalizeAreaCode(kvp.Key);
-                    if (string.IsNullOrEmpty(key)) continue;
-
-                    if (!existing.TryGetValue(key, out var metric))
+                    var normalized = NormalizeAreaCode(key);
+                    if (!string.IsNullOrEmpty(normalized))
                     {
-                        metric = new Form6KpiMetric
-                        {
-                            Form6Id = entity.Id,
-                            AreaCode = key
-                        };
-                        existing[key] = metric;
-                        entity.Metrics.Add(metric);
-                        _db.Form6KpiMetrics.Add(metric);
+                        set.Add(normalized);
                     }
-
-                    setter(metric, kvp.Value);
                 }
             }
 
-            apply(dto.unavailable_minutes, (metric, value) => metric.UnavailableMinutes = value);
-            apply(dto.total_minutes, (metric, value) => metric.TotalMinutes = value);
-            apply(dto.total_nodes, (metric, value) => metric.TotalNodes = value);
+            AddKeys(dto.UnavailableMinutes);
+            AddKeys(dto.TotalMinutes);
+            AddKeys(dto.TotalNodes);
+
+            return set;
         }
 
-        public class Form6MetricUpsertDto
+        private static int? TryGetMetricValue(Dictionary<string, int?>? source, string normalizedKey)
         {
-            public int? unavailable_minutes { get; set; }
-            public int? total_minutes { get; set; }
-            public int? total_nodes { get; set; }
+            if (source == null) return null;
+            foreach (var kvp in source)
+            {
+                if (NormalizeAreaCode(kvp.Key) == normalizedKey)
+                {
+                    return kvp.Value;
+                }
+            }
+            return null;
+        }
+
+        public class IpNwOpMetricUpsertDto
+        {
+            public int? UnavailableMinutes { get; set; }
+            public int? TotalMinutes { get; set; }
+            public int? TotalNodes { get; set; }
         }
     }
 }

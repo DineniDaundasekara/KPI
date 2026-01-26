@@ -1,10 +1,10 @@
-import { CommonModule } from '@angular/common';
+﻿import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import * as ExcelJS from 'exceljs';
-import { Form6Service, Form6Record } from '../../../../services/form6.service';
+import { IpNwOpService, IpNwOpKpiDto, IpNwOpMetricPayload } from '../../../../services/ip-nw-op.service';
 import { RegionService, Region } from '../../../../services/region.service';
 
 interface RegionRow {
@@ -46,9 +46,9 @@ const LOCAL_REGION_TABLE: RegionRow[] = [
   styleUrls: ['./ip-nw-op.component.scss'],
 })
 export class IpNwOpComponent implements OnInit, OnDestroy {
-  pageTitle = 'Platform KPI — IP NW OP';
+  pageTitle = 'Platform KPI - IP NW OP';
 
-  data: Form6Record[] = [];
+  data: IpNwOpKpiDto[] = [];
   regionTable: RegionRow[] = [...LOCAL_REGION_TABLE];
 
   loading = true;
@@ -91,7 +91,7 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   toasts: Array<{ id: number; type: 'success' | 'danger'; text: string }> = [];
   private toastId = 1;
 
-  // ---- Form6 mapping (DB keys are LOWERCASE) ----
+  // ---- IP NW OP mapping (DB keys are lowercase) ----
   optionMapping: Record<string, string> = {
     cenhkmd: 'CEN/HK/MD',
     cenhkmd1: 'CEN/HK/MD',
@@ -115,13 +115,13 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
     komltmbva: 'KO / MLT / MB / VA',
   };
 
-  // friendly → dbKey (built once)
+  // friendly -> dbKey (built once)
   private friendlyToDbKey: Record<string, string> = {};
   private filtersInitialized = false;
 
   constructor(
     private http: HttpClient,
-    private form6Service: Form6Service,
+    private ipNwOpService: IpNwOpService,
     private regionService: RegionService
   ) {}
 
@@ -190,7 +190,7 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
     return this.optionMapping[key] || key.toUpperCase();
   }
 
-  getAreaPercentage(entry: Form6Record): string {
+  getAreaPercentage(entry: IpNwOpKpiDto): string {
     const key = this.selectedKey;
     if (!key) return '-';
 
@@ -211,18 +211,18 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   }
 
   getAreaMetric(
-    entry: Form6Record,
+    entry: IpNwOpKpiDto,
     bucket: 'total_minutes' | 'unavailable_minutes' | 'total_nodes'
   ): string {
     const key = this.selectedKey;
     if (!key) return '-';
 
-    const dict = entry[bucket] as Record<string, string | number> | undefined;
+    const dict = entry[bucket] as Record<string, number | null> | undefined;
     const value = dict ? dict[key] : undefined;
-    return value === undefined || value === null || value === '' ? '-' : String(value);
+    return value === undefined || value === null ? '-' : String(value);
   }
 
-  private buildPayload(entry: Form6Record): Form6Record {
+  private buildPayload(entry: IpNwOpKpiDto): IpNwOpKpiDto {
     return {
       ...entry,
       unavailable_minutes: this.normalizeMetricDict(entry.unavailable_minutes),
@@ -233,7 +233,7 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
 
   private normalizeMetricDict(
     source?: Record<string, string | number | undefined | null>
-  ): Record<string, number> {
+  ): Record<string, number | null> {
     if (!source) return {};
 
     return Object.entries(source).reduce((acc, [key, value]) => {
@@ -242,7 +242,7 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
       if (!Number.isFinite(numeric)) return acc;
       acc[key] = numeric;
       return acc;
-    }, {} as Record<string, number>);
+    }, {} as Record<string, number | null>);
   }
 
   // -------------------------
@@ -320,9 +320,9 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = null;
 
-    this.form6Service.getAll().subscribe({
+    this.ipNwOpService.getAll().subscribe({
       next: (records) => {
-        this.data = Array.isArray(records) ? (records as Form6Record[]) : [];
+        this.data = Array.isArray(records) ? (records as IpNwOpKpiDto[]) : [];
         this.loading = false;
       },
       error: (err) => {
@@ -453,14 +453,14 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
 
     const totalAvailableMinutes = tm - um;
     const totalMin = 24 * 60 * this.daysInMonth * tn;
-    if (totalMin === 0) return 100;
+    if (totalMin <= 0) return 100;
     return (100 * totalAvailableMinutes) / totalMin;
   }
 
   // -------------------------
   // Editing
   // -------------------------
-  startEdit(entry: Form6Record, key: 'unavailable_minutes' | 'total_minutes' | 'total_nodes'): void {
+  startEdit(entry: IpNwOpKpiDto, key: 'unavailable_minutes' | 'total_minutes' | 'total_nodes'): void {
     if (!this.canEditMetrics) return;
 
     const k = this.selectedKey;
@@ -479,36 +479,74 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
     };
   }
 
-  onEditInput(value: string): void {
-    this.editCell = { ...this.editCell, value };
+  onEditInput(value: string | number | null | undefined): void {
+    const normalizedValue = value === null || value === undefined ? '' : String(value);
+    this.editCell = { ...this.editCell, value: normalizedValue };
   }
 
-  doneEdit(): void {
-    if (!this.canEditMetrics || !this.editCell.rowId || !this.editCell.key) return;
+  async doneEdit(): Promise<void> {
+    if (!this.canEditMetrics || !this.editCell.rowId || !this.editCell.key || this.saving) {
+      return;
+    }
 
     const [parentKey, childKey] = this.editCell.key.split('.');
-    const newValue = this.editCell.value;
+    if (!parentKey || !childKey) {
+      this.cancelEdit();
+      return;
+    }
+
+    const newValue = this.editCell.value.trim();
+    const numericValue = newValue === '' ? null : Number(newValue);
+    const nextValue =
+      numericValue === null || Number.isFinite(numericValue) ? numericValue : null;
+
+    let updatedEntry: IpNwOpKpiDto | null = null;
 
     this.data = this.data.map((entry) => {
       if (entry._id !== this.editCell.rowId) return entry;
 
-      const next: Form6Record = { ...entry };
-      const parent = (next as any)[parentKey] || {};
-      (next as any)[parentKey] = { ...parent, [childKey]: newValue };
+      const next: IpNwOpKpiDto = { ...entry };
+      const parent = ((next as any)[parentKey] || {}) as Record<string, number | null>;
+      (next as any)[parentKey] = { ...parent, [childKey]: nextValue };
 
-      // If total_nodes edited, sync total_minutes
       if (parentKey === 'total_nodes') {
-        const nodes = Number(newValue) || 0;
+        const nodes = typeof nextValue === 'number' ? nextValue : 0;
         next.total_minutes = {
           ...(next.total_minutes || {}),
           [childKey]: 24 * 60 * this.daysInMonth * nodes,
         };
       }
 
+      updatedEntry = next;
       return next;
     });
 
     this.cancelEdit();
+
+    if (!updatedEntry) {
+      this.showToast('danger', 'Unable to locate the edited record. Please retry.');
+      return;
+    }
+
+    const entryToPersist = updatedEntry as IpNwOpKpiDto;
+
+    const payload: IpNwOpMetricPayload = {
+      unavailableMinutes: entryToPersist.unavailable_minutes?.[childKey] ?? null,
+      totalMinutes: entryToPersist.total_minutes?.[childKey] ?? null,
+      totalNodes: entryToPersist.total_nodes?.[childKey] ?? null,
+    };
+
+    try {
+      this.saving = true;
+      await firstValueFrom(this.ipNwOpService.upsertMetric(entryToPersist._id, childKey, payload));
+      this.showToast('success', 'Metric updated successfully.');
+    } catch (error) {
+      console.error('Failed to persist metric change:', error);
+      this.showToast('danger', 'Failed to save change. Reloading latest data.');
+      this.loadData();
+    } finally {
+      this.saving = false;
+    }
   }
 
   cancelEdit(): void {
@@ -536,27 +574,6 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   // -------------------------
   // Save All
   // -------------------------
-  async saveAllChanges(): Promise<void> {
-    if (!this.canEditMetrics || this.saving) return;
-
-    this.saving = true;
-    try {
-      await Promise.all(
-        this.data.map((entry) =>
-          firstValueFrom(this.form6Service.update(entry._id, this.buildPayload(entry)))
-        )
-      );
-
-      this.loadData();
-      this.showToast('success', 'All changes have been saved successfully!');
-    } catch (e) {
-      console.error('Error saving data:', e);
-      this.showToast('danger', 'Failed to save changes. Please try again.');
-    } finally {
-      this.saving = false;
-    }
-  }
-
   // -------------------------
   // Excel Export (same structure as React)
   // -------------------------
@@ -675,3 +692,5 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
     URL.revokeObjectURL(link.href);
   }
 }
+
+

@@ -67,7 +67,7 @@ namespace backend.Data
         // IP NW OP KPI (FORM 6)
         // =========================
         public DbSet<IpNwOpKpi> IpNwOpKpis { get; set; } = null!;
-        public DbSet<Form6KpiMetric> Form6KpiMetrics { get; set; } = null!;
+        public DbSet<IpNwOpKpiMetric> IpNwOpKpiMetrics { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -127,41 +127,47 @@ namespace backend.Data
                 entity.Property(x => x.V).HasColumnName("v");
             });
 
-            // IP NW OP KPI (form6_kpi)
+            // IP NW OP KPI
             modelBuilder.Entity<IpNwOpKpi>(entity =>
             {
-                entity.ToTable("form6_kpi", "dbo");
+                entity.ToTable("IpNwOpKpi", "dbo");
                 entity.HasKey(x => x.Id);
 
                 entity.Property(x => x.Id).HasColumnName("id").HasMaxLength(64);
-                entity.Property(x => x.No).HasColumnName("no"); // int? in model
+                entity.Property(x => x.No).HasColumnName("no");
                 entity.Property(x => x.NetworkEngineerKpi).HasColumnName("network_engineer_kpi");
                 entity.Property(x => x.Division).HasColumnName("division");
                 entity.Property(x => x.Section).HasColumnName("section");
                 entity.Property(x => x.KpiPercent).HasColumnName("kpi_percent");
+
+                entity.Property(x => x.Month).HasColumnName("month");
+                entity.Property(x => x.Year).HasColumnName("year");
+                entity.Property(x => x.UpdatedAt).HasColumnName("updated_at");
             });
 
-            // Metrics (form6_kpi_metrics)  ✅ ONLY ONE BLOCK
-            modelBuilder.Entity<Form6KpiMetric>(entity =>
+            modelBuilder.Entity<IpNwOpKpiMetric>(entity =>
             {
-                entity.ToTable("form6_kpi_metrics", "dbo");
+                entity.ToTable("IpNwOpKpiMetrics", "dbo");
                 entity.HasKey(x => x.Id);
 
                 entity.Property(x => x.Id)
                     .HasColumnName("id")
-                    .ValueGeneratedOnAdd(); // because IDENTITY
+                    .ValueGeneratedOnAdd();
 
-                entity.Property(x => x.Form6Id).HasColumnName("form6_id").HasMaxLength(64);
+                entity.Property(x => x.IpNwOpKpiId)
+                    .HasColumnName("ip_nw_op_kpi_id")
+                    .HasMaxLength(64);
+
                 entity.Property(x => x.AreaCode).HasColumnName("area_code").HasMaxLength(50);
 
                 entity.Property(x => x.UnavailableMinutes).HasColumnName("unavailable_minutes");
                 entity.Property(x => x.TotalMinutes).HasColumnName("total_minutes");
                 entity.Property(x => x.TotalNodes).HasColumnName("total_nodes");
 
-                entity.HasOne(x => x.Form6)
-                    .WithMany(f => f.Metrics)
-                    .HasForeignKey(x => x.Form6Id)
-                    .HasConstraintName("FK_form6_metrics_form6");
+                entity.HasOne(x => x.IpNwOpKpi)
+                    .WithMany(k => k.Metrics)
+                    .HasForeignKey(x => x.IpNwOpKpiId)
+                    .HasConstraintName("FK_IpNwOpKpiMetrics_IpNwOpKpi");
             });
 
             // =========================

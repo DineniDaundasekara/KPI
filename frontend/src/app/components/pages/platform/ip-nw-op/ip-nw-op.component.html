@@ -209,23 +209,10 @@
               </span>
             </h5>
 
-            <div class="ms-auto d-flex align-items-center gap-2" *ngIf="canEditMetrics">
-              <small class="text-white-50 fw-semibold">Inline editing enabled</small>
-              <button
-                type="button"
-                class="btn btn-success btn-sm"
-                (click)="saveAllChanges()"
-                [disabled]="saving"
-              >
-                <ng-container *ngIf="!saving; else savingState">
-                  <i class="bi bi-save me-1"></i>
-                  Save All Changes
-                </ng-container>
-                <ng-template #savingState>
-                  <span class="spinner-border spinner-border-sm me-1" role="status"></span>
-                  Saving...
-                </ng-template>
-              </button>
+            <div class="ms-auto" *ngIf="canEditMetrics">
+              <small class="text-white-50 fw-semibold">
+                Inline edits auto-save for {{ selectedAreaLabel || 'selected area' }}
+              </small>
             </div>
           </div>
 

@@ -1,10 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
-interface Form6Row {
+interface IpNwOpRow {
   _id: string;
   no: number;
   network_engineer_kpi: string;
@@ -21,12 +21,12 @@ interface Form6Row {
   styleUrls: ['./ip-nw-op.component.scss'],
 })
 export class AdminIpNwOpComponent implements OnInit {
-  pageTitle = 'Admin — IP NW OP';
+  pageTitle = 'Admin - IP NW OP';
 
   // backend base url
-  private apiBase = 'http://localhost:5043';
+  private apiBase = 'http://localhost:5043/ip-nw-op';
 
-  data: Form6Row[] = [];
+  data: IpNwOpRow[] = [];
 
   form = {
     no: '',
@@ -47,12 +47,12 @@ export class AdminIpNwOpComponent implements OnInit {
     this.loadData();
   }
 
-  // ✅ only initial load + manual retry uses this
+  // Only initial load + manual retry uses this
   loadData(): void {
     this.loading = true;
     this.error = null;
 
-    this.http.get<Form6Row[]>(`${this.apiBase}/form6/`).subscribe({
+    this.http.get<IpNwOpRow[]>(`${this.apiBase}/`).subscribe({
       next: (res) => {
         this.data = Array.isArray(res) ? res : [];
         this.sortData();
@@ -102,14 +102,14 @@ export class AdminIpNwOpComponent implements OnInit {
     }
 
     try {
-      // ✅ do NOT set loading for full page here (avoid big loading screen)
+      // Do not set loading for full page here (avoid big loading screen)
       if (this.editingId) {
         // UPDATE
         await firstValueFrom(
-          this.http.put(`${this.apiBase}/form6/update/${this.editingId}`, payload)
+          this.http.put(`${this.apiBase}/update/${this.editingId}`, payload)
         );
 
-        // 🔥 update local array instantly
+        // update local array instantly
         const idx = this.data.findIndex((x) => x._id === this.editingId);
         if (idx !== -1) {
           this.data[idx] = { _id: this.editingId, ...payload };
@@ -118,10 +118,10 @@ export class AdminIpNwOpComponent implements OnInit {
       } else {
         // ADD
         const res: any = await firstValueFrom(
-          this.http.post(`${this.apiBase}/form6/add`, payload)
+          this.http.post(`${this.apiBase}/add`, payload)
         );
 
-        // 🔥 insert locally instantly
+        // insert locally instantly
         const newId = res?._id || res?.id || crypto.randomUUID();
         this.data.push({ _id: newId, ...payload });
         this.sortData();
@@ -134,7 +134,7 @@ export class AdminIpNwOpComponent implements OnInit {
     }
   }
 
-  editRow(item: Form6Row): void {
+  editRow(item: IpNwOpRow): void {
     this.form = {
       no: String(item.no ?? ''),
       network_engineer_kpi: item.network_engineer_kpi ?? '',
@@ -155,9 +155,9 @@ export class AdminIpNwOpComponent implements OnInit {
     if (!ok) return;
 
     try {
-      await firstValueFrom(this.http.delete(`${this.apiBase}/form6/delete/${id}`));
+      await firstValueFrom(this.http.delete(`${this.apiBase}/delete/${id}`));
 
-      // 🔥 remove locally instantly
+      // remove locally instantly
       this.data = this.data.filter((x) => x._id !== id);
     } catch (err) {
       console.error(err);
@@ -180,3 +180,5 @@ export class AdminIpNwOpComponent implements OnInit {
     this.editingId = null;
   }
 }
+
+
