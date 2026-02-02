@@ -8,6 +8,8 @@ import { RegionService, Region } from '../../../../services/region.service';
 
 interface KpiData {
   _id: { $oid: string } | number;
+  kpiId?: number;
+  id?: number | string;
   no: number;
   kpi: string;
   target: string;
@@ -22,6 +24,8 @@ interface KpiData {
   __v?: number;
   [key: string]: any; // For dynamic area columns
 }
+
+type AdminKpiRow = ServiceFulfilmentKpiDto & { displayOrder?: number };
 
 interface RegionData {
   id?: number;
@@ -52,8 +56,9 @@ export class ServiceFulfilmentComponent implements OnInit {
   // Data
   data: KpiData[] = [];
   regionTable: RegionData[] = [];
-  adminKpiRows: ServiceFulfilmentKpiDto[] = [];
+  adminKpiRows: AdminKpiRow[] = [];
   editingCell: { rowId: string | number | null, key: string | null } = { rowId: null, key: null };
+  activeEditValue = '';
   
   // Dropdown options
   dropdown2Options: string[] = [];
@@ -191,7 +196,7 @@ export class ServiceFulfilmentComponent implements OnInit {
     this.loading = true;
     this.serviceFulfilmentKpiService.getAll().subscribe({
       next: (kpis) => {
-        const rows = Array.isArray(kpis) ? kpis : [];
+        const rows = Array.isArray(kpis) ? this.decorateAdminRows(kpis) : [];
         this.adminKpiRows = rows;
         this.syncSelectedPeriodFromData(rows);
         this.rebuildKpiMatrix();
@@ -330,6 +335,72 @@ export class ServiceFulfilmentComponent implements OnInit {
     return month?.label ?? `M${value}`;
   }
 
+  private decorateAdminRows(rows: ServiceFulfilmentKpiDto[]): AdminKpiRow[] {
+    return rows.map((kpi, index) => ({
+      ...kpi,
+      displayOrder: this.resolveDisplayOrder(kpi, index)
+    }));
+  }
+
+  private resolveDisplayOrder(kpi?: ServiceFulfilmentKpiDto | null, fallbackIndex: number = 0): number {
+    if (kpi?.displayOrder && kpi.displayOrder > 0) {
+      return kpi.displayOrder;
+    }
+
+    const legacyNo = (kpi as any)?.no;
+    if (typeof legacyNo === 'number' && legacyNo > 0) {
+      return legacyNo;
+    }
+
+    return fallbackIndex + 1;
+  }
+
+  private getIdKey(id?: number | string | null): string | null {
+    if (id === null || id === undefined || id === '') {
+      return null;
+    }
+    return String(id);
+  }
+
+  private resolveNumericId(id?: number | string | null): number | undefined {
+    if (typeof id === 'number') {
+      return id;
+    }
+    if (typeof id === 'string') {
+      const parsed = Number(id);
+      if (!Number.isNaN(parsed)) {
+        return parsed;
+      }
+    }
+    return undefined;
+  }
+
+  private buildRowId(sourceId: number | string | undefined, fallback: number): { $oid: string } | number {
+    if (typeof sourceId === 'number') {
+      return sourceId;
+    }
+    if (typeof sourceId === 'string' && sourceId.trim().length) {
+      return { $oid: sourceId };
+    }
+    return fallback;
+  }
+
+  private resolveKpiIdentifier(row: KpiData): number | null {
+    if (typeof row.kpiId === 'number') {
+      return row.kpiId;
+    }
+    if (typeof row._id === 'number') {
+      return row._id;
+    }
+    if (typeof row._id === 'object' && row._id.$oid) {
+      const parsed = Number(row._id.$oid);
+      if (!Number.isNaN(parsed)) {
+        return parsed;
+      }
+    }
+    return null;
+  }
+
   private rebuildKpiMatrix() {
     if (!this.metricsRows.length) {
       console.log('Service Fulfilment: No metrics, building base data from admin rows', { adminRows: this.adminKpiRows.length });
@@ -348,19 +419,25 @@ export class ServiceFulfilmentComponent implements OnInit {
       return [];
     }
 
-    return this.adminKpiRows.map((kpi, index) => ({
-      _id: kpi.id ? { $oid: kpi.id } : kpi.no ?? index + 1,
-      no: kpi.no,
-      kpi: kpi.kpi,
-      target: kpi.target,
-      calculation: kpi.calculation ?? '',
-      platform: kpi.platform ?? '',
-      responsibledgm: kpi.responsibleDgm ?? '',
-      definedoladetails: this.resolveDefinedOlaValue(kpi),
-      weightage: this.formatWeightageValue(kpi.weightage),
-      datasources: kpi.dataSources ?? '',
-      areas: {}
-    }));
+    return this.adminKpiRows.map((kpi, index) => {
+      const displayOrder = this.resolveDisplayOrder(kpi, index);
+      const numericId = this.resolveNumericId(kpi.id);
+
+      return {
+        _id: this.buildRowId(kpi.id, displayOrder),
+        kpiId: numericId,
+        no: displayOrder,
+        kpi: kpi.kpi,
+        target: kpi.target,
+        calculation: kpi.calculation ?? '',
+        platform: kpi.platform ?? '',
+        responsibledgm: kpi.responsibleDgm ?? '',
+        definedoladetails: this.resolveDefinedOlaValue(kpi),
+        weightage: this.formatWeightageValue(kpi.weightage),
+        datasources: kpi.dataSources ?? '',
+        areas: {}
+      };
+    });
   }
 
   private syncSelectedPeriodFromData(rows: ServiceFulfilmentKpiDto[]) {
@@ -415,25 +492,33 @@ export class ServiceFulfilmentComponent implements OnInit {
       return [];
     }
 
-    const masterById = new Map<string, ServiceFulfilmentKpiDto>();
-    const masterByNo = new Map<number, ServiceFulfilmentKpiDto>();
-
-    this.adminKpiRows.forEach((kpi) => {
-      if (kpi.id) {
-        masterById.set(kpi.id, kpi);
+    const masterById = new Map<string, AdminKpiRow>();
+    this.adminKpiRows.forEach((kpi, index) => {
+      const decoratedOrder = this.resolveDisplayOrder(kpi, index);
+      const idKey = this.getIdKey(kpi.id);
+      const decorated: AdminKpiRow = {
+        ...kpi,
+        displayOrder: decoratedOrder
+      };
+      if (idKey) {
+        masterById.set(idKey, decorated);
       }
-      masterByNo.set(kpi.no, kpi);
     });
 
     const grouped = new Map<string, KpiData>();
 
-    metrics.forEach((metric) => {
-      const groupKey = metric.id ?? metric.no.toString();
+    metrics.forEach((metric, metricIndex) => {
+      const idKey = this.getIdKey(metric.id);
+      const groupKey = idKey ?? `legacy-${metricIndex}`;
+
       if (!grouped.has(groupKey)) {
-        const master = (metric.id ? masterById.get(metric.id) : undefined) ?? masterByNo.get(metric.no);
+        const master = idKey ? masterById.get(idKey) : undefined;
+        const displayOrder = this.resolveDisplayOrder(master, grouped.size);
+
         grouped.set(groupKey, {
-          _id: metric.id ? { $oid: metric.id } : metric.no,
-          no: master?.no ?? metric.no,
+          _id: this.buildRowId(metric.id ?? master?.id, displayOrder),
+          kpiId: this.resolveNumericId(metric.id ?? master?.id),
+          no: displayOrder,
           kpi: master?.kpi ?? metric.kpi ?? '',
           target: master?.target ?? metric.target ?? '',
           calculation: master?.calculation ?? '',
@@ -447,34 +532,29 @@ export class ServiceFulfilmentComponent implements OnInit {
       }
 
       const row = grouped.get(groupKey)!;
-      // Use the area code directly from the metric
       const areaCode = metric.area ? metric.area.trim().toUpperCase() : '';
-      // Normalize it to get the standard area key
       const areaKey = this.normalizeAreaKey(areaCode);
-      
-      console.log('Service Fulfilment: Building metric row', { 
-        no: row.no, 
-        areaCode, 
-        areaKey, 
+
+      console.log('Service Fulfilment: Building metric row', {
+        no: row.no,
+        areaCode,
+        areaKey,
         kpiValue: metric.kpiValue,
         form4Dropdown4: this.formValues.dropdown4
       });
-      
+
       if (!row.areas) {
         row.areas = {};
       }
-      
-      // Store the value using the normalized key (this is what will be used for lookup)
+
       row.areas[areaKey] = metric.kpiValue;
       row[areaKey] = metric.kpiValue;
-      
-      // Also store with the original area code from database (in case it differs)
+
       if (areaCode && areaCode !== areaKey) {
         row.areas[areaCode] = metric.kpiValue;
         row[areaCode] = metric.kpiValue;
       }
-      
-      // If we have a filtered area, also store it with that exact key
+
       if (this.formValues.dropdown4 && this.formValues.dropdown4 !== areaKey && this.formValues.dropdown4 !== areaCode) {
         row.areas[this.formValues.dropdown4] = metric.kpiValue;
         row[this.formValues.dropdown4] = metric.kpiValue;
@@ -482,7 +562,7 @@ export class ServiceFulfilmentComponent implements OnInit {
     });
 
     const result = Array.from(grouped.values()).sort((a, b) => a.no - b.no);
-    console.log('Service Fulfilment: Built KPI data', { 
+    console.log('Service Fulfilment: Built KPI data', {
       rowCount: result.length,
       firstRowAreas: result[0]?.areas,
       firstRowKeys: result[0] ? Object.keys(result[0]).filter(k => !this.baseColumns.includes(k) && k !== '_id' && k !== '__v') : []
@@ -768,10 +848,13 @@ export class ServiceFulfilmentComponent implements OnInit {
       return;
     }
     this.editingCell = { rowId: this.getRowId(item), key };
+    const existing = this.getCellValue(item, key);
+    this.activeEditValue = existing === null || existing === undefined ? '' : String(existing);
   }
 
   cancelEdit() {
     this.editingCell = { rowId: null, key: null };
+    this.activeEditValue = '';
   }
 
   saveEdit(item: KpiData, key: string) {
@@ -787,17 +870,13 @@ export class ServiceFulfilmentComponent implements OnInit {
     }
 
     const rowId = this.getRowId(item);
-    const kpiId = typeof rowId === 'string' ? rowId : (typeof item._id === 'object' && item._id.$oid ? item._id.$oid : null);
-    if (!kpiId) {
+    const latestRow = this.data.find(row => this.getRowId(row) === rowId) ?? item;
+    const kpiId = this.resolveKpiIdentifier(latestRow);
+    if (kpiId === null) {
       this.toastr.error('Unable to resolve the KPI identifier for this row.', 'Missing KPI Id');
       return;
     }
-
-    const latestRow = this.data.find(row => this.getRowId(row) === rowId) ?? item;
-    const rawValue = this.getCellValue(latestRow, key);
-    const numericValue = typeof rawValue === 'number'
-      ? rawValue
-      : parseFloat(String(rawValue ?? '').replace(/%/g, '').trim());
+    const numericValue = parseFloat(String(this.activeEditValue ?? '').replace(/%/g, '').trim());
 
     if (isNaN(numericValue)) {
       this.toastr.error('Please enter a valid numeric value before saving.', 'Invalid Value');
@@ -817,6 +896,7 @@ export class ServiceFulfilmentComponent implements OnInit {
       next: () => {
         this.metricsLoading = false;
         this.editingCell = { rowId: null, key: null };
+        this.activeEditValue = '';
         this.toastr.success(`Saved ${this.optionMapping[areaCode] || areaCode} metric successfully.`, 'Success');
         this.loadMetrics();
       },
@@ -825,40 +905,6 @@ export class ServiceFulfilmentComponent implements OnInit {
         console.error('Failed to save Service Fulfilment metric value', err);
         this.toastr.error('Saving metric failed. Please try again.', 'Save Failed');
       }
-    });
-  }
-
-  handleFieldChange(event: Event, rowId: string | number, key: string) {
-    if (!this.isEditingAllowed) return;
-    
-    const input = event.target as HTMLInputElement;
-    const value = input.value;
-    
-    this.data = this.data.map(item => {
-      const currentRowId = this.getRowId(item);
-      if (currentRowId !== rowId) return item;
-      
-      const updatedItem = { ...item };
-      
-      // Try to parse as number
-      const cleanValue = value.replace(/%/g, '').trim();
-      const numValue = parseFloat(cleanValue);
-      
-      if (!isNaN(numValue)) {
-        updatedItem[key] = numValue;
-        if (updatedItem.areas) {
-          updatedItem.areas[key] = numValue;
-          const normalizedKey = this.resolveAreaCode(key);
-          if (normalizedKey && normalizedKey !== key) {
-            updatedItem.areas[normalizedKey] = numValue;
-            updatedItem[normalizedKey] = numValue;
-          }
-        }
-      } else {
-        updatedItem[key] = value;
-      }
-      
-      return updatedItem;
     });
   }
 
@@ -916,19 +962,9 @@ export class ServiceFulfilmentComponent implements OnInit {
   }
 
   getColumnsToRender(): string[] {
-    const areaKeys = this.getAreaKeys();
-
-    // When a specific area is selected, prioritize it
     if (this.formValues.dropdown4) {
       return [...this.baseColumns, this.formValues.dropdown4];
     }
-
-    // Otherwise render all discovered area columns
-    if (areaKeys.length) {
-      return [...this.baseColumns, ...areaKeys];
-    }
-
-    // Fallback to base columns
     return this.baseColumns;
   }
 
@@ -981,23 +1017,16 @@ export class ServiceFulfilmentComponent implements OnInit {
   }
 
   private refreshColumnsFromData() {
-    const areaKeys = this.getAreaKeys();
     if (this.formValues.dropdown4) {
       // When a specific area is selected, use the resolved area code
       const selectedAreaKey = this.resolveAreaCode(this.formValues.dropdown4) || this.formValues.dropdown4;
       console.log('Service Fulfilment: Refreshing columns with selected area', {
         dropdown4: this.formValues.dropdown4,
         selectedAreaKey,
-        areaKeys,
         hasData: this.data.length > 0,
         firstRowAreas: this.data[0]?.areas
       });
       this.visibleColumns = [...this.baseColumns, selectedAreaKey];
-      return;
-    }
-    if (areaKeys.length) {
-      console.log('Service Fulfilment: Refreshing columns with all area keys', { areaKeys });
-      this.visibleColumns = [...this.baseColumns, ...areaKeys];
       return;
     }
     console.log('Service Fulfilment: Refreshing columns - base columns only');

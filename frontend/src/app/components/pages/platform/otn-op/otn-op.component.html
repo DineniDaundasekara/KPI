@@ -1,24 +1,36 @@
 <div class="page-container">
-	<div class="page-header">
-		<h1>{{ pageTitle }}</h1>
-		<p class="page-subtitle">Fiber failures restoration & OTN network availability</p>
+	<div class="page-header d-flex flex-wrap align-items-start justify-content-between gap-3">
+		<div>
+			<h1>{{ pageTitle }}</h1>
+			<p class="page-subtitle">Fiber failures restoration & OTN network availability</p>
 
-		<div class="mt-3 d-flex flex-wrap align-items-center gap-2">
-			<small class="text-muted">
-				<i class="bi bi-info-circle me-1"></i>
-				{{ otnOp1Data.length + otnOp2Data.length }} KPIs loaded •
-				<span [class.text-success]="isEditingAllowed" [class.text-warning]="!isEditingAllowed">
-					<i class="bi" [ngClass]="isEditingAllowed ? 'bi-check-circle' : 'bi-exclamation-circle'"></i>
-					{{ isEditingAllowed ? 'Edit mode enabled (Platform Admin)' : 'View only mode (User)' }}
-				</span>
-			</small>
+			<div class="mt-3 d-flex flex-wrap align-items-center gap-2">
+				<small class="text-muted">
+					<i class="bi bi-info-circle me-1"></i>
+					{{ otnOp1Data.length + otnOp2Data.length }} KPIs loaded •
+					<span [class.text-success]="isEditingAllowed" [class.text-warning]="!isEditingAllowed">
+						<i class="bi" [ngClass]="isEditingAllowed ? 'bi-check-circle' : 'bi-exclamation-circle'"></i>
+						{{ isEditingAllowed ? 'Edit mode enabled (Platform Admin)' : 'View only mode (User)' }}
+					</span>
+				</small>
+				<button
+					type="button"
+					class="btn btn-outline-secondary btn-sm ms-2"
+					(click)="toggleRoleOverride()"
+				>
+					Simulate Role ·
+					<strong>{{ devRoleOverride ? devRoleOverride.toUpperCase() : 'LIVE' }}</strong>
+				</button>
+			</div>
+		</div>
+		<div class="header-actions d-flex flex-wrap align-items-center gap-2">
 			<button
 				type="button"
-				class="btn btn-outline-secondary btn-sm ms-2"
-				(click)="toggleRoleOverride()"
+				class="primary-btn"
+				(click)="exportToExcel()"
+				[disabled]="loading || !combinedData.length"
 			>
-				Simulate Role ·
-				<strong>{{ devRoleOverride ? devRoleOverride.toUpperCase() : 'LIVE' }}</strong>
+				Export to Excel
 			</button>
 		</div>
 	</div>
@@ -425,11 +437,5 @@
 			</div>
 		</div>
 
-		<div class="mt-4 d-flex flex-wrap gap-2">
-			<button type="button" class="btn btn-success" (click)="exportToExcel()">
-				<i class="bi bi-file-earmark-excel me-2"></i>
-				Export to Excel
-			</button>
-		</div>
 	</div>
 </div>

@@ -217,6 +217,28 @@ namespace backend.Data
             });
 
             //servicefullilment
+            modelBuilder.Entity<ServiceFulfilmentKpi>(entity =>
+            {
+                entity.ToTable("ServiceFulfilmentKpi", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("id")
+                      .ValueGeneratedOnAdd(); // ✅ INT IDENTITY
+
+                entity.Property(x => x.Kpi).HasColumnName("kpi");
+                entity.Property(x => x.Target).HasColumnName("target");
+                entity.Property(x => x.Calculation).HasColumnName("calculation");
+                entity.Property(x => x.Platform).HasColumnName("platform");
+                entity.Property(x => x.ResponsibleDgm).HasColumnName("responsibledgm");
+                entity.Property(x => x.DefineDoladetails).HasColumnName("definedoladetails");
+                entity.Property(x => x.Weightage).HasColumnName("weightage");
+                entity.Property(x => x.DataSources).HasColumnName("datasources");
+
+                entity.Property(x => x.Month).HasColumnName("month");
+                entity.Property(x => x.Year).HasColumnName("year");
+                entity.Property(x => x.UpdatedAt).HasColumnName("updatedAt");
+            });
             modelBuilder.Entity<ServiceFulfilmentKpiMetric>(entity =>
             {
                 entity.ToTable("ServiceFulfilmentKpiMetrics", "dbo");
@@ -224,50 +246,34 @@ namespace backend.Data
 
                 entity.Property(x => x.Id)
                       .HasColumnName("id")
-                      .ValueGeneratedOnAdd();
+                      .ValueGeneratedOnAdd(); // ✅ INT IDENTITY
 
-                        entity.Property(x => x.ServiceFulfilmentKpiId)
-                            .HasColumnName("service_fulfilment_kpi_id")
-                            .HasMaxLength(50);
+                entity.Property(x => x.ServiceFulfilmentKpiId)
+                      .HasColumnName("ServiceFulfilmentKpiId"); // ✅ INT FK (no MaxLength)
 
                 entity.Property(x => x.AreaCode)
                       .HasColumnName("area_code")
                       .HasMaxLength(50);
 
-                entity.Property(x => x.KpiValue).HasColumnName("kpi_value");
+                entity.Property(x => x.KpiValue)
+                      .HasColumnName("kpi_value")
+                      .HasColumnType("decimal(6,2)");
+
                 entity.Property(x => x.Month).HasColumnName("month");
                 entity.Property(x => x.Year).HasColumnName("year");
 
                 entity.HasOne(x => x.ServiceFulfilmentKpi)
-                      .WithMany(k => k.Metrics) // only if you add ICollection navigation
+                      .WithMany(k => k.Metrics)
                       .HasForeignKey(x => x.ServiceFulfilmentKpiId)
                       .HasConstraintName("FK_ServiceFulfilmentKpiMetrics_ServiceFulfilmentKpi")
                       .OnDelete(DeleteBehavior.Cascade);
+
+                // ✅ Important: prevent duplicates for same KPI+area+month+year
+                entity.HasIndex(x => new { x.ServiceFulfilmentKpiId, x.AreaCode, x.Month, x.Year })
+                      .IsUnique()
+                      .HasDatabaseName("UQ_ServiceFulfilmentKpiMetrics_Row");
             });
 
-            modelBuilder.Entity<ServiceFulfilmentKpi>(entity =>
-            {
-                entity.ToTable("ServiceFulfilmentKpi", "dbo");
-                entity.HasKey(x => x.Id);
-
-                entity.Property(x => x.Id).HasColumnName("id").HasMaxLength(36);
-
-                entity.Property(x => x.No).HasColumnName("no");
-                entity.Property(x => x.Kpi).HasColumnName("kpi");
-                entity.Property(x => x.Target).HasColumnName("target");
-                entity.Property(x => x.Calculation).HasColumnName("calculation");
-                entity.Property(x => x.Platform).HasColumnName("platform");
-                entity.Property(x => x.ResponsibleDgm).HasColumnName("responsibleDgm");
-                entity.Property(x => x.DefineDoladetails).HasColumnName("definedOLADetails");
-                entity.Property(x => x.Weightage).HasColumnName("weightage");
-                entity.Property(x => x.DataSources).HasColumnName("dataSources");
-
-                entity.Property(x => x.Month).HasColumnName("month");
-                entity.Property(x => x.Year).HasColumnName("year");
-
-                entity.Property(x => x.UpdatedAt).HasColumnName("updatedAt");
-                entity.Property(x => x.V).HasColumnName("v");
-            });
 
             //OTNOP1 AND OTNOP2 
             // =========================

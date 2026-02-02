@@ -24,12 +24,18 @@
 }
 
 .page-container {
-  padding: 1.75rem 2rem 2.5rem;
+  padding: 1.75rem clamp(1.25rem, 3vw, 3.5rem) 2.5rem;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   position: relative;
   z-index: 1;
+}
+
+.page-content {
+  width: 100%;
+  display: flex;
+  justify-content: center;
 }
 
 .page-header {
@@ -70,7 +76,7 @@
 
 .dashboard-container {
   width: 100%;
-  max-width: 1200px;
+  max-width: clamp(1200px, 85vw, 1600px);
   margin: 0 auto;
 }
 
@@ -302,21 +308,30 @@
 }
 
 .btn-close {
-  background: transparent;
+  background: #ffffff;
   color: var(--accent-primary);
-  border: 2px dashed rgba(0, 87, 166, 0.4);
-  border-radius: 6px;
+  border: 2px solid rgba(0, 87, 166, 0.25);
+  border-radius: 10px;
   padding: 0.75rem 1.5rem;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  transition: border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
+  box-shadow: 0 8px 16px rgba(0, 87, 166, 0.08);
 }
 
 .btn-close:hover {
+  border-color: rgba(2, 178, 140, 0.8);
   color: var(--accent-secondary);
-  border-color: rgba(2, 178, 140, 0.7);
+  box-shadow: 0 12px 24px rgba(2, 178, 140, 0.15);
   transform: translateY(-1px);
+}
+
+.btn-close:focus-visible {
+  outline: none;
+  border-color: rgba(0, 87, 166, 0.85);
+  background: rgba(0, 87, 166, 0.05);
+  box-shadow: 0 0 0 3px rgba(0, 87, 166, 0.12);
 }
 
 .btn-submit {
@@ -331,8 +346,23 @@
 }
 
 .btn-submit:disabled {
-  background: #cccccc;
+  background: linear-gradient(135deg, rgba(0, 87, 166, 0.6), rgba(2, 178, 140, 0.55));
+  color: rgba(255, 255, 255, 0.85);
+  box-shadow: none;
   cursor: not-allowed;
+  opacity: 0.75;
+}
+
+@media (max-width: 640px) {
+  .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .form-actions button {
+    width: 100%;
+    text-align: center;
+  }
 }
 
 /* KPI List Table */

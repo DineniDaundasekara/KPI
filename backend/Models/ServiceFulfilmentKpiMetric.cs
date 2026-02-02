@@ -7,10 +7,10 @@ namespace backend.Models
     public class ServiceFulfilmentKpiMetric
     {
         [Key]
-        public long Id { get; set; }
+        public int Id { get; set; } // ✅ INT IDENTITY in SQL
 
-        // FK column
-        public string ServiceFulfilmentKpiId { get; set; } = null!;
+        // ✅ FK is INT now
+        public int ServiceFulfilmentKpiId { get; set; }
 
         public string AreaCode { get; set; } = string.Empty;
 

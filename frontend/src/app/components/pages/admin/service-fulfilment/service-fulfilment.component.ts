@@ -3,6 +3,8 @@ import { CommonModule, DOCUMENT } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ServiceFulfilmentKpiDto, ServiceFulfilmentKpiService } from '../../../../services/service-fulfilment-kpi.service';
 
+type AdminKpiRow = ServiceFulfilmentKpiDto & { displayOrder?: number };
+
 @Component({
   selector: 'app-admin-service-fulfilment',
   standalone: true,
@@ -27,11 +29,11 @@ export class AdminServiceFulfilmentComponent implements OnInit {
   // Form
   kpiForm!: FormGroup;
   isEditing = false;
-  editingId: string | null = null;
+  editingId: number | string | null = null;
   showForm = false;
 
   // Table data
-  kpiList: ServiceFulfilmentKpiDto[] = [];
+  kpiList: AdminKpiRow[] = [];
 
   loading = false;
   saving = false;
@@ -44,14 +46,13 @@ export class AdminServiceFulfilmentComponent implements OnInit {
 
   ngOnInit(): void {
     this.kpiForm = this.fb.group({
-      no: ['', Validators.required],
       kpi: ['', Validators.required],
       target: ['', Validators.required],
       calculation: ['', Validators.required],
       platform: ['', Validators.required],
       responsibleDgm: ['', Validators.required],
       definedOla: ['', Validators.required],
-      weightage: ['', Validators.required],
+      weightage: ['', [Validators.required, Validators.min(0), Validators.max(100)]],
       dataSources: ['', Validators.required],
       month: [this.defaultMonth, Validators.required],
       year: [this.defaultYear, Validators.required]
@@ -66,10 +67,13 @@ export class AdminServiceFulfilmentComponent implements OnInit {
 
     this.serviceFulfilmentKpiService.getAll().subscribe({
       next: data => {
-        this.kpiList = data;
+        this.kpiList = data.map((kpi, index) => ({
+          ...kpi,
+          displayOrder: kpi.displayOrder ?? index + 1
+        }));
         this.activeKpis = data.length;
-        this.avgWeightage =
-          data.reduce((sum, k) => sum + k.weightage, 0) / (data.length || 1);
+        const totalWeight = data.reduce((sum, k) => sum + (k.weightage ?? 0), 0);
+        this.avgWeightage = data.length ? Number((totalWeight / data.length).toFixed(1)) : 0;
         this.dgmCount = new Set(data.map(k => k.responsibleDgm)).size;
         this.loading = false;
       },
@@ -101,17 +105,17 @@ export class AdminServiceFulfilmentComponent implements OnInit {
     const definedOlaValue = (formValue.definedOla ?? '').toString().trim();
 
     const payload: ServiceFulfilmentKpiDto = {
-      no: formValue.no,
       kpi: formValue.kpi,
       target: formValue.target,
       calculation: formValue.calculation,
       platform: formValue.platform,
       responsibleDgm: formValue.responsibleDgm,
+      defineDoladetails: definedOlaValue,
       definedoladetails: definedOlaValue,
       dataSources: formValue.dataSources,
-      weightage: formValue.weightage,
-      month: formValue.month,
-      year: formValue.year
+      weightage: Number(formValue.weightage),
+      month: Number(formValue.month),
+      year: Number(formValue.year)
     };
 
     this.saving = true;
@@ -143,7 +147,6 @@ export class AdminServiceFulfilmentComponent implements OnInit {
     const definedOlaValue = this.resolveDefinedOlaValue(kpi);
 
     this.kpiForm.patchValue({
-      no: kpi.no,
       kpi: kpi.kpi,
       target: kpi.target,
       calculation: kpi.calculation,

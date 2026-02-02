@@ -227,6 +227,31 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 		return this.optionMapping[key] || key.toUpperCase();
 	}
 
+	private collectAllAreaKeys(): string[] {
+		const areaSet = new Set<string>();
+		this.otnOp1Data.forEach((entry) => {
+			Object.keys(entry.totalMinutes || {}).forEach((key) => key && areaSet.add(key));
+			Object.keys(entry.unavailableMinutes || {}).forEach((key) => key && areaSet.add(key));
+			Object.keys(entry.totalNodes || {}).forEach((key) => key && areaSet.add(key));
+		});
+		this.otnOp2Data.forEach((entry) => {
+			Object.keys(entry.totalFailedLinks || {}).forEach((key) => key && areaSet.add(key));
+			Object.keys(entry.linksSlaNotViolated || {}).forEach((key) => key && areaSet.add(key));
+		});
+		return Array.from(areaSet);
+	}
+
+	private getExportAreaKeys(): string[] {
+		return this.selectedKey ? [this.selectedKey] : this.collectAllAreaKeys();
+	}
+
+	private resolveAreaHeader(areaKey: string): string {
+		if (this.selectedKey && areaKey === this.selectedKey && this.selectedLeaLabel) {
+			return this.selectedLeaLabel;
+		}
+		return this.optionMapping[areaKey] || areaKey.toUpperCase();
+	}
+
 	get canEditMetrics(): boolean {
 		return this.isEditingAllowed && !!this.selectedKey;
 	}
@@ -1037,18 +1062,7 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 		worksheet.addRow([`Generated Date: ${new Date().toISOString().split('T')[0]}`]);
 		worksheet.addRow([]);
 
-		const areaSet = new Set<string>();
-		this.otnOp1Data.forEach((entry) => {
-			Object.keys(entry.totalMinutes || {}).forEach((key) => key && areaSet.add(key));
-			Object.keys(entry.unavailableMinutes || {}).forEach((key) => key && areaSet.add(key));
-			Object.keys(entry.totalNodes || {}).forEach((key) => key && areaSet.add(key));
-		});
-		this.otnOp2Data.forEach((entry) => {
-			Object.keys(entry.totalFailedLinks || {}).forEach((key) => key && areaSet.add(key));
-			Object.keys(entry.linksSlaNotViolated || {}).forEach((key) => key && areaSet.add(key));
-		});
-
-		const areas = Array.from(areaSet);
+		const areas = this.getExportAreaKeys();
 
 		const headers = [
 			'ID',
@@ -1056,7 +1070,7 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 			'Division',
 			'Section',
 			'KPI Percent',
-			...areas.map((area) => this.optionMapping[area] || area),
+			...areas.map((area) => this.resolveAreaHeader(area)),
 		];
 
 		const headerRow = worksheet.addRow(headers);
