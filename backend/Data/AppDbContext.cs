@@ -42,9 +42,7 @@ namespace backend.Data
         public DbSet<ServiceFulfilmentKpi> ServiceFulfilmentKpis { get; set; } = null!;
         public DbSet<ServiceFulfilmentKpiMetric> ServiceFulfilmentKpiMetrics { get; set; } = null!;
 
-        public DbSet<Form8_2025> Form8Records { get; set; } = null!;
-
-        public DbSet<Form9_2025> Form9_2025 { get; set; } = null!;
+        
 
         // =========================
         // BB&ANW (FORM 7 renamed)
@@ -68,6 +66,13 @@ namespace backend.Data
         // =========================
         public DbSet<IpNwOpKpi> IpNwOpKpis { get; set; } = null!;
         public DbSet<IpNwOpKpiMetric> IpNwOpKpiMetrics { get; set; } = null!;
+
+        //OTNOP1 AND OTNOP2
+        public DbSet<OtnOp1> OtnOp1 { get; set; } = null!;
+        public DbSet<OtnOp1Metrics> OtnOp1Metrics { get; set; } = null!;
+        public DbSet<OtnOp2> OtnOp2 { get; set; } = null!;
+        public DbSet<OtnOp2Metrics> OtnOp2Metrics { get; set; } = null!;
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -263,6 +268,142 @@ namespace backend.Data
                 entity.Property(x => x.UpdatedAt).HasColumnName("updatedAt");
                 entity.Property(x => x.V).HasColumnName("v");
             });
+
+            //OTNOP1 AND OTNOP2 
+            // =========================
+            // OtnOp1 (Form8) + Metrics
+            // =========================
+            modelBuilder.Entity<OtnOp1>(entity =>
+            {
+                entity.ToTable("OtnOp1", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("Id")
+                      .ValueGeneratedOnAdd(); // INT IDENTITY
+
+                entity.Property(x => x.NetworkEngineerKpi)
+                      .HasColumnName("NetworkEngineerKpi")
+                      .HasMaxLength(255)
+                      .IsRequired();
+
+                entity.Property(x => x.Division)
+                      .HasColumnName("Division")
+                      .HasMaxLength(100);
+
+                entity.Property(x => x.Section)
+                      .HasColumnName("Section")
+                      .HasMaxLength(100);
+
+                entity.Property(x => x.KpiPercent)
+                      .HasColumnName("KpiPercent")
+                      .HasColumnType("decimal(6,3)");
+            });
+
+            modelBuilder.Entity<OtnOp1Metrics>(entity =>
+            {
+                entity.ToTable("OtnOp1Metrics", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("Id")
+                      .ValueGeneratedOnAdd();
+
+                entity.Property(x => x.OtnOp1Id)
+                      .HasColumnName("OtnOp1Id")
+                      .IsRequired();
+
+                entity.Property(x => x.Site)
+                      .HasColumnName("Site")
+                      .HasMaxLength(20)
+                      .IsRequired();
+
+                entity.Property(x => x.UnavailableMinutes).HasColumnName("UnavailableMinutes");
+                entity.Property(x => x.TotalMinutes).HasColumnName("TotalMinutes");
+                entity.Property(x => x.TotalNodes).HasColumnName("TotalNodes");
+
+                entity.Property(x => x.Year).HasColumnName("Year");
+                entity.Property(x => x.Month).HasColumnName("Month");
+
+                entity.HasOne(x => x.OtnOp1)
+                      .WithMany(k => k.Metrics)
+                      .HasForeignKey(x => x.OtnOp1Id)
+                      .HasConstraintName("FK_Otn1M_Otn1")
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // matches: UQ_Otn1M UNIQUE (OtnOp1Id, Site, Year, Month)
+                entity.HasIndex(x => new { x.OtnOp1Id, x.Site, x.Year, x.Month })
+                      .IsUnique()
+                      .HasDatabaseName("UQ_Otn1M");
+            });
+
+
+            // =========================
+            // OtnOp2 (Form9) + Metrics
+            // =========================
+            modelBuilder.Entity<OtnOp2>(entity =>
+            {
+                entity.ToTable("OtnOp2", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("Id")
+                      .ValueGeneratedOnAdd();
+
+                entity.Property(x => x.NetworkEngineerKpi)
+                      .HasColumnName("NetworkEngineerKpi")
+                      .HasMaxLength(255)
+                      .IsRequired();
+
+                entity.Property(x => x.Division)
+                      .HasColumnName("Division")
+                      .HasMaxLength(100);
+
+                entity.Property(x => x.Section)
+                      .HasColumnName("Section")
+                      .HasMaxLength(100);
+
+                entity.Property(x => x.KpiPercent)
+                      .HasColumnName("KpiPercent")
+                      .HasColumnType("decimal(6,3)");
+            });
+
+            modelBuilder.Entity<OtnOp2Metrics>(entity =>
+            {
+                entity.ToTable("OtnOp2Metrics", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("Id")
+                      .ValueGeneratedOnAdd();
+
+                entity.Property(x => x.OtnOp2Id)
+                      .HasColumnName("OtnOp2Id")
+                      .IsRequired();
+
+                entity.Property(x => x.Site)
+                      .HasColumnName("Site")
+                      .HasMaxLength(20)
+                      .IsRequired();
+
+                entity.Property(x => x.TotalFailedLinks).HasColumnName("TotalFailedLinks");
+                entity.Property(x => x.LinksSlaNotViolated).HasColumnName("LinksSlaNotViolated");
+
+                entity.Property(x => x.Year).HasColumnName("Year");
+                entity.Property(x => x.Month).HasColumnName("Month");
+
+                entity.HasOne(x => x.OtnOp2)
+                      .WithMany(k => k.Metrics)
+                      .HasForeignKey(x => x.OtnOp2Id)
+                      .HasConstraintName("FK_Otn2M_Otn2")
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(x => new { x.OtnOp2Id, x.Site, x.Year, x.Month })
+                      .IsUnique()
+                      .HasDatabaseName("UQ_Otn2M");
+            });
+
+
 
 
 

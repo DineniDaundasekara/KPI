@@ -136,6 +136,27 @@
 	color: #334155;
 }
 
+.metric-cell {
+	min-width: 220px;
+	vertical-align: middle;
+	transition: background-color 0.2s ease;
+
+	&.can-edit {
+		background-color: #fffdf5;
+	}
+
+	.edit-box input {
+		border: 1px solid #cbd5f5;
+		border-radius: 8px;
+		padding: 6px 10px;
+		font-size: 0.9rem;
+	}
+
+	.cell-view button {
+		margin-left: auto;
+	}
+}
+
 .cell-view {
 	display: flex;
 	align-items: center;
@@ -311,49 +332,6 @@
 
 .toast-danger {
 	background: #d92c20;
-}
-
-.snapshot-card {
-	border-radius: 18px;
-	background: #fefefe;
-	box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-
-	.snapshot-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-		gap: 1.25rem;
-	}
-
-	.snapshot-section {
-		border: 1px solid #e4ebf5;
-		border-radius: 14px;
-		padding: 1rem;
-		background: #ffffff;
-		box-shadow: inset 0 0 0 1px rgba(74, 144, 226, 0.08);
-	}
-
-	.snapshot-title {
-		font-size: 0.95rem;
-		font-weight: 600;
-		color: #0f4c81;
-		margin-bottom: 0.75rem;
-	}
-
-	.snapshot-table {
-		th {
-			background: #0f4c81;
-			color: #ffffff;
-			border: none;
-			font-size: 0.78rem;
-			text-transform: uppercase;
-		}
-
-		td {
-			font-size: 0.85rem;
-			padding: 0.5rem;
-			border-color: #edf2fb;
-		}
-	}
 }
 
 @media (max-width: 768px) {

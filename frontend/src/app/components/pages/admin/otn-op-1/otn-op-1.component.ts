@@ -1,9 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { finalize } from 'rxjs/operators';
 
-import { Form8Service } from '../../../../services/form8.service';
+import { OtnOp1Service, OtnOpKpi, CreateOtnOpKpi } from '../../../../services/otn-op1.service';
 
 @Component({
   selector: 'app-otn-op-1',
@@ -16,8 +15,8 @@ export class OtnOp1Component implements OnInit {
 
   pageTitle = 'INT & NT OP_1';
 
-  records: any[] = [];
-  editingId: string | null = null;
+  records: OtnOpKpi[] = [];
+  editingId: number | null = null;
 
   loading = false;
   saving = false;
@@ -27,16 +26,15 @@ export class OtnOp1Component implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private form8Service: Form8Service
+    private otnOp1Service: OtnOp1Service
   ) {}
 
   ngOnInit(): void {
     this.form = this.fb.group({
-      no: ['', Validators.required],
-      network_Engineer_Kpi: ['', Validators.required],
-      division: ['', Validators.required],
-      section: ['', Validators.required],
-      kpi_Percent: ['', Validators.required]
+      networkEngineerKpi: ['', Validators.required],
+      division: [''],
+      section: [''],
+      kpiPercent: ['']
     });
 
     this.fetchData();
@@ -44,14 +42,15 @@ export class OtnOp1Component implements OnInit {
 
   fetchData(): void {
     this.loading = true;
-    this.form8Service
-      .getAll()
-      .pipe(finalize(() => (this.loading = false)))
+    this.otnOp1Service
+      .getAllKpis()
       .subscribe({
-        next: (res: any[]) => {
+        next: (res: OtnOpKpi[]) => {
+          this.loading = false;
           this.records = res;
         },
         error: () => {
+          this.loading = false;
           this.errorMessage = 'Failed to load KPI data';
         }
       });
@@ -60,48 +59,65 @@ export class OtnOp1Component implements OnInit {
   onSubmit(): void {
     if (this.form.invalid) return;
 
-    const payload = this.form.value;
+    const payload: CreateOtnOpKpi = {
+      networkEngineerKpi: this.form.value.networkEngineerKpi,
+      division: this.form.value.division || undefined,
+      section: this.form.value.section || undefined,
+      kpiPercent: this.form.value.kpiPercent ? Number(this.form.value.kpiPercent) : undefined
+    };
+    
     this.saving = true;
 
-    const request$ = this.editingId
-      ? this.form8Service.update(this.editingId, payload)
-      : this.form8Service.add(payload);
-
-    request$
-      .pipe(finalize(() => (this.saving = false)))
-      .subscribe({
+    if (this.editingId) {
+      this.otnOp1Service.updateKpi(this.editingId, payload).subscribe({
         next: () => {
+          this.saving = false;
           this.resetForm();
           this.fetchData();
         },
         error: () => {
+          this.saving = false;
           this.errorMessage = 'Save failed';
         }
       });
+    } else {
+      this.otnOp1Service.createKpi(payload).subscribe({
+        next: () => {
+          this.saving = false;
+          this.resetForm();
+          this.fetchData();
+        },
+        error: () => {
+          this.saving = false;
+          this.errorMessage = 'Save failed';
+        }
+      });
+    }
   }
 
-  onEdit(record: any): void {
-    // Support both camelCase and PascalCase id keys just in case
-    this.editingId = record.id ?? record.Id ?? null;
+  onEdit(record: OtnOpKpi): void {
+    this.editingId = record.id;
     this.form.patchValue({
-      no: record.no,
-      network_Engineer_Kpi: record.network_Engineer_Kpi,
-      division: record.division,
-      section: record.section,
-      kpi_Percent: record.kpi_Percent
+      networkEngineerKpi: record.networkEngineerKpi,
+      division: record.division || '',
+      section: record.section || '',
+      kpiPercent: record.kpiPercent || ''
     });
   }
 
-  onDelete(id: string): void {
+  onDelete(id: number): void {
     if (!confirm('Delete this record?')) return;
 
     this.saving = true;
-    this.form8Service
-      .delete(id)
-      .pipe(finalize(() => (this.saving = false)))
+    this.otnOp1Service
+      .deleteKpi(id)
       .subscribe({
-        next: () => this.fetchData(),
+        next: () => {
+          this.saving = false;
+          this.fetchData();
+        },
         error: () => {
+          this.saving = false;
           this.errorMessage = 'Delete failed';
         }
       });

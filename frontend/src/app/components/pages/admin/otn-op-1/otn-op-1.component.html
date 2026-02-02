@@ -11,23 +11,19 @@
       <h2>{{ editingId ? 'Update KPI' : 'Create KPI' }}</h2>
 
       <div class="field-group">
-        <input type="number" formControlName="no" placeholder="No" required />
+        <input type="text" formControlName="networkEngineerKpi" placeholder="Network Engineer KPI" required />
       </div>
 
       <div class="field-group">
-        <input type="text" formControlName="network_Engineer_Kpi" placeholder="KPI" required />
+        <input type="text" formControlName="division" placeholder="Division" />
       </div>
 
       <div class="field-group">
-        <input type="text" formControlName="division" placeholder="Division" required />
+        <input type="text" formControlName="section" placeholder="Section" />
       </div>
 
       <div class="field-group">
-        <input type="text" formControlName="section" placeholder="Section" required />
-      </div>
-
-      <div class="field-group">
-        <input type="text" formControlName="kpi_Percent" placeholder="KPI (%)" required />
+        <input type="number" formControlName="kpiPercent" placeholder="KPI (%)" />
       </div>
 
       <div class="actions">
@@ -56,10 +52,9 @@
     <table *ngIf="!loading && records.length" class="kpi-table">
       <thead>
         <tr>
-          <th>No</th>
           <th>Network Engineers KPI</th>
-          <th>DIVISION</th>
-          <th>SECTION</th>
+          <th>Division</th>
+          <th>Section</th>
           <th>KPI (%)</th>
           <th>Actions</th>
         </tr>
@@ -67,14 +62,13 @@
 
       <tbody>
         <tr *ngFor="let record of records">
-          <td>{{ record.no }}</td>
-          <td>{{ record.network_Engineer_Kpi }}</td>
+          <td>{{ record.networkEngineerKpi }}</td>
           <td>{{ record.division }}</td>
           <td>{{ record.section }}</td>
-          <td>{{ record.kpi_Percent }}</td>
+          <td>{{ record.kpiPercent }}</td>
           <td>
             <button type="button" class="edit" (click)="onEdit(record)">Edit</button>
-            <button type="button" class="delete" (click)="onDelete(record.id || record.Id)">Delete</button>
+            <button type="button" class="delete" (click)="onDelete(record.id)">Delete</button>
           </td>
         </tr>
       </tbody>

@@ -1,11 +1,12 @@
-import { CommonModule } from '@angular/common';
+﻿import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import * as ExcelJS from 'exceljs';
-import { firstValueFrom, forkJoin } from 'rxjs';
-import { Form8Service } from '../../../../services/form8.service';
-import { KpiService, KpiRecord } from '../../../../services/kpi.service';
+import { firstValueFrom, forkJoin, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+import { OtnOp1Service, OtnOpKpi, OtnOp1Metric } from '../../../../services/otn-op1.service';
+import { OtnOp2Service, OtnOp2Metric } from '../../../../services/otn-op2.service';
 import { RegionService, Region } from '../../../../services/region.service';
 
 type Dict<T = any> = Record<string, T>;
@@ -18,34 +19,41 @@ interface RegionRow {
 }
 
 interface BaseEntry {
-	_id: string;
-	no: number;
-	network_engineer_kpi: string;
+	id: number;
+	networkEngineerKpi: string;
 	division: string;
 	section: string;
-	kpi_percent: number;
-	formType: 'form8' | 'form9';
+	kpiPercent: number;
+	formType: 'OtnOp1' | 'OtnOp2';
 	isModified?: boolean;
 }
 
-interface Form8Entry extends BaseEntry {
-	formType: 'form8';
-	total_minutes?: Dict<any>;
-	unavailable_minutes?: Dict<any>;
-	total_nodes?: Dict<any>;
+interface MetricMeta {
+	id?: number;
+	site?: string;
 }
 
-interface Form9Entry extends BaseEntry {
-	formType: 'form9';
-	Total_Failed_Links?: Dict<any>;
-	Links_SLA_Not_Violated?: Dict<any>;
+interface OtnOp1Entry extends BaseEntry {
+	formType: 'OtnOp1';
+	unavailableMinutes?: Dict<any>;
+	totalMinutes?: Dict<any>;
+	totalNodes?: Dict<any>;
+	metricMeta?: Dict<MetricMeta>;
+}
+
+interface OtnOp2Entry extends BaseEntry {
+	formType: 'OtnOp2';
+	totalFailedLinks?: Dict<any>;
+	linksSlaNotViolated?: Dict<any>;
+	metricMeta?: Dict<MetricMeta>;
 }
 
 interface EditCellState {
-	rowId: string | null;
+	rowId: number | null;
 	parentKey: string | null;
 	childKey: string | null;
 	value: string;
+	formType: 'OtnOp1' | 'OtnOp2' | null;
 }
 
 const LOCAL_REGION_TABLE: RegionRow[] = [
@@ -81,17 +89,17 @@ const LOCAL_REGION_TABLE: RegionRow[] = [
 export class OtnOpComponent implements OnInit, OnDestroy {
 	pageTitle = 'Platform KPI — OTN & Optical';
 
-	form8Data: Form8Entry[] = [];
-	form9Data: Form9Entry[] = [];
+	otnOp1Data: OtnOp1Entry[] = [];
+	otnOp2Data: OtnOp2Entry[] = [];
 	regionTable: RegionRow[] = [...LOCAL_REGION_TABLE];
-	adminForm8Rows: any[] = [];
-	adminForm9Rows: KpiRecord[] = [];
 
 	loading = true;
 	error: string | null = null;
 
 	role: string | null = null;
 	isEditingAllowed = false;
+	devRoleOverride: 'padmin' | 'user' | null = null;
+	saving = false;
 
 	readonly daysInMonth: number = new Date(
 		new Date().getFullYear(),
@@ -112,11 +120,30 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 	dropdown3Options: string[] = [];
 	dropdown4Options: string[] = [];
 
+	selectedYear: number = new Date().getFullYear();
+	selectedMonth: number = new Date().getMonth() + 1;
+	yearOptions: number[] = [];
+	monthOptions: { value: number; label: string }[] = [
+		{ value: 1, label: 'January' },
+		{ value: 2, label: 'February' },
+		{ value: 3, label: 'March' },
+		{ value: 4, label: 'April' },
+		{ value: 5, label: 'May' },
+		{ value: 6, label: 'June' },
+		{ value: 7, label: 'July' },
+		{ value: 8, label: 'August' },
+		{ value: 9, label: 'September' },
+		{ value: 10, label: 'October' },
+		{ value: 11, label: 'November' },
+		{ value: 12, label: 'December' },
+	];
+
 	editCell: EditCellState = {
 		rowId: null,
 		parentKey: null,
 		childKey: null,
 		value: '',
+		formType: null,
 	};
 
 	toasts: Array<{ id: number; type: 'success' | 'danger'; text: string }> = [];
@@ -150,13 +177,23 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 
 	constructor(
 		private http: HttpClient,
-		private form8Service: Form8Service,
-		private kpiService: KpiService,
+		private otnOp1Service: OtnOp1Service,
+		private otnOp2Service: OtnOp2Service,
 		private regionService: RegionService
 	) {}
 
 	ngOnInit(): void {
 		this.buildFriendlyMap();
+		
+		// Initialize year options (last 3 years)
+		const currentYear = new Date().getFullYear();
+		this.yearOptions = [currentYear - 2, currentYear - 1, currentYear];
+		
+		// Set default to previous month
+		const prevMonth = new Date(currentYear, new Date().getMonth() - 1, 1);
+		this.selectedYear = prevMonth.getFullYear();
+		this.selectedMonth = prevMonth.getMonth() + 1;
+		
 		this.loadRole();
 		this.loadRegionTable();
 		this.initializeFilters();
@@ -190,87 +227,66 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 		return this.optionMapping[key] || key.toUpperCase();
 	}
 
-	get hasSnapshotData(): boolean {
-		if (!this.selectedKey) {
-			return false;
-		}
-
-		return (
-			this.form8Data.some((entry) => this.hasForm8Snapshot(entry, this.selectedKey)) ||
-			this.form9Data.some((entry) => this.hasForm9Snapshot(entry, this.selectedKey))
-		);
+	get canEditMetrics(): boolean {
+		return this.isEditingAllowed && !!this.selectedKey;
 	}
 
-	get form8SnapshotRows(): Form8Entry[] {
-		if (!this.selectedKey) {
-			return [];
-		}
-		return this.form8Data.filter((entry) => this.hasForm8Snapshot(entry, this.selectedKey));
+	get combinedData(): Array<OtnOp1Entry | OtnOp2Entry> {
+		return [...this.otnOp1Data, ...this.otnOp2Data].sort((a, b) => a.id - b.id);
 	}
 
-	get form9SnapshotRows(): Form9Entry[] {
-		if (!this.selectedKey) {
-			return [];
-		}
-		return this.form9Data.filter((entry) => this.hasForm9Snapshot(entry, this.selectedKey));
-	}
-
-	get combinedData(): Array<Form8Entry | Form9Entry> {
-		return [...this.form8Data, ...this.form9Data].sort((a, b) => a.no - b.no);
-	}
-
-	selectedPercentage(entry: Form8Entry | Form9Entry): string {
+	selectedPercentage(entry: OtnOp1Entry | OtnOp2Entry): string {
 		if (!this.selectedKey) {
 			return '';
 		}
 
-		if (entry.formType === 'form8') {
-			const pct = this.calculatePercentageForm8(
-				(entry as Form8Entry).total_minutes?.[this.selectedKey],
-				(entry as Form8Entry).unavailable_minutes?.[this.selectedKey],
-				(entry as Form8Entry).total_nodes?.[this.selectedKey]
+		if (entry.formType === 'OtnOp1') {
+			const pct = this.calculatePercentageOtnOp1(
+				(entry as OtnOp1Entry).totalMinutes?.[this.selectedKey],
+				(entry as OtnOp1Entry).unavailableMinutes?.[this.selectedKey],
+				(entry as OtnOp1Entry).totalNodes?.[this.selectedKey]
 			);
 			return isNaN(pct) ? '' : `${pct.toFixed(2)}%`;
 		}
 
-		const pct = this.calculatePercentageForm9(
-			(entry as Form9Entry).Total_Failed_Links?.[this.selectedKey],
-			(entry as Form9Entry).Links_SLA_Not_Violated?.[this.selectedKey]
+		const pct = this.calculatePercentageOtnOp2(
+			(entry as OtnOp2Entry).totalFailedLinks?.[this.selectedKey],
+			(entry as OtnOp2Entry).linksSlaNotViolated?.[this.selectedKey]
 		);
 		return isNaN(pct) ? '' : `${pct.toFixed(2)}%`;
 	}
 
-	getTotalMinutesDisplay(entry: Form8Entry | Form9Entry): string {
-		if (entry.formType !== 'form8' || !this.selectedKey) {
+	getTotalMinutesDisplay(entry: OtnOp1Entry | OtnOp2Entry): string {
+		if (entry.formType !== 'OtnOp1' || !this.selectedKey) {
 			return '';
 		}
 
-		const manual = Number((entry as Form8Entry).total_minutes?.[this.selectedKey]) || 0;
-		const nodes = Number((entry as Form8Entry).total_nodes?.[this.selectedKey]) || 0;
+		const manual = Number((entry as OtnOp1Entry).totalMinutes?.[this.selectedKey]) || 0;
+		const nodes = Number((entry as OtnOp1Entry).totalNodes?.[this.selectedKey]) || 0;
 		const computed = 24 * 60 * this.daysInMonth * nodes;
 		const value = manual || computed;
 		return value ? String(value) : '';
 	}
 
-	getForm8Value(
-		entry: Form8Entry | Form9Entry,
-		field: 'unavailable_minutes' | 'total_nodes'
+	getOtnOp1Value(
+		entry: OtnOp1Entry | OtnOp2Entry,
+		field: 'unavailableMinutes' | 'totalNodes'
 	): string {
-		if (entry.formType !== 'form8' || !this.selectedKey) {
+		if (entry.formType !== 'OtnOp1' || !this.selectedKey) {
 			return '';
 		}
-		const payload = (entry as Form8Entry)[field] || {};
+		const payload = (entry as OtnOp1Entry)[field] || {};
 		return payload[this.selectedKey] ?? '';
 	}
 
-	getForm9Value(
-		entry: Form8Entry | Form9Entry,
-		field: 'Total_Failed_Links' | 'Links_SLA_Not_Violated'
+	getOtnOp2Value(
+		entry: OtnOp1Entry | OtnOp2Entry,
+		field: 'totalFailedLinks' | 'linksSlaNotViolated'
 	): string {
-		if (entry.formType !== 'form9' || !this.selectedKey) {
+		if (entry.formType !== 'OtnOp2' || !this.selectedKey) {
 			return '';
 		}
-		const payload = (entry as Form9Entry)[field] || {};
+		const payload = (entry as OtnOp2Entry)[field] || {};
 		return payload[this.selectedKey] ?? '';
 	}
 
@@ -298,7 +314,25 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 	}
 
 	private refreshEditPermission(): void {
+		if (this.devRoleOverride) {
+			this.isEditingAllowed = this.devRoleOverride === 'padmin';
+			return;
+		}
 		this.isEditingAllowed = this.role === 'padmin';
+	}
+
+	toggleRoleOverride(): void {
+		if (!this.devRoleOverride) {
+			this.devRoleOverride = 'padmin';
+		} else if (this.devRoleOverride === 'padmin') {
+			this.devRoleOverride = 'user';
+		} else {
+			this.devRoleOverride = null;
+		}
+
+		this.refreshEditPermission();
+		const label = this.devRoleOverride ? this.devRoleOverride.toUpperCase() : 'LIVE ROLE';
+		this.showToast('success', `Role override: ${label}`);
 	}
 
 	loadRole(): void {
@@ -345,99 +379,186 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 	}
 
 	loadData(): void {
+		this.cancelEdit();
 		this.loading = true;
 		this.error = null;
 
+		console.log(`Loading OTN KPI metrics for Year: ${this.selectedYear}, Month: ${this.selectedMonth}`);
+
 		forkJoin({
-			form8: this.form8Service.getAll(),
-			form9: this.kpiService.getAll(),
+			otnOp1: this.otnOp1Service.getAllKpis(),
+			otnOp2: this.otnOp2Service.getAllKpis(),
 		}).subscribe({
-			next: ({ form8, form9 }) => {
-				try {
-					this.adminForm8Rows = Array.isArray(form8) ? form8 : [];
-					this.adminForm9Rows = Array.isArray(form9) ? form9 : [];
-					this.form8Data = this.transformForm8Records(this.adminForm8Rows);
-					this.form9Data = this.transformForm9Records(this.adminForm9Rows);
-					this.loading = false;
-				} catch (mappingError) {
-					console.error('Failed to transform OTN KPI payloads:', mappingError);
-					this.form8Data = [];
-					this.form9Data = [];
-					this.loading = false;
-					this.error = 'Failed to prepare OTN KPI data.';
-				}
+			next: ({ otnOp1, otnOp2 }) => {
+				const otnOp1Kpis = otnOp1 || [];
+				const otnOp2Kpis = otnOp2 || [];
+
+				const otnOp1Metrics$ = otnOp1Kpis.length
+					? forkJoin(
+							otnOp1Kpis.map((kpi) =>
+								this.otnOp1Service
+									.getMetrics(kpi.id, this.selectedYear, this.selectedMonth)
+									.pipe(
+										catchError((err) => {
+											console.warn('Failed to fetch OtnOp1 metrics for id:', kpi.id, err);
+											return of([]);
+										}),
+										map((metrics) => ({ kpiId: kpi.id, metrics }))
+									)
+							)
+						)
+					: of([]);
+
+				const otnOp2Metrics$ = otnOp2Kpis.length
+					? forkJoin(
+							otnOp2Kpis.map((kpi) =>
+								this.otnOp2Service
+									.getMetrics(kpi.id, this.selectedYear, this.selectedMonth)
+									.pipe(
+										catchError((err) => {
+											console.warn('Failed to fetch OtnOp2 metrics for id:', kpi.id, err);
+											return of([]);
+										}),
+										map((metrics) => ({ kpiId: kpi.id, metrics }))
+									)
+							)
+						)
+					: of([]);
+
+				forkJoin({ op1Metrics: otnOp1Metrics$, op2Metrics: otnOp2Metrics$ }).subscribe({
+					next: ({ op1Metrics, op2Metrics }) => {
+						try {
+							const op1MetricMap = new Map();
+							(op1Metrics || []).forEach((item: any) => {
+								if (item?.kpiId && item?.metrics) {
+									op1MetricMap.set(item.kpiId, item.metrics);
+								}
+							});
+
+							const op2MetricMap = new Map();
+							(op2Metrics || []).forEach((item: any) => {
+								if (item?.kpiId && item?.metrics) {
+									op2MetricMap.set(item.kpiId, item.metrics);
+								}
+							});
+
+							this.otnOp1Data = this.transformOtnOp1Records(otnOp1Kpis, op1MetricMap);
+							this.otnOp2Data = this.transformOtnOp2Records(otnOp2Kpis, op2MetricMap);
+							this.loading = false;
+						} catch (mappingError) {
+							console.error('Failed to transform OTN KPI data:', mappingError);
+							this.otnOp1Data = [];
+							this.otnOp2Data = [];
+							this.loading = false;
+							this.error = 'Failed to prepare OTN KPI data.';
+						}
+					},
+					error: (metricsErr) => {
+						console.error('Failed to load OTN KPI metrics:', metricsErr);
+						this.otnOp1Data = [];
+						this.otnOp2Data = [];
+						this.loading = false;
+						this.error = 'Failed to load OTN KPI metrics.';
+					},
+				});
 			},
 			error: (err) => {
-				console.error('Failed to load OTN admin data:', err);
-				this.adminForm8Rows = [];
-				this.adminForm9Rows = [];
-				this.form8Data = [];
-				this.form9Data = [];
+				console.error('Failed to load OTN KPI data:', err);
+				this.otnOp1Data = [];
+				this.otnOp2Data = [];
 				this.loading = false;
 				this.error = 'Failed to load OTN KPI data.';
 			},
 		});
 	}
 
-	private transformForm8Records(records: any[]): Form8Entry[] {
+	private transformOtnOp1Records(records: OtnOpKpi[], metricMap: Map<number, any>): OtnOp1Entry[] {
 		return (Array.isArray(records) ? records : [])
-			.map((record, index) => this.mapForm8Record(record, index))
-			.filter((entry): entry is Form8Entry => Boolean(entry))
-			.sort((a, b) => a.no - b.no);
+			.map((record) => this.mapOtnOp1Record(record, metricMap.get(record.id)))
+			.filter((entry): entry is OtnOp1Entry => Boolean(entry))
+			.sort((a, b) => a.id - b.id);
 	}
 
-	private transformForm9Records(records: any[]): Form9Entry[] {
+	private transformOtnOp2Records(records: OtnOpKpi[], metricMap: Map<number, any>): OtnOp2Entry[] {
 		return (Array.isArray(records) ? records : [])
-			.map((record, index) => this.mapForm9Record(record, index))
-			.filter((entry): entry is Form9Entry => Boolean(entry))
-			.sort((a, b) => a.no - b.no);
+			.map((record) => this.mapOtnOp2Record(record, metricMap.get(record.id)))
+			.filter((entry): entry is OtnOp2Entry => Boolean(entry))
+			.sort((a, b) => a.id - b.id);
 	}
 
-	private mapForm8Record(record: any, index: number): Form8Entry {
-		const entry: Form8Entry = {
-			_id: this.extractId(record, index, 'form8'),
-			no: this.toNumber(this.pickFirst(record, ['no', 'No', 'NO']), index + 1),
-			network_engineer_kpi: this.toStringValue(
-				this.pickFirst(
-					record,
-					['network_engineer_kpi', 'network_Engineer_Kpi', 'networkEngineerKpi', 'NetworkEngineerKpi']
-				),
-				'—'
-			),
-			division: this.toStringValue(this.pickFirst(record, ['division', 'Division']), '—'),
-			section: this.toStringValue(this.pickFirst(record, ['section', 'Section']), '—'),
-			kpi_percent: this.toNumber(
-				this.pickFirst(record, ['kpi_percent', 'kpi_Percent', 'Kpi_Percent', 'kpiPercent', 'KpiPercent']),
-				0
-			),
-			formType: 'form8',
-			total_minutes: this.collectDict(record, 'total_minutes'),
-			unavailable_minutes: this.collectDict(record, 'unavailable_minutes'),
-			total_nodes: this.collectDict(record, 'total_nodes'),
+	private mapOtnOp1Record(record: OtnOpKpi, metrics?: any): OtnOp1Entry {
+		// Extract metrics into dictionaries keyed by area/site
+		const totalMinutes: Dict<any> = {};
+		const unavailableMinutes: Dict<any> = {};
+		const totalNodes: Dict<any> = {};
+		const metricMeta: Dict<MetricMeta> = {};
+
+		if (Array.isArray(metrics)) {
+			console.log(`OtnOp1 KPI ${record.id} metrics:`, metrics);
+			metrics.forEach((metric: any) => {
+				const siteKey = this.norm(metric.site || '');
+				if (siteKey) {
+					totalMinutes[siteKey] = metric.totalMinutes ?? 0;
+					unavailableMinutes[siteKey] = metric.unavailableMinutes ?? 0;
+					totalNodes[siteKey] = metric.totalNodes ?? 0;
+					metricMeta[siteKey] = {
+						id: metric.id,
+						site: metric.site,
+					};
+				}
+			});
+		} else if (metrics) {
+			console.warn(`OtnOp1 KPI ${record.id} metrics is not an array:`, metrics);
+		}
+
+		const entry: OtnOp1Entry = {
+			id: record.id,
+			networkEngineerKpi: record.networkEngineerKpi || '—',
+			division: record.division || '—',
+			section: record.section || '—',
+			kpiPercent: record.kpiPercent || 0,
+			formType: 'OtnOp1',
+			totalMinutes,
+			unavailableMinutes,
+			totalNodes,
+			metricMeta,
 		};
 		return entry;
 	}
 
-	private mapForm9Record(record: any, index: number): Form9Entry {
-		const entry: Form9Entry = {
-			_id: this.extractId(record, index, 'form9'),
-			no: this.toNumber(this.pickFirst(record, ['no', 'No', 'NO']), index + 1),
-			network_engineer_kpi: this.toStringValue(
-				this.pickFirst(
-					record,
-					['network_engineer_kpi', 'network_Engineer_Kpi', 'networkEngineerKpi', 'NetworkEngineerKpi']
-				),
-				'—'
-			),
-			division: this.toStringValue(this.pickFirst(record, ['division', 'Division']), '—'),
-			section: this.toStringValue(this.pickFirst(record, ['section', 'Section']), '—'),
-			kpi_percent: this.toNumber(
-				this.pickFirst(record, ['kpi_percent', 'kpi_Percent', 'Kpi_Percent', 'kpiPercent', 'KpiPercent']),
-				0
-			),
-			formType: 'form9',
-			Total_Failed_Links: this.collectDict(record, 'total_failed_links'),
-			Links_SLA_Not_Violated: this.collectDict(record, 'links_sla_not_violated'),
+	private mapOtnOp2Record(record: OtnOpKpi, metrics?: any): OtnOp2Entry {
+		// Extract metrics into dictionaries keyed by area/site
+		const totalFailedLinks: Dict<any> = {};
+		const linksSlaNotViolated: Dict<any> = {};
+		const metricMeta: Dict<MetricMeta> = {};
+
+		if (Array.isArray(metrics)) {
+			console.log(`OtnOp2 KPI ${record.id} metrics:`, metrics);
+			metrics.forEach((metric: any) => {
+				const siteKey = this.norm(metric.site || '');
+				if (siteKey) {
+					totalFailedLinks[siteKey] = metric.totalFailedLinks ?? 0;
+					linksSlaNotViolated[siteKey] = metric.linksSlaNotViolated ?? 0;
+					metricMeta[siteKey] = {
+						id: metric.id,
+						site: metric.site,
+					};
+				}
+			});
+		} else if (metrics) {
+			console.warn(`OtnOp2 KPI ${record.id} metrics is not an array:`, metrics);
+		}
+
+		const entry: OtnOp2Entry = {
+			id: record.id,
+			networkEngineerKpi: record.networkEngineerKpi || '—',
+			division: record.division || '—',
+			section: record.section || '—',
+			kpiPercent: record.kpiPercent || 0,
+			formType: 'OtnOp2',
+			totalFailedLinks,
+			linksSlaNotViolated,
+			metricMeta,
 		};
 		return entry;
 	}
@@ -452,26 +573,6 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 			}
 		}
 		return fallback;
-	}
-
-	private extractId(record: any, index: number, prefix: string): string {
-		const rawId = this.pickFirst(record, ['_id', 'id', 'Id', 'ID', 'recordId']);
-		if (rawId !== undefined && rawId !== null && rawId !== '') {
-			return String(rawId);
-		}
-		return `${prefix}-${index + 1}`;
-	}
-
-	private toNumber(value: any, fallback = 0): number {
-		const parsed = Number(value);
-		return Number.isFinite(parsed) ? parsed : fallback;
-	}
-
-	private toStringValue(value: any, fallback = ''): string {
-		if (value === undefined || value === null || value === '') {
-			return fallback;
-		}
-		return String(value);
 	}
 
 	private collectDict(record: any, baseKey: string): Dict<any> {
@@ -601,29 +702,6 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 		return {};
 	}
 
-	hasForm8Snapshot(entry: Form8Entry, key?: string): boolean {
-		const lookup = this.norm(key || this.selectedKey);
-		if (!lookup) {
-			return false;
-		}
-		return Boolean(
-			(entry.total_minutes && entry.total_minutes[lookup] !== undefined) ||
-			(entry.unavailable_minutes && entry.unavailable_minutes[lookup] !== undefined) ||
-			(entry.total_nodes && entry.total_nodes[lookup] !== undefined)
-		);
-	}
-
-	hasForm9Snapshot(entry: Form9Entry, key?: string): boolean {
-		const lookup = this.norm(key || this.selectedKey);
-		if (!lookup) {
-			return false;
-		}
-		return Boolean(
-			(entry.Total_Failed_Links && entry.Total_Failed_Links[lookup] !== undefined) ||
-			(entry.Links_SLA_Not_Violated && entry.Links_SLA_Not_Violated[lookup] !== undefined)
-		);
-	}
-
 	formatSnapshotValue(value: any): string {
 		if (value === undefined || value === null || value === '') {
 			return '—';
@@ -694,13 +772,17 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 	private initializeFilters(): void {
 		if (this.filtersInitialized) return;
 		
-		// Don't auto-select, leave all as empty strings
 		this.formValues.dropdown1 = '';
 		this.formValues.dropdown2 = '';
 		this.formValues.dropdown3 = '';
 		this.formValues.dropdown4 = '';
 		
 		this.filtersInitialized = true;
+	}
+
+	onPeriodChange(): void {
+		this.cancelEdit();
+		this.loadData();
 	}
 
 	onDropdownChange(
@@ -741,7 +823,7 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 		this.cancelEdit();
 	}
 
-	calculatePercentageForm8(totalMinutes: any, unavailableMinutes: any, totalNodes: any): number {
+	calculatePercentageOtnOp1(totalMinutes: any, unavailableMinutes: any, totalNodes: any): number {
 		const tm = Number(totalMinutes) || 0;
 		const um = Number(unavailableMinutes) || 0;
 		const tn = Number(totalNodes) || 0;
@@ -756,7 +838,7 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 		return Math.max(0, Math.min(100, pct));
 	}
 
-	calculatePercentageForm9(totalFailed: any, slaNotViolated: any): number {
+	calculatePercentageOtnOp2(totalFailed: any, slaNotViolated: any): number {
 		const failed = Number(totalFailed) || 0;
 		const ok = Number(slaNotViolated) || 0;
 		if (failed === 0) {
@@ -767,79 +849,104 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 	}
 
 	startEdit(
-		entry: Form8Entry | Form9Entry,
+		entry: OtnOp1Entry | OtnOp2Entry,
 		parentKey:
-			| 'total_minutes'
-			| 'unavailable_minutes'
-			| 'total_nodes'
-			| 'Total_Failed_Links'
-			| 'Links_SLA_Not_Violated'
+			| 'totalMinutes'
+			| 'unavailableMinutes'
+			| 'totalNodes'
+			| 'totalFailedLinks'
+			| 'linksSlaNotViolated'
 	): void {
-		if (!this.isEditingAllowed || !this.selectedKey) {
+		if (!this.canEditMetrics || this.saving || !this.selectedKey) {
 			return;
 		}
 
 		const value = (entry as any)[parentKey]?.[this.selectedKey] ?? '';
 		this.editCell = {
-			rowId: entry._id,
+			rowId: entry.id,
 			parentKey,
 			childKey: this.selectedKey,
 			value: value === undefined || value === null ? '' : String(value),
+			formType: entry.formType,
 		};
 	}
 
-	onEditInput(value: string): void {
-		this.editCell = { ...this.editCell, value };
+	onEditInput(value: string | number | null | undefined): void {
+		const normalizedValue = value === null || value === undefined ? '' : String(value);
+		this.editCell = { ...this.editCell, value: normalizedValue };
 	}
 
-	doneEdit(): void {
-		if (!this.editCell.rowId || !this.editCell.parentKey || !this.editCell.childKey) {
+	async doneEdit(): Promise<void> {
+		if (
+			!this.editCell.rowId ||
+			!this.editCell.parentKey ||
+			!this.editCell.childKey ||
+			!this.editCell.formType ||
+			this.saving
+		) {
 			return;
 		}
 
-		const { rowId, parentKey, childKey, value } = this.editCell;
+		const { rowId, parentKey, childKey, value, formType } = this.editCell;
+		const trimmedValue = value?.toString().trim() ?? '';
+		const numericValue = trimmedValue === '' ? null : Number(trimmedValue);
+		const nextValue = numericValue === null || Number.isFinite(numericValue) ? numericValue : null;
+		let updatedEntry: OtnOp1Entry | OtnOp2Entry | null = null;
 
-		this.form8Data = this.form8Data.map((entry) => {
-			if (entry._id !== rowId) {
-				return entry;
-			}
+		if (formType === 'OtnOp1') {
+			this.otnOp1Data = this.otnOp1Data.map((entry) => {
+				if (entry.id !== rowId) {
+					return entry;
+				}
 
-			const parent = { ...(entry as any)[parentKey] };
-			parent[childKey] = value;
+				const parent = { ...(entry as any)[parentKey] };
+				parent[childKey] = nextValue;
 
-			const next: Form8Entry = {
-				...entry,
-				[parentKey]: parent,
-				isModified: true,
-			} as Form8Entry;
+				const next: OtnOp1Entry = {
+					...entry,
+					[parentKey]: parent,
+				} as OtnOp1Entry;
 
-			if (parentKey === 'total_nodes') {
-				const nodes = Number(value) || 0;
-				const computed = 24 * 60 * this.daysInMonth * nodes;
-				next.total_minutes = {
-					...(entry.total_minutes || {}),
-					[childKey]: computed,
-				};
-			}
-			return next;
-		});
+				if (parentKey === 'totalNodes') {
+					const nodes = typeof nextValue === 'number' ? nextValue : 0;
+					const computed = 24 * 60 * this.daysInMonth * nodes;
+					next.totalMinutes = {
+						...(entry.totalMinutes || {}),
+						[childKey]: computed,
+					};
+				}
 
-		this.form9Data = this.form9Data.map((entry) => {
-			if (entry._id !== rowId) {
-				return entry;
-			}
+				updatedEntry = next;
+				return next;
+			});
+		} else {
+			this.otnOp2Data = this.otnOp2Data.map((entry) => {
+				if (entry.id !== rowId) {
+					return entry;
+				}
 
-			const parent = { ...(entry as any)[parentKey] };
-			parent[childKey] = value;
+				const parent = { ...(entry as any)[parentKey] };
+				parent[childKey] = nextValue;
 
-			return {
-				...entry,
-				[parentKey]: parent,
-				isModified: true,
-			} as Form9Entry;
-		});
+				const next: OtnOp2Entry = {
+					...entry,
+					[parentKey]: parent,
+				} as OtnOp2Entry;
 
+				updatedEntry = next;
+				return next;
+			});
+		}
+
+		const entryToPersist = updatedEntry;
 		this.cancelEdit();
+
+		if (!entryToPersist) {
+			this.showToast('danger', 'Unable to locate the edited record. Please retry.');
+			return;
+		}
+
+		await this.persistMetricChange(entryToPersist, childKey);
 	}
 
 	cancelEdit(): void {
@@ -848,41 +955,78 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 			parentKey: null,
 			childKey: null,
 			value: '',
+			formType: null,
 		};
 	}
 
-	async saveAllChanges(): Promise<void> {
-		if (!this.isEditingAllowed) {
-			return;
+	isEditing(rowId: number, parentKey: string): boolean {
+		return (
+			this.editCell.rowId === rowId &&
+			this.editCell.parentKey === parentKey &&
+			this.editCell.childKey === this.selectedKey
+		);
+	}
+
+	handleEditKey(event: KeyboardEvent): void {
+		if (event.key === 'Enter') {
+			event.preventDefault();
+			this.doneEdit();
+		} else if (event.key === 'Escape') {
+			event.preventDefault();
+			this.cancelEdit();
 		}
+	}
 
-		const updates: Promise<any>[] = [];
+	private async persistMetricChange(entry: OtnOp1Entry | OtnOp2Entry, siteKey: string): Promise<void> {
+		const meta = entry.metricMeta?.[siteKey];
+		const siteLabel = this.resolveSiteLabel(siteKey, meta);
 
-		this.form8Data.forEach((entry) => {
-			if (entry.isModified) {
-				updates.push(firstValueFrom(this.http.put(`/form8/update/${entry._id}`, entry)));
-			}
-		});
-
-		this.form9Data.forEach((entry) => {
-			if (entry.isModified) {
-				updates.push(firstValueFrom(this.http.put(`/form9/update/${entry._id}`, entry)));
-			}
-		});
-
-		if (!updates.length) {
-			this.showToast('success', 'No pending changes to save.');
-			return;
-		}
-
+		this.saving = true;
 		try {
-			await Promise.all(updates);
-			this.loadData();
-			this.showToast('success', 'OTN KPIs saved successfully.');
+			if (entry.formType === 'OtnOp1') {
+				const payload: OtnOp1Metric = {
+					id: meta?.id ?? 0,
+					otnOp1Id: entry.id,
+					site: siteLabel,
+					unavailableMinutes: Number(entry.unavailableMinutes?.[siteKey]) || 0,
+					totalMinutes: Number(entry.totalMinutes?.[siteKey]) || 0,
+					totalNodes: Number(entry.totalNodes?.[siteKey]) || 0,
+					year: this.selectedYear,
+					month: this.selectedMonth,
+				};
+				await firstValueFrom(this.otnOp1Service.upsertMetrics(entry.id, [payload]));
+			} else {
+				const payload: OtnOp2Metric = {
+					id: meta?.id ?? 0,
+					otnOp2Id: entry.id,
+					site: siteLabel,
+					totalFailedLinks: Number(entry.totalFailedLinks?.[siteKey]) || 0,
+					linksSlaNotViolated: Number(entry.linksSlaNotViolated?.[siteKey]) || 0,
+					year: this.selectedYear,
+					month: this.selectedMonth,
+				};
+				await firstValueFrom(this.otnOp2Service.upsertMetrics(entry.id, [payload]));
+			}
+
+			this.showToast('success', 'Metric updated successfully.');
 		} catch (error) {
-			console.error('Failed to save OTN data:', error);
-			this.showToast('danger', 'Failed to save changes. Please try again.');
+			console.error('Failed to persist metric change:', error);
+			this.showToast('danger', 'Failed to save change. Reloading latest data.');
+			this.loadData();
+		} finally {
+			this.saving = false;
 		}
+	}
+
+	private resolveSiteLabel(siteKey: string, meta?: MetricMeta): string {
+		if (meta?.site) {
+			return meta.site;
+		}
+		const friendly = this.optionMapping[siteKey];
+		if (friendly) {
+			return friendly.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+		}
+		return siteKey.toUpperCase();
 	}
 
 	async exportToExcel(): Promise<void> {
@@ -894,20 +1038,20 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 		worksheet.addRow([]);
 
 		const areaSet = new Set<string>();
-		this.form8Data.forEach((entry) => {
-			Object.keys(entry.total_minutes || {}).forEach((key) => key && areaSet.add(key));
-			Object.keys(entry.unavailable_minutes || {}).forEach((key) => key && areaSet.add(key));
-			Object.keys(entry.total_nodes || {}).forEach((key) => key && areaSet.add(key));
+		this.otnOp1Data.forEach((entry) => {
+			Object.keys(entry.totalMinutes || {}).forEach((key) => key && areaSet.add(key));
+			Object.keys(entry.unavailableMinutes || {}).forEach((key) => key && areaSet.add(key));
+			Object.keys(entry.totalNodes || {}).forEach((key) => key && areaSet.add(key));
 		});
-		this.form9Data.forEach((entry) => {
-			Object.keys(entry.Total_Failed_Links || {}).forEach((key) => key && areaSet.add(key));
-			Object.keys(entry.Links_SLA_Not_Violated || {}).forEach((key) => key && areaSet.add(key));
+		this.otnOp2Data.forEach((entry) => {
+			Object.keys(entry.totalFailedLinks || {}).forEach((key) => key && areaSet.add(key));
+			Object.keys(entry.linksSlaNotViolated || {}).forEach((key) => key && areaSet.add(key));
 		});
 
 		const areas = Array.from(areaSet);
 
 		const headers = [
-			'No',
+			'ID',
 			'Network Engineer KPI',
 			'Division',
 			'Section',
@@ -930,25 +1074,25 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 
 		this.combinedData.forEach((entry) => {
 			const baseRow: any[] = [
-				entry.no,
-				entry.network_engineer_kpi,
+				entry.id,
+				entry.networkEngineerKpi,
 				entry.division,
 				entry.section,
-				entry.kpi_percent,
+				entry.kpiPercent,
 			];
 
 			areas.forEach((area) => {
-				if (entry.formType === 'form8') {
-					const pct = this.calculatePercentageForm8(
-						entry.total_minutes?.[area],
-						entry.unavailable_minutes?.[area],
-						entry.total_nodes?.[area]
+				if (entry.formType === 'OtnOp1') {
+					const pct = this.calculatePercentageOtnOp1(
+						(entry as OtnOp1Entry).totalMinutes?.[area],
+						(entry as OtnOp1Entry).unavailableMinutes?.[area],
+						(entry as OtnOp1Entry).totalNodes?.[area]
 					);
 					baseRow.push(isNaN(pct) ? '' : `${pct.toFixed(2)}%`);
 				} else {
-					const pct = this.calculatePercentageForm9(
-						(entry as Form9Entry).Total_Failed_Links?.[area],
-						(entry as Form9Entry).Links_SLA_Not_Violated?.[area]
+					const pct = this.calculatePercentageOtnOp2(
+						(entry as OtnOp2Entry).totalFailedLinks?.[area],
+						(entry as OtnOp2Entry).linksSlaNotViolated?.[area]
 					);
 					baseRow.push(isNaN(pct) ? '' : `${pct.toFixed(2)}%`);
 				}
@@ -965,18 +1109,18 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 				};
 			});
 
-			if (entry.formType === 'form8') {
+			if (entry.formType === 'OtnOp1') {
 				const totalMinutesRow: any[] = ['', 'Total Minutes', '', '', ''];
 				const unavailableRow: any[] = ['', 'Unavailable Minutes', '', '', ''];
 				const totalNodesRow: any[] = ['', 'Total Nodes', '', '', ''];
 
 				areas.forEach((area) => {
-					const nodes = Number(entry.total_nodes?.[area]) || 0;
-					const manual = Number(entry.total_minutes?.[area]) || 0;
+					const nodes = Number((entry as OtnOp1Entry).totalNodes?.[area]) || 0;
+					const manual = Number((entry as OtnOp1Entry).totalMinutes?.[area]) || 0;
 					const computed = 24 * 60 * this.daysInMonth * nodes;
 					totalMinutesRow.push(manual || computed || '');
-					unavailableRow.push(entry.unavailable_minutes?.[area] ?? '');
-					totalNodesRow.push(entry.total_nodes?.[area] ?? '');
+					unavailableRow.push((entry as OtnOp1Entry).unavailableMinutes?.[area] ?? '');
+					totalNodesRow.push((entry as OtnOp1Entry).totalNodes?.[area] ?? '');
 				});
 
 				[totalMinutesRow, unavailableRow, totalNodesRow].forEach((rowData) => {
@@ -996,8 +1140,8 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 				const slaRow: any[] = ['', 'Links SLA Not Violated', '', '', ''];
 
 				areas.forEach((area) => {
-					totalFailedRow.push((entry as Form9Entry).Total_Failed_Links?.[area] ?? '');
-					slaRow.push((entry as Form9Entry).Links_SLA_Not_Violated?.[area] ?? '');
+					totalFailedRow.push((entry as OtnOp2Entry).totalFailedLinks?.[area] ?? '');
+					slaRow.push((entry as OtnOp2Entry).linksSlaNotViolated?.[area] ?? '');
 				});
 
 				[totalFailedRow, slaRow].forEach((rowData) => {
