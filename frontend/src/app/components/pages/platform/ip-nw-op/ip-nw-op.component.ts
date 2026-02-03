@@ -4,7 +4,7 @@ import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import * as ExcelJS from 'exceljs';
-import { IpNwOpService, IpNwOpKpiDto, IpNwOpMetricPayload } from '../../../../services/ip-nw-op.service';
+import { IpNwOpService, IpNwOpKpiDto, IpNwOpMetricPayload, IpNwOpMetric } from '../../../../services/ip-nw-op.service';
 import { RegionService, Region } from '../../../../services/region.service';
 
 interface RegionRow {
@@ -49,6 +49,7 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   pageTitle = 'Platform KPI - IP NW OP';
 
   data: IpNwOpKpiDto[] = [];
+  metrics: IpNwOpMetric[] = [];
   regionTable: RegionRow[] = [...LOCAL_REGION_TABLE];
 
   loading = true;
@@ -61,12 +62,12 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
 
   private permissionTimer: any = null;
 
-  // current month days
-  readonly daysInMonth: number = new Date(
-    new Date().getFullYear(),
-    new Date().getMonth() + 1,
-    0
-  ).getDate();
+  // Month/Year selection (current month default)
+  selectedMonth: number = new Date().getMonth() + 1; // 1-12
+  selectedYear: number = new Date().getFullYear();
+
+  // current month days (recalculated when month/year changes)
+  daysInMonth: number = this.getDaysInMonth(this.selectedYear, this.selectedMonth);
 
   // dropdown form
   formValues = {
@@ -81,7 +82,7 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   dropdown4Options: string[] = [];
 
   // edit cell state (nested key like "total_nodes.adipr")
-  editCell: { rowId: string | null; key: string | null; value: string } = {
+  editCell: { rowId: number | null; key: string | null; value: string } = {
     rowId: null,
     key: null,
     value: '',
@@ -147,6 +148,10 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
     return s ? String(s).replace(/[^A-Za-z0-9]/g, '').toLowerCase() : '';
   }
 
+  private getDaysInMonth(year: number, month: number): number {
+    return new Date(year, month, 0).getDate();
+  }
+
   private buildFriendlyMap(): void {
     const out: Record<string, string> = {};
     Object.keys(this.optionMapping).forEach((dbKey) => {
@@ -191,22 +196,18 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   }
 
   getAreaPercentage(entry: IpNwOpKpiDto): string {
-    const key = this.selectedKey;
-    if (!key) return '-';
-
-    const totalMinutes = entry.total_minutes?.[key];
-    const unavailableMinutes = entry.unavailable_minutes?.[key];
-    const totalNodes = entry.total_nodes?.[key];
-
-    if (
-      totalMinutes === undefined ||
-      unavailableMinutes === undefined ||
-      totalNodes === undefined
-    ) {
+    if (!this.selectedKey) return '-';
+    
+    // Find metric for this KPI and area
+    const metric = this.metrics.find(
+      m => m.ip_nw_op_kpi_id === entry.id && m.area_code === this.selectedKey
+    );
+    
+    if (!metric || metric.total_minutes === undefined || metric.unavailable_minutes === undefined || metric.total_nodes === undefined) {
       return '-';
     }
 
-    const pct = this.calculatePercentage(totalMinutes, unavailableMinutes, totalNodes);
+    const pct = this.calculatePercentage(metric.total_minutes, metric.unavailable_minutes, metric.total_nodes);
     return Number.isFinite(pct) ? `${pct.toFixed(2)}%` : '-';
   }
 
@@ -214,21 +215,21 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
     entry: IpNwOpKpiDto,
     bucket: 'total_minutes' | 'unavailable_minutes' | 'total_nodes'
   ): string {
-    const key = this.selectedKey;
-    if (!key) return '-';
-
-    const dict = entry[bucket] as Record<string, number | null> | undefined;
-    const value = dict ? dict[key] : undefined;
+    if (!this.selectedKey) return '-';
+    
+    // Find metric for this KPI and area
+    const metric = this.metrics.find(
+      m => m.ip_nw_op_kpi_id === entry.id && m.area_code === this.selectedKey
+    );
+    
+    if (!metric) return '-';
+    
+    const value = metric[bucket];
     return value === undefined || value === null ? '-' : String(value);
   }
 
   private buildPayload(entry: IpNwOpKpiDto): IpNwOpKpiDto {
-    return {
-      ...entry,
-      unavailable_minutes: this.normalizeMetricDict(entry.unavailable_minutes),
-      total_minutes: this.normalizeMetricDict(entry.total_minutes),
-      total_nodes: this.normalizeMetricDict(entry.total_nodes),
-    };
+    return { ...entry };
   }
 
   private normalizeMetricDict(
@@ -319,10 +320,15 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   loadData(): void {
     this.loading = true;
     this.error = null;
+    this.metrics = [];
 
-    this.ipNwOpService.getAll().subscribe({
+    // Pass area parameter if selected
+    const areaParam = this.selectedKey || undefined;
+
+    this.ipNwOpService.getAll(this.selectedMonth, this.selectedYear, areaParam).subscribe({
       next: (records) => {
         this.data = Array.isArray(records) ? (records as IpNwOpKpiDto[]) : [];
+        this.metrics = this.selectedKey ? this.buildMetricsFromKpis(this.data, this.selectedKey) : [];
         this.loading = false;
       },
       error: (err) => {
@@ -332,6 +338,36 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
         this.error = 'Failed to load IP NW OP KPI data.';
       }
     });
+  }
+
+  private buildMetricsFromKpis(entries: IpNwOpKpiDto[], areaKey: string): IpNwOpMetric[] {
+    const key = this.norm(areaKey);
+    if (!key) return [];
+
+    return entries.map((entry) => {
+      const unavailable = entry.unavailable_minutes?.[key] ?? null;
+      const totalMinutes = entry.total_minutes?.[key] ?? null;
+      const totalNodes = entry.total_nodes?.[key] ?? null;
+
+      return {
+        ip_nw_op_kpi_id: entry.id,
+        area_code: key,
+        month: this.selectedMonth,
+        year: this.selectedYear,
+        unavailable_minutes: unavailable,
+        total_minutes: totalMinutes,
+        total_nodes: totalNodes,
+      } as IpNwOpMetric;
+    });
+  }
+
+  onMonthYearChange(): void {
+    // Update daysInMonth when month/year changes
+    this.daysInMonth = this.getDaysInMonth(this.selectedYear, this.selectedMonth);
+    // Reset editing state
+    this.cancelEdit();
+    // Reload data with new month/year
+    this.loadData();
   }
 
   // -------------------------
@@ -415,6 +451,7 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
       this.dropdown3Options = [];
       this.dropdown4Options = [];
       this.cancelEdit();
+      this.loadData();
       return;
     }
 
@@ -426,6 +463,7 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
       this.updateDropdown3Options(value);
       this.dropdown4Options = [];
       this.cancelEdit();
+      this.loadData();
       return;
     }
 
@@ -435,12 +473,14 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
 
       this.updateDropdown4Options(value);
       this.cancelEdit();
+      this.loadData();
       return;
     }
 
-    // dropdown4
+    // dropdown4 - Area changed
     this.formValues.dropdown4 = value;
     this.cancelEdit();
+    this.loadData();
   }
 
   // -------------------------
@@ -465,15 +505,16 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
 
     const k = this.selectedKey;
     const nestedKey = `${key}.${k}`;
-    const currentVal =
-      key === 'unavailable_minutes'
-        ? entry.unavailable_minutes?.[k]
-        : key === 'total_minutes'
-        ? entry.total_minutes?.[k]
-        : entry.total_nodes?.[k];
+    
+    // Find the current metric value
+    const metric = this.metrics.find(
+      m => m.ip_nw_op_kpi_id === entry.id && m.area_code === k
+    );
+    
+    const currentVal = metric ? metric[key] : null;
 
     this.editCell = {
-      rowId: entry._id,
+      rowId: entry.id,
       key: nestedKey,
       value: currentVal === undefined || currentVal === null ? '' : String(currentVal),
     };
@@ -485,7 +526,7 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   }
 
   async doneEdit(): Promise<void> {
-    if (!this.canEditMetrics || !this.editCell.rowId || !this.editCell.key || this.saving) {
+    if (!this.canEditMetrics || this.editCell.rowId === null || !this.editCell.key || this.saving) {
       return;
     }
 
@@ -500,46 +541,49 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
     const nextValue =
       numericValue === null || Number.isFinite(numericValue) ? numericValue : null;
 
-    let updatedEntry: IpNwOpKpiDto | null = null;
-
-    this.data = this.data.map((entry) => {
-      if (entry._id !== this.editCell.rowId) return entry;
-
-      const next: IpNwOpKpiDto = { ...entry };
-      const parent = ((next as any)[parentKey] || {}) as Record<string, number | null>;
-      (next as any)[parentKey] = { ...parent, [childKey]: nextValue };
-
-      if (parentKey === 'total_nodes') {
-        const nodes = typeof nextValue === 'number' ? nextValue : 0;
-        next.total_minutes = {
-          ...(next.total_minutes || {}),
-          [childKey]: 24 * 60 * this.daysInMonth * nodes,
-        };
-      }
-
-      updatedEntry = next;
-      return next;
-    });
-
+    const kpiId = this.editCell.rowId;
     this.cancelEdit();
 
-    if (!updatedEntry) {
-      this.showToast('danger', 'Unable to locate the edited record. Please retry.');
-      return;
+    const payload: IpNwOpMetricPayload = {};
+    if (parentKey === 'unavailable_minutes') payload.unavailableMinutes = nextValue;
+    else if (parentKey === 'total_minutes') payload.totalMinutes = nextValue;
+    else if (parentKey === 'total_nodes') {
+      payload.totalNodes = nextValue;
+      const autoTotalMinutes =
+        nextValue === null ? null : Math.round(24 * 60 * this.daysInMonth * Number(nextValue));
+      payload.totalMinutes = autoTotalMinutes;
     }
-
-    const entryToPersist = updatedEntry as IpNwOpKpiDto;
-
-    const payload: IpNwOpMetricPayload = {
-      unavailableMinutes: entryToPersist.unavailable_minutes?.[childKey] ?? null,
-      totalMinutes: entryToPersist.total_minutes?.[childKey] ?? null,
-      totalNodes: entryToPersist.total_nodes?.[childKey] ?? null,
-    };
 
     try {
       this.saving = true;
-      await firstValueFrom(this.ipNwOpService.upsertMetric(entryToPersist._id, childKey, payload));
+      await firstValueFrom(
+        this.ipNwOpService.upsertMetric(kpiId, childKey, this.selectedMonth, this.selectedYear, payload)
+      );
       this.showToast('success', 'Metric updated successfully.');
+      const areaCode = this.norm(childKey);
+      let metric = this.metrics.find(
+        (m) => m.ip_nw_op_kpi_id === kpiId && m.area_code === areaCode
+      );
+
+      if (!metric) {
+        metric = {
+          ip_nw_op_kpi_id: kpiId,
+          area_code: areaCode,
+          month: this.selectedMonth,
+          year: this.selectedYear,
+        } as IpNwOpMetric;
+        this.metrics = [...this.metrics, metric];
+      }
+
+      if (payload.unavailableMinutes !== undefined) {
+        metric.unavailable_minutes = payload.unavailableMinutes ?? null;
+      }
+      if (payload.totalMinutes !== undefined) {
+        metric.total_minutes = payload.totalMinutes ?? null;
+      }
+      if (payload.totalNodes !== undefined) {
+        metric.total_nodes = payload.totalNodes ?? null;
+      }
     } catch (error) {
       console.error('Failed to persist metric change:', error);
       this.showToast('danger', 'Failed to save change. Reloading latest data.');
@@ -554,7 +598,7 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   }
 
   isCellEditing(
-    rowId: string,
+    rowId: number,
     bucket: 'unavailable_minutes' | 'total_minutes' | 'total_nodes'
   ): boolean {
     if (!this.selectedKey || !this.editCell.key) return false;
@@ -611,7 +655,7 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
 
     this.data.forEach((entry) => {
       const row: any[] = [
-        entry.no,
+        entry.id,
         entry.network_engineer_kpi,
         entry.division,
         entry.section,
@@ -619,21 +663,8 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
       ];
 
       areas.forEach((a) => {
-        const k = this.norm(a);
-        let pct = '';
-        if (
-          entry.total_minutes?.[k] !== undefined ||
-          entry.unavailable_minutes?.[k] !== undefined ||
-          entry.total_nodes?.[k] !== undefined
-        ) {
-          pct =
-            this.calculatePercentage(
-              entry.total_minutes?.[k],
-              entry.unavailable_minutes?.[k],
-              entry.total_nodes?.[k]
-            ).toFixed(2) + '%';
-        }
-        row.push(pct);
+        // Metrics are now stored separately, placeholder for now
+        row.push('');
       });
 
       const r = ws.addRow(row);
@@ -647,16 +678,16 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
         cell.alignment = { horizontal: 'center', vertical: 'middle' };
       });
 
-      // Sub-rows
+      // Sub-rows (placeholders for metrics)
       const tm: any[] = ['', 'Total Minutes', '', '', ''];
       const um: any[] = ['', 'Unavailable Minutes', '', '', ''];
       const tn: any[] = ['', 'Total Nodes', '', '', ''];
 
       areas.forEach((a) => {
-        const k = this.norm(a);
-        tm.push(entry.total_minutes?.[k] ?? '');
-        um.push(entry.unavailable_minutes?.[k] ?? '');
-        tn.push(entry.total_nodes?.[k] ?? '');
+        // Metrics are now stored separately
+        tm.push('');
+        um.push('');
+        tn.push('');
       });
 
       [tm, um, tn].forEach((arr) => {
@@ -692,5 +723,4 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
     URL.revokeObjectURL(link.href);
   }
 }
-
 
