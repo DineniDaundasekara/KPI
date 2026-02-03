@@ -8,7 +8,7 @@ import * as ExcelJS from 'exceljs';
 /* ================= TYPES ================= */
 
 type RoutineRecord = {
-  _id?: string;
+  _id?: number;  // Changed from string to number (int identity)
   no?: number;
   kpi?: string;
   target?: string;

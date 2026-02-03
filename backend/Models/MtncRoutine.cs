@@ -2,7 +2,7 @@
 {
     public class MtncRoutine
     {
-        public string Id { get; set; } = string.Empty;      // nvarchar/varchar id (your table uses string ids)
+        public int Id { get; set; }  // id (int identity)
         public byte No { get; set; }                        // ✅ tinyint -> byte
         public string Kpi { get; set; } = string.Empty;
         public string Target { get; set; } = string.Empty;

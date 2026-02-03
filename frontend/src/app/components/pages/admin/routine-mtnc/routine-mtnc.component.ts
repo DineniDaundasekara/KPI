@@ -5,7 +5,7 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
 
 type RoutineRecord = {
-  _id: string;
+  _id: number;  // Changed from string to number (int identity)
   no: number;
   kpi: string;
   target: string;
@@ -33,7 +33,7 @@ export class AdminRoutineMtncComponent implements OnInit {
 
   // ✅ from DB only
   records: RoutineRecord[] = [];
-  editingId: string | null = null;
+  editingId: number | null = null;
 
   loading = false;
   saving = false;
@@ -133,8 +133,8 @@ export class AdminRoutineMtncComponent implements OnInit {
     this.errorMessage = '';
   }
 
-  onDelete(id: string): void {
-    if (!id) {
+  onDelete(id: number): void {
+    if (!id || id <= 0) {
       this.errorMessage = 'Invalid record id.';
       return;
     }
