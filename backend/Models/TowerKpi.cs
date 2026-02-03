@@ -3,13 +3,12 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace backend.Models
 {
-    [Table("kpitowertable_2025")]
+    [Table("kpitowertable")]
     public class TowerKpi
     {
         [Key]
         [Column("id")]
-        [MaxLength(24)]
-        public string Id { get; set; } = null!;
+        public int Id { get; set; }
 
         [Column("no")]
         public byte No { get; set; }
