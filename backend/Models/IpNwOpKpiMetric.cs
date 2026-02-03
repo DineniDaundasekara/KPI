@@ -8,11 +8,11 @@ namespace backend.Models
     public class IpNwOpKpiMetric
     {
         [Key]
-        public long Id { get; set; }
+        [Column("id")]
+        public int Id { get; set; }   // ✅ INT IDENTITY
 
-        // renamed column in DB: ip_nw_op_kpi_id
         [Column("ip_nw_op_kpi_id")]
-        public string IpNwOpKpiId { get; set; } = null!;
+        public int IpNwOpKpiId { get; set; }     // ✅ FK INT
 
         [Column("area_code")]
         public string AreaCode { get; set; } = string.Empty;
@@ -25,6 +25,12 @@ namespace backend.Models
 
         [Column("total_nodes")]
         public int? TotalNodes { get; set; }
+
+        [Column("month")]
+        public byte Month { get; set; }          // ✅ NOT NULL
+
+        [Column("year")]
+        public short Year { get; set; }          // ✅ NOT NULL
 
         // Navigation
         [JsonIgnore]
