@@ -5,8 +5,8 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
 
 type EmailRecipient = {
-  id: string;     // ✅ SQL id column
-  email: string;  // ✅ SQL email column
+  id: number;     // SQL id column (int identity)
+  email: string;  // SQL email column
   v?: number;     // optional
 };
 
@@ -26,7 +26,7 @@ export class EmailServiceComponent implements OnInit {
   submitButtonLabel = 'Add Recipient';
 
   recipients: EmailRecipient[] = [];
-  editingId: string | null = null;
+  editingId: number | null = null;
 
   loading = false;
   saving = false;
@@ -82,8 +82,8 @@ export class EmailServiceComponent implements OnInit {
 
     let request$;
     if (this.editingId) {
-      // Prevent update if editingId is empty or undefined
-      if (!this.editingId) {
+      // Prevent update if editingId is invalid (0 or negative)
+      if (this.editingId <= 0) {
         this.errorMessage = 'Invalid recipient for update.';
         return;
       }
@@ -124,8 +124,8 @@ export class EmailServiceComponent implements OnInit {
     this.errorMessage = '';
   }
 
-  onDelete(id: string): void {
-    if (!id) {
+  onDelete(id: number): void {
+    if (!id || id <= 0) {
       this.errorMessage = 'Invalid recipient for deletion.';
       return;
     }
