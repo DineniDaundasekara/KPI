@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
@@ -9,31 +11,22 @@ namespace backend.Models
     {
         [Key]
         [Column("id")]
-        public string Id { get; set; } = null!;
-
-        [Column("no")]
-        public int? No { get; set; }   // DB: int NULL
+        public int Id { get; set; }   // ✅ INT IDENTITY
 
         [Column("network_engineer_kpi")]
-        public string? NetworkEngineerKpi { get; set; } // DB: nvarchar NULL
+        public string? NetworkEngineerKpi { get; set; }
 
         [Column("division")]
-        public string? Division { get; set; } // DB: nvarchar NULL
+        public string? Division { get; set; }
 
         [Column("section")]
-        public string? Section { get; set; } // DB: nvarchar NULL
+        public string? Section { get; set; }
 
         [Column("kpi_percent")]
-        public double? KpiPercent { get; set; } // DB: float NULL
-
-        [Column("month")]
-        public byte? Month { get; set; } // DB: tinyint NULL
-
-        [Column("year")]
-        public short? Year { get; set; } // DB: smallint NULL
+        public double? KpiPercent { get; set; }  // SQL float
 
         [Column("updated_at")]
-        public DateTime? UpdatedAt { get; set; } // DB: datetime2 NULL
+        public DateTime? UpdatedAt { get; set; } // datetime2(7)
 
         // ✅ One KPI -> Many Metrics
         [JsonIgnore]

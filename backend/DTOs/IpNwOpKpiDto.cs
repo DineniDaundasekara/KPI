@@ -6,11 +6,8 @@ namespace backend.DTOs
 {
     public class IpNwOpKpiDto
     {
-        [JsonPropertyName("_id")]
-        public string Id { get; set; } = string.Empty;
-
-        [JsonPropertyName("no")]
-        public int? No { get; set; }
+        [JsonPropertyName("id")]
+        public int Id { get; set; }   // ✅ was string (_id), now int
 
         [JsonPropertyName("network_engineer_kpi")]
         public string? NetworkEngineerKpi { get; set; }
@@ -24,15 +21,10 @@ namespace backend.DTOs
         [JsonPropertyName("kpi_percent")]
         public double? KpiPercent { get; set; }
 
-        [JsonPropertyName("month")]
-        public byte? Month { get; set; }
-
-        [JsonPropertyName("year")]
-        public short? Year { get; set; }
-
         [JsonPropertyName("updated_at")]
         public DateTime? UpdatedAt { get; set; }
 
+        // ✅ Optional: keep these if your frontend expects area-wise mapping
         [JsonPropertyName("unavailable_minutes")]
         public Dictionary<string, int?> UnavailableMinutes { get; set; } = new();
 

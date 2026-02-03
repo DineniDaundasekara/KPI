@@ -61,9 +61,38 @@
 
   <!-- Main -->
   <div *ngIf="!loading && !error">
-    <!-- Filters -->
+    <!-- Month/Year Selection & Filters Combined -->
     <form (submit)="$event.preventDefault()" class="filters-form mb-4">
       <div class="row g-3">
+        <div class="col-md-3">
+          <label for="monthSelect" class="form-label">Month:</label>
+          <select
+            id="monthSelect"
+            class="form-select"
+            [(ngModel)]="selectedMonth"
+            (change)="onMonthYearChange()"
+            name="month"
+          >
+            <option *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]" [value]="m">
+              {{ ['January', 'February', 'March', 'April', 'May', 'June', 
+                  'July', 'August', 'September', 'October', 'November', 'December'][m-1] }}
+            </option>
+          </select>
+        </div>
+        
+        <div class="col-md-3">
+          <label for="yearSelect" class="form-label">Year:</label>
+          <select
+            id="yearSelect"
+            class="form-select"
+            [(ngModel)]="selectedYear"
+            (change)="onMonthYearChange()"
+            name="year"
+          >
+            <option *ngFor="let y of [2023,2024,2025,2026,2027,2028]" [value]="y">{{ y }}</option>
+          </select>
+        </div>
+
         <div class="col-md-3">
           <label for="dropdown1" class="form-label">R-GM:</label>
           <select
@@ -177,8 +206,8 @@
               </thead>
 
               <tbody>
-                <tr *ngFor="let row of data">
-                  <td>{{ row.no }}</td>
+                <tr *ngFor="let row of data; let i = index">
+                  <td>{{ i + 1 }}</td>
                   <td>{{ row.network_engineer_kpi }}</td>
                   <td>{{ row.division }}</td>
                   <td>{{ row.section }}</td>
@@ -231,9 +260,9 @@
 
               <tbody>
                 <ng-container *ngIf="data.length > 0; else noAreaRows">
-                  <ng-container *ngFor="let row of data">
+                  <ng-container *ngFor="let row of data; let i = index">
                     <tr>
-                      <td>{{ row.no }}</td>
+                      <td>{{ i + 1 }}</td>
                       <td>{{ row.network_engineer_kpi }}</td>
                       <td>{{ row.division }}</td>
                       <td>{{ row.section }}</td>
@@ -244,7 +273,7 @@
                       <td></td>
                       <td colspan="4" class="sub-label">Unavailable Minutes</td>
                       <td class="metric-cell" [class.can-edit]="canEditMetrics">
-                        <ng-container *ngIf="isCellEditing(row._id, 'unavailable_minutes'); else unavailableView">
+                        <ng-container *ngIf="isCellEditing(row.id, 'unavailable_minutes'); else unavailableView">
                           <div class="edit-box">
                             <input
                               type="number"
@@ -287,7 +316,7 @@
                       <td></td>
                       <td colspan="4" class="sub-label">Total Minutes</td>
                       <td class="metric-cell" [class.can-edit]="canEditMetrics">
-                        <ng-container *ngIf="isCellEditing(row._id, 'total_minutes'); else totalMinutesView">
+                        <ng-container *ngIf="isCellEditing(row.id, 'total_minutes'); else totalMinutesView">
                           <div class="edit-box">
                             <input
                               type="number"
@@ -330,7 +359,7 @@
                       <td></td>
                       <td colspan="4" class="sub-label">Total Nodes</td>
                       <td class="metric-cell" [class.can-edit]="canEditMetrics">
-                        <ng-container *ngIf="isCellEditing(row._id, 'total_nodes'); else totalNodesView">
+                        <ng-container *ngIf="isCellEditing(row.id, 'total_nodes'); else totalNodesView">
                           <div class="edit-box">
                             <input
                               type="number"

@@ -1,58 +1,44 @@
 ﻿import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-
-interface IpNwOpRow {
-  _id: string;
-  no: number;
-  network_engineer_kpi: string;
-  division: string;
-  section: string;
-  kpi_percent: number; // keep as number for sorting + display
-}
+import { IpNwOpService, IpNwOpKpiDto } from '../../../../services/ip-nw-op.service';
 
 @Component({
   selector: 'app-admin-ip-nw-op',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule],
   templateUrl: './ip-nw-op.component.html',
   styleUrls: ['./ip-nw-op.component.scss'],
 })
 export class AdminIpNwOpComponent implements OnInit {
   pageTitle = 'Admin - IP NW OP';
 
-  // backend base url
-  private apiBase = 'http://localhost:5043/ip-nw-op';
-
-  data: IpNwOpRow[] = [];
+  data: IpNwOpKpiDto[] = [];
 
   form = {
-    no: '',
     network_engineer_kpi: '',
     division: '',
     section: '',
     kpi_percent: '',
   };
 
-  editingId: string | null = null;
+  editingId: number | null = null;
 
   loading = false;
   error: string | null = null;
 
-  constructor(private http: HttpClient) {}
+  constructor(private ipNwOpService: IpNwOpService) {}
 
   ngOnInit(): void {
     this.loadData();
   }
 
-  // Only initial load + manual retry uses this
   loadData(): void {
     this.loading = true;
     this.error = null;
 
-    this.http.get<IpNwOpRow[]>(`${this.apiBase}/`).subscribe({
+    this.ipNwOpService.getAll().subscribe({
       next: (res) => {
         this.data = Array.isArray(res) ? res : [];
         this.sortData();
@@ -70,9 +56,9 @@ export class AdminIpNwOpComponent implements OnInit {
   handleInputChange(name: string, value: string): void {
     const fieldMapping: Record<string, keyof typeof this.form> = {
       kpi: 'network_engineer_kpi',
-      target: 'division',
-      calculation: 'section',
-      platform: 'kpi_percent',
+      division: 'division',
+      section: 'section',
+      kpi_percent: 'kpi_percent',
     };
 
     const fieldName = fieldMapping[name] || (name as keyof typeof this.form);
@@ -83,7 +69,6 @@ export class AdminIpNwOpComponent implements OnInit {
     this.error = null;
 
     const payload = {
-      no: Number(this.form.no),
       network_engineer_kpi: this.form.network_engineer_kpi.trim(),
       division: this.form.division.trim(),
       section: this.form.section.trim(),
@@ -91,7 +76,6 @@ export class AdminIpNwOpComponent implements OnInit {
     };
 
     if (
-      !payload.no ||
       !payload.network_engineer_kpi ||
       !payload.division ||
       !payload.section ||
@@ -102,28 +86,26 @@ export class AdminIpNwOpComponent implements OnInit {
     }
 
     try {
-      // Do not set loading for full page here (avoid big loading screen)
-      if (this.editingId) {
+      if (this.editingId !== null) {
         // UPDATE
         await firstValueFrom(
-          this.http.put(`${this.apiBase}/update/${this.editingId}`, payload)
+          this.ipNwOpService.update(this.editingId, payload)
         );
 
         // update local array instantly
-        const idx = this.data.findIndex((x) => x._id === this.editingId);
+        const idx = this.data.findIndex((x) => x.id === this.editingId);
         if (idx !== -1) {
-          this.data[idx] = { _id: this.editingId, ...payload };
+          this.data[idx] = { ...this.data[idx], ...payload };
           this.sortData();
         }
       } else {
         // ADD
-        const res: any = await firstValueFrom(
-          this.http.post(`${this.apiBase}/add`, payload)
+        const res = await firstValueFrom(
+          this.ipNwOpService.add(payload)
         );
 
         // insert locally instantly
-        const newId = res?._id || res?.id || crypto.randomUUID();
-        this.data.push({ _id: newId, ...payload });
+        this.data.push(res);
         this.sortData();
       }
 
@@ -134,31 +116,30 @@ export class AdminIpNwOpComponent implements OnInit {
     }
   }
 
-  editRow(item: IpNwOpRow): void {
+  editRow(item: IpNwOpKpiDto): void {
     this.form = {
-      no: String(item.no ?? ''),
       network_engineer_kpi: item.network_engineer_kpi ?? '',
       division: item.division ?? '',
       section: item.section ?? '',
       kpi_percent: String(item.kpi_percent ?? ''),
     };
 
-    this.editingId = item._id;
+    this.editingId = item.id;
   }
 
   cancelEdit(): void {
     this.resetForm();
   }
 
-  async deleteRow(id: string): Promise<void> {
+  async deleteRow(id: number): Promise<void> {
     const ok = window.confirm('Are you sure you want to delete this item?');
     if (!ok) return;
 
     try {
-      await firstValueFrom(this.http.delete(`${this.apiBase}/delete/${id}`));
+      await firstValueFrom(this.ipNwOpService.delete(id));
 
       // remove locally instantly
-      this.data = this.data.filter((x) => x._id !== id);
+      this.data = this.data.filter((x) => x.id !== id);
     } catch (err) {
       console.error(err);
       this.error = 'Failed to delete item. Please try again.';
@@ -166,12 +147,13 @@ export class AdminIpNwOpComponent implements OnInit {
   }
 
   private sortData(): void {
-    this.data = [...this.data].sort((a, b) => (a.no ?? 0) - (b.no ?? 0));
+    this.data = [...this.data].sort((a, b) => 
+      (a.network_engineer_kpi ?? '').localeCompare(b.network_engineer_kpi ?? '')
+    );
   }
 
   resetForm(): void {
     this.form = {
-      no: '',
       network_engineer_kpi: '',
       division: '',
       section: '',

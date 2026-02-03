@@ -133,21 +133,33 @@ namespace backend.Data
             });
 
             // IP NW OP KPI
+            // IP NW OP KPI (FORM 6) - UPDATED
             modelBuilder.Entity<IpNwOpKpi>(entity =>
             {
                 entity.ToTable("IpNwOpKpi", "dbo");
                 entity.HasKey(x => x.Id);
 
-                entity.Property(x => x.Id).HasColumnName("id").HasMaxLength(64);
-                entity.Property(x => x.No).HasColumnName("no");
-                entity.Property(x => x.NetworkEngineerKpi).HasColumnName("network_engineer_kpi");
-                entity.Property(x => x.Division).HasColumnName("division");
-                entity.Property(x => x.Section).HasColumnName("section");
-                entity.Property(x => x.KpiPercent).HasColumnName("kpi_percent");
+                entity.Property(x => x.Id)
+                      .HasColumnName("id")
+                      .ValueGeneratedOnAdd(); // ✅ INT IDENTITY
 
-                entity.Property(x => x.Month).HasColumnName("month");
-                entity.Property(x => x.Year).HasColumnName("year");
-                entity.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+                entity.Property(x => x.NetworkEngineerKpi)
+                      .HasColumnName("network_engineer_kpi")
+                      .HasMaxLength(255);
+
+                entity.Property(x => x.Division)
+                      .HasColumnName("division")
+                      .HasMaxLength(255);
+
+                entity.Property(x => x.Section)
+                      .HasColumnName("section")
+                      .HasMaxLength(50);
+
+                entity.Property(x => x.KpiPercent)
+                      .HasColumnName("kpi_percent");
+
+                entity.Property(x => x.UpdatedAt)
+                      .HasColumnName("updated_at");
             });
 
             modelBuilder.Entity<IpNwOpKpiMetric>(entity =>
@@ -156,23 +168,35 @@ namespace backend.Data
                 entity.HasKey(x => x.Id);
 
                 entity.Property(x => x.Id)
-                    .HasColumnName("id")
-                    .ValueGeneratedOnAdd();
+                      .HasColumnName("id")
+                      .ValueGeneratedOnAdd(); // ✅ INT IDENTITY
 
                 entity.Property(x => x.IpNwOpKpiId)
-                    .HasColumnName("ip_nw_op_kpi_id")
-                    .HasMaxLength(64);
+                      .HasColumnName("ip_nw_op_kpi_id"); // ✅ INT FK (NO MaxLength)
 
-                entity.Property(x => x.AreaCode).HasColumnName("area_code").HasMaxLength(50);
+                entity.Property(x => x.AreaCode)
+                      .HasColumnName("area_code")
+                      .HasMaxLength(50)
+                      .IsRequired();
 
                 entity.Property(x => x.UnavailableMinutes).HasColumnName("unavailable_minutes");
                 entity.Property(x => x.TotalMinutes).HasColumnName("total_minutes");
                 entity.Property(x => x.TotalNodes).HasColumnName("total_nodes");
 
+                // ✅ NEW columns in metrics table
+                entity.Property(x => x.Month).HasColumnName("month");
+                entity.Property(x => x.Year).HasColumnName("year");
+
                 entity.HasOne(x => x.IpNwOpKpi)
-                    .WithMany(k => k.Metrics)
-                    .HasForeignKey(x => x.IpNwOpKpiId)
-                    .HasConstraintName("FK_IpNwOpKpiMetrics_IpNwOpKpi");
+                      .WithMany(k => k.Metrics)
+                      .HasForeignKey(x => x.IpNwOpKpiId)
+                      .HasConstraintName("FK_IpNwOpKpiMetrics_IpNwOpKpi")
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // ✅ Match DB unique constraint: (ip_nw_op_kpi_id, area_code, month, year)
+                entity.HasIndex(x => new { x.IpNwOpKpiId, x.AreaCode, x.Month, x.Year })
+                      .IsUnique()
+                      .HasDatabaseName("UQ_IpNwOpKpiMetrics");
             });
 
             // =========================

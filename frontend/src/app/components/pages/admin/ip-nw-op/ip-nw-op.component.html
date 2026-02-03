@@ -46,12 +46,7 @@
 
       <form (ngSubmit)="save()" class="form-grid">
         <div class="field">
-          <label>No</label>
-          <input type="number" required [(ngModel)]="form.no" name="no" placeholder="No" />
-        </div>
-
-        <div class="field">
-          <label>KPI</label>
+          <label>Network Engineer KPI</label>
           <input
             type="text"
             required
@@ -68,8 +63,8 @@
             type="text"
             required
             [ngModel]="form.division"
-            (ngModelChange)="handleInputChange('target', $event)"
-            name="target"
+            (ngModelChange)="handleInputChange('division', $event)"
+            name="division"
             placeholder="Division"
           />
         </div>
@@ -80,8 +75,8 @@
             type="text"
             required
             [ngModel]="form.section"
-            (ngModelChange)="handleInputChange('calculation', $event)"
-            name="calculation"
+            (ngModelChange)="handleInputChange('section', $event)"
+            name="section"
             placeholder="Section"
           />
         </div>
@@ -89,11 +84,12 @@
         <div class="field">
           <label>KPI (%)</label>
           <input
-            type="text"
+            type="number"
             required
+            step="0.01"
             [ngModel]="form.kpi_percent"
-            (ngModelChange)="handleInputChange('platform', $event)"
-            name="platform"
+            (ngModelChange)="handleInputChange('kpi_percent', $event)"
+            name="kpi_percent"
             placeholder="KPI (%)"
           />
         </div>
@@ -121,7 +117,6 @@
         <table class="data-table">
           <thead>
             <tr>
-              <th>No</th>
               <th>Network Engineer KPI</th>
               <th>Division</th>
               <th>Section</th>
@@ -132,19 +127,18 @@
 
           <tbody>
             <tr *ngFor="let item of data">
-              <td>{{ item.no }}</td>
               <td>{{ item.network_engineer_kpi }}</td>
               <td>{{ item.division }}</td>
               <td>{{ item.section }}</td>
               <td>{{ item.kpi_percent }}</td>
               <td class="row-actions">
                 <button type="button" class="mini-btn edit" (click)="editRow(item)">Edit</button>
-                <button type="button" class="mini-btn delete" (click)="deleteRow(item._id)">Delete</button>
+                <button type="button" class="mini-btn delete" (click)="deleteRow(item.id)">Delete</button>
               </td>
             </tr>
 
             <tr *ngIf="data.length === 0">
-              <td colspan="6" class="empty">
+              <td colspan="5" class="empty">
                 No records found.
               </td>
             </tr>
