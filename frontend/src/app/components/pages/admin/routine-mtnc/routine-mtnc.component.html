@@ -8,10 +8,10 @@
   <section class="form-section">
     <form class="kpi-form" [formGroup]="form" (ngSubmit)="onSubmit()" [class.edit-mode]="editingId">
       <h2>{{ formTitle }}</h2>
-      <div class="field-group">
+      <!-- <div class="field-group">
         <input type="number" formControlName="no" placeholder="No" required [class.editing]="editingId" />
         <span class="error" *ngIf="form.controls.no.invalid && form.controls.no.touched">Required</span>
-      </div>
+      </div> -->
       <div class="field-group">
         <input type="text" formControlName="kpi" placeholder="KPI" required [class.editing]="editingId" />
         <span class="error" *ngIf="form.controls.kpi.invalid && form.controls.kpi.touched">Required</span>
