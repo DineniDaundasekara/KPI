@@ -22,6 +22,7 @@ namespace backend.Controllers
 
         // =========================
         // MASTER LIST
+        // GET /service-fulfilment-kpi?month=11&year=2025
         // =========================
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] byte? month, [FromQuery] short? year)
@@ -35,11 +36,10 @@ namespace backend.Controllers
                 query = query.Where(x => x.Year == year.Value);
 
             var result = await query
-                .OrderBy(x => x.No)
+                .OrderBy(x => x.Id) // ? no 'No' column now
                 .Select(x => new ServiceFulfilmentKpiDto
                 {
                     Id = x.Id,
-                    No = x.No,
                     Kpi = x.Kpi,
                     Target = x.Target,
                     Calculation = x.Calculation,
@@ -49,15 +49,17 @@ namespace backend.Controllers
                     Weightage = x.Weightage,
                     DataSources = x.DataSources,
                     Month = x.Month,
-                    Year = x.Year
+                    Year = x.Year,
+                    UpdatedAt = x.UpdatedAt
                 })
                 .ToListAsync();
 
             return Ok(result);
         }
 
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(string id)
+        // GET /service-fulfilment-kpi/5
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetById(int id)
         {
             var entity = await _context.ServiceFulfilmentKpis
                 .AsNoTracking()
@@ -68,17 +70,20 @@ namespace backend.Controllers
             return Ok(MapToDto(entity));
         }
 
+        // POST /service-fulfilment-kpi/add
         [HttpPost("add")]
         public async Task<IActionResult> Add([FromBody] ServiceFulfilmentKpiDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
+            var now = DateTime.UtcNow;
+
             var entity = new ServiceFulfilmentKpi
             {
-                Id = Guid.NewGuid().ToString(),
-                UpdatedAt = DateTime.UtcNow.ToString("O"),
-                Month = dto.Month != 0 ? dto.Month : (byte)DateTime.UtcNow.Month,
-                Year = dto.Year != 0 ? dto.Year : (short)DateTime.UtcNow.Year
+                // ? Id is identity - do NOT set it
+                UpdatedAt = now.ToString("O"),
+                Month = dto.Month != 0 ? dto.Month : (byte)now.Month,
+                Year = dto.Year != 0 ? dto.Year : (short)now.Year
             };
 
             ApplyDtoToEntity(entity, dto);
@@ -89,8 +94,9 @@ namespace backend.Controllers
             return CreatedAtAction(nameof(GetById), new { id = entity.Id }, MapToDto(entity));
         }
 
-        [HttpPut("update/{id}")]
-        public async Task<IActionResult> Update(string id, [FromBody] ServiceFulfilmentKpiDto dto)
+        // PUT /service-fulfilment-kpi/update/5
+        [HttpPut("update/{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromBody] ServiceFulfilmentKpiDto dto)
         {
             var entity = await _context.ServiceFulfilmentKpis.FirstOrDefaultAsync(x => x.Id == id);
             if (entity == null) return NotFound();
@@ -102,8 +108,9 @@ namespace backend.Controllers
             return Ok(MapToDto(entity));
         }
 
-        [HttpDelete("delete/{id}")]
-        public async Task<IActionResult> Delete(string id)
+        // DELETE /service-fulfilment-kpi/delete/5
+        [HttpDelete("delete/{id:int}")]
+        public async Task<IActionResult> Delete(int id)
         {
             var entity = await _context.ServiceFulfilmentKpis.FirstOrDefaultAsync(x => x.Id == id);
             if (entity == null) return NotFound();
@@ -124,10 +131,15 @@ namespace backend.Controllers
             [FromQuery] short year,
             [FromQuery] string? area)
         {
-            var query = from metric in _context.ServiceFulfilmentKpiMetrics
-                        join kpi in _context.ServiceFulfilmentKpis on metric.ServiceFulfilmentKpiId equals kpi.Id
-                        where metric.Month == month && metric.Year == year
-                        select new { metric, kpi };
+            if (month == 0 || year == 0)
+                return BadRequest("Month and Year must be greater than zero.");
+
+            var query =
+                from metric in _context.ServiceFulfilmentKpiMetrics.AsNoTracking()
+                join kpi in _context.ServiceFulfilmentKpis.AsNoTracking()
+                    on metric.ServiceFulfilmentKpiId equals kpi.Id
+                where metric.Month == month && metric.Year == year
+                select new { metric, kpi };
 
             if (!string.IsNullOrWhiteSpace(area))
             {
@@ -136,12 +148,10 @@ namespace backend.Controllers
             }
 
             var result = await query
-                .AsNoTracking()
-                .OrderBy(x => x.kpi.No)
+                .OrderBy(x => x.kpi.Id) // ? no 'No' column now
                 .Select(x => new
                 {
                     id = x.kpi.Id,
-                    no = x.kpi.No,
                     kpi = x.kpi.Kpi,
                     target = x.kpi.Target,
                     platform = x.kpi.Platform,
@@ -159,37 +169,23 @@ namespace backend.Controllers
             return Ok(result);
         }
 
+        // POST /service-fulfilment-kpi/metrics
         [HttpPost("metrics")]
         public async Task<IActionResult> UpsertMetric([FromBody] UpsertServiceFulfilmentMetricDto dto)
         {
-            if (dto == null)
-            {
-                return BadRequest("Request body is required.");
-            }
-
-            if (string.IsNullOrWhiteSpace(dto.ServiceFulfilmentKpiId))
-            {
-                return BadRequest("ServiceFulfilmentKpiId is required.");
-            }
-
-            if (dto.Month == 0 || dto.Year == 0)
-            {
-                return BadRequest("Month and Year must be greater than zero.");
-            }
+            if (dto == null) return BadRequest("Request body is required.");
+            if (dto.ServiceFulfilmentKpiId <= 0) return BadRequest("ServiceFulfilmentKpiId must be > 0.");
+            if (dto.Month == 0 || dto.Year == 0) return BadRequest("Month and Year must be greater than zero.");
 
             var kpi = await _context.ServiceFulfilmentKpis
                 .FirstOrDefaultAsync(x => x.Id == dto.ServiceFulfilmentKpiId);
 
             if (kpi == null)
-            {
                 return NotFound($"Service Fulfilment KPI with id '{dto.ServiceFulfilmentKpiId}' was not found.");
-            }
 
             var normalizedArea = (dto.AreaCode ?? string.Empty).Trim().ToUpper();
             if (string.IsNullOrWhiteSpace(normalizedArea))
-            {
                 return BadRequest("AreaCode is required.");
-            }
 
             var metric = await _context.ServiceFulfilmentKpiMetrics.FirstOrDefaultAsync(x =>
                 x.ServiceFulfilmentKpiId == dto.ServiceFulfilmentKpiId &&
@@ -222,7 +218,6 @@ namespace backend.Controllers
             var response = new
             {
                 id = kpi.Id,
-                no = kpi.No,
                 kpi = kpi.Kpi,
                 target = kpi.Target,
                 platform = kpi.Platform,
@@ -241,7 +236,6 @@ namespace backend.Controllers
         private static ServiceFulfilmentKpiDto MapToDto(ServiceFulfilmentKpi entity) => new ServiceFulfilmentKpiDto
         {
             Id = entity.Id,
-            No = entity.No,
             Kpi = entity.Kpi,
             Target = entity.Target,
             Calculation = entity.Calculation,
@@ -251,12 +245,12 @@ namespace backend.Controllers
             Weightage = entity.Weightage,
             DataSources = entity.DataSources,
             Month = entity.Month,
-            Year = entity.Year
+            Year = entity.Year,
+            UpdatedAt = entity.UpdatedAt
         };
 
         private static void ApplyDtoToEntity(ServiceFulfilmentKpi entity, ServiceFulfilmentKpiDto dto)
         {
-            entity.No = dto.No;
             entity.Kpi = dto.Kpi ?? string.Empty;
             entity.Target = dto.Target ?? string.Empty;
             entity.Calculation = dto.Calculation ?? string.Empty;
@@ -268,6 +262,9 @@ namespace backend.Controllers
 
             if (dto.Month > 0) entity.Month = dto.Month;
             if (dto.Year > 0) entity.Year = dto.Year;
+
+            if (!string.IsNullOrWhiteSpace(dto.UpdatedAt))
+                entity.UpdatedAt = dto.UpdatedAt!;
         }
     }
 }

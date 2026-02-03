@@ -1,7 +1,7 @@
 <div class="page-container">
   <div class="page-header">
     <h1>{{ pageTitle }}</h1>
-    <p class="page-subtitle">Manage service fulfilment settings and configurations</p>
+    <p class="page-subtitle">Manage service fulfilment settings and configurations in here</p>
   </div>
 
   <div class="page-content">
@@ -68,19 +68,6 @@
           class="kpi-form">
           <!-- Form Row 1 -->
           <div class="form-row">
-            <div class="form-group">
-              <label for="no">NO</label>
-              <input 
-                type="text" 
-                id="no" 
-                formControlName="no"
-                placeholder="Enter KPI number"
-                [class.invalid]="kpiForm.get('no')?.invalid && kpiForm.get('no')?.touched">
-              <div class="error-message" *ngIf="kpiForm.get('no')?.invalid && kpiForm.get('no')?.touched">
-                KPI number is required
-              </div>
-            </div>
-            
             <div class="form-group">
               <label for="kpi">KPI</label>
               <input 
@@ -234,17 +221,12 @@
               </thead>
               <tbody>
                 <tr *ngFor="let kpi of kpiList; let i = index">
-                  <td>{{ kpi.no }}</td>
+                  <td>{{ kpi.displayOrder || (i + 1) }}</td>
                   <td>{{ kpi.kpi }}</td>
                   <td>{{ kpi.target }}</td>
                   <td><span class="platform-badge">{{ kpi.platform }}</span></td>
                   <td>{{ kpi.responsibleDgm }}</td>
-                  <td>
-                    <div class="weightage-display">
-                      <div class="weightage-bar" [style.width.%]="kpi.weightage"></div>
-                      <span>{{ kpi.weightage }}%</span>
-                    </div>
-                  </td>
+                  <td>{{ kpi.weightage }}%</td>
                   <td class="action-buttons">
                     <button class="btn-edit" (click)="editKpi(i)">Edit</button>
                     <button class="btn-delete" (click)="deleteKpi(i)">Delete</button>

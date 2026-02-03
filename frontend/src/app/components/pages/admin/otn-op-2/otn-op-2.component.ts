@@ -1,7 +1,7 @@
 import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { KpiService, KpiRecord } from '../../../../services/kpi.service';
+import { OtnOp2Service, OtnOpKpi, CreateOtnOpKpi } from '../../../../services/otn-op2.service';
 
 @Component({
   selector: 'app-otn-op-2',
@@ -13,23 +13,22 @@ import { KpiService, KpiRecord } from '../../../../services/kpi.service';
 export class OtnOp2Component implements OnInit {
 
   private readonly fb = inject(FormBuilder);
-  private readonly kpiService = inject(KpiService);
+  private readonly otnOp2Service = inject(OtnOp2Service);
 
   pageTitle = 'INT & NT OP_02';
 
-  records: KpiRecord[] = [];
-  editingId: string | null = null;
+  records: OtnOpKpi[] = [];
+  editingId: number | null = null;
 
   loading = false;
   saving = false;
   errorMessage = '';
 
   form = this.fb.group({
-    no: [0, Validators.required],
-    network_Engineer_Kpi: ['', Validators.required],
-    division: ['', Validators.required],
-    section: ['', Validators.required],
-    kpi_Percent: [0, Validators.required]
+    networkEngineerKpi: ['', Validators.required],
+    division: [''],
+    section: [''],
+    kpiPercent: [null as number | null]
   });
 
   ngOnInit(): void {
@@ -39,7 +38,7 @@ export class OtnOp2Component implements OnInit {
   fetchData(): void {
     this.loading = true;
 
-    this.kpiService.getAll().subscribe({
+    this.otnOp2Service.getAllKpis().subscribe({
       next: data => {
         this.records = data;
       },
@@ -60,54 +59,61 @@ export class OtnOp2Component implements OnInit {
       return;
     }
 
-    const payload: KpiRecord = {
-      no: this.form.value.no!,
-      network_Engineer_Kpi: this.form.value.network_Engineer_Kpi!,
-      division: this.form.value.division!,
-      section: this.form.value.section!,
-      kpi_Percent: this.form.value.kpi_Percent!
+    const payload: CreateOtnOpKpi = {
+      networkEngineerKpi: this.form.value.networkEngineerKpi!,
+      division: this.form.value.division || undefined,
+      section: this.form.value.section || undefined,
+      kpiPercent: this.form.value.kpiPercent ?? undefined
     };
 
     this.saving = true;
 
-    const request$ = this.editingId
-      ? this.kpiService.update(this.editingId, payload)
-      : this.kpiService.create(payload);
-
-    request$.subscribe({
-      next: () => {
-        this.resetForm();
-        this.fetchData();
-      },
-      error: err => {
-        console.error(err);
-        this.errorMessage = 'Save failed';
-        this.saving = false;
-      },
-      complete: () => {
-        this.saving = false;
-      }
-    });
+    if (this.editingId) {
+      this.otnOp2Service.updateKpi(this.editingId, payload).subscribe({
+        next: () => {
+          this.resetForm();
+          this.fetchData();
+          this.saving = false;
+        },
+        error: (err: any) => {
+          console.error(err);
+          this.errorMessage = 'Save failed';
+          this.saving = false;
+        }
+      });
+    } else {
+      this.otnOp2Service.createKpi(payload).subscribe({
+        next: () => {
+          this.resetForm();
+          this.fetchData();
+          this.saving = false;
+        },
+        error: (err: any) => {
+          console.error(err);
+          this.errorMessage = 'Save failed';
+          this.saving = false;
+        }
+      });
+    }
   }
 
-  onEdit(record: KpiRecord): void {
-    this.editingId = record.id!;
+  onEdit(record: OtnOpKpi): void {
+    this.editingId = record.id;
 
     this.form.patchValue({
-      no: record.no,
-      network_Engineer_Kpi: record.network_Engineer_Kpi,
-      division: record.division,
-      section: record.section,
-      kpi_Percent: record.kpi_Percent
+      networkEngineerKpi: record.networkEngineerKpi,
+      division: record.division || '',
+      section: record.section || '',
+      kpiPercent: record.kpiPercent ?? null
     });
   }
 
-  onDelete(id?: string): void {
+  onDelete(id?: number): void {
     if (!id || !confirm('Delete this record?')) return;
 
     this.saving = true;
 
-    this.kpiService.delete(id).subscribe({
+    this.otnOp2Service.deleteKpi(id).subscribe({
       next: () => this.fetchData(),
       error: err => {
         console.error(err);
@@ -126,11 +132,10 @@ export class OtnOp2Component implements OnInit {
 
   private resetForm(): void {
     this.form.reset({
-      no: 0,
-      network_Engineer_Kpi: '',
+      networkEngineerKpi: '',
       division: '',
       section: '',
-      kpi_Percent: 0
+      kpiPercent: null
     });
     this.editingId = null;
   }

@@ -1,22 +1,29 @@
 <div class="page-container">
-  <div class="page-header">
-    <h1>{{ pageTitle }}</h1>
-    <p class="page-subtitle">Monitor service fulfilment metrics and performance</p>
-    
-    <div class="mt-3">
-      <small class="text-muted">
-        <i class="bi bi-info-circle me-1"></i>
-        {{ data.length }} KPIs loaded • {{ metricsRows.length }} metric rows • 
-        <span [class.text-success]="isEditingAllowed" [class.text-warning]="!isEditingAllowed">
-          <i class="bi" [ngClass]="isEditingAllowed ? 'bi-check-circle' : 'bi-exclamation-circle'"></i>
-          {{ isEditingAllowed ? 'Edit mode enabled (Platform Admin)' : 'View only mode (User)' }}
-        </span>
-      </small>
-      <div class="mt-2">
-        <button type="button" class="btn btn-sm btn-outline-secondary" (click)="toggleRoleSimulation()">
-          {{ userRole === 'padmin' ? 'Simulate as User' : 'Simulate as Platform Admin' }}
-        </button>
+  <div class="page-header d-flex flex-wrap align-items-start justify-content-between gap-3">
+    <div>
+      <h1>{{ pageTitle }}</h1>
+      <p class="page-subtitle">Monitor service fulfilment metrics and performance</p>
+      
+      <div class="mt-3">
+        <small class="text-muted">
+          <i class="bi bi-info-circle me-1"></i>
+          {{ data.length }} KPIs loaded • {{ metricsRows.length }} metric rows • 
+          <span [class.text-success]="isEditingAllowed" [class.text-warning]="!isEditingAllowed">
+            <i class="bi" [ngClass]="isEditingAllowed ? 'bi-check-circle' : 'bi-exclamation-circle'"></i>
+            {{ isEditingAllowed ? 'Edit mode enabled (Platform Admin)' : 'View only mode (User)' }}
+          </span>
+        </small>
+        <div class="mt-2 d-flex flex-wrap gap-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" (click)="toggleRoleSimulation()">
+            {{ userRole === 'padmin' ? 'Simulate as User' : 'Simulate as Platform Admin' }}
+          </button>
+        </div>
       </div>
+    </div>
+    <div class="header-actions d-flex flex-wrap gap-2 ms-auto">
+      <button type="button" class="primary-btn" (click)="generateExcelReport()" [disabled]="loading || !data.length">
+        Export to Excel
+      </button>
     </div>
   </div>
 
@@ -197,38 +204,46 @@
                       <div
                         class="editable-cell"
                         [class.can-edit]="isEditingAllowed"
-                        [class.is-active]="isEditingCell(row, column)"
-                        (click)="startEdit(row, column)">
+                        [class.is-active]="isEditingCell(row, column)">
                         <ng-container *ngIf="isEditingCell(row, column); else metricDisplay">
-                          <input
-                            type="number"
-                            class="form-control form-control-sm"
-                            [value]="getCellValue(row, column) || ''"
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            inputmode="decimal"
-                            autofocus
-                            (focus)="selectMetricInput($event)"
-                            (input)="handleFieldChange($event, getRowId(row), column)"
-                            (keyup.enter)="saveEdit(row, column)"
-                            (keyup.escape)="cancelEdit()"
-                          />
-                          <div class="edit-actions">
-                            <button type="button" class="btn btn-sm btn-success" (mousedown)="$event.preventDefault()" (click)="saveEdit(row, column)">
-                              Save
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" (mousedown)="$event.preventDefault()" (click)="cancelEdit()">
-                              Cancel
-                            </button>
-                          </div>
+                          <form class="inline-edit-form" (submit)="$event.preventDefault(); saveEdit(row, column)">
+                            <input
+                              type="number"
+                              class="form-control form-control-sm"
+                              [(ngModel)]="activeEditValue"
+                              [ngModelOptions]="{ standalone: true }"
+                              min="0"
+                              max="100"
+                              step="0.01"
+                              inputmode="decimal"
+                              autofocus
+                              (focus)="selectMetricInput($event)"
+                              (keyup.escape)="cancelEdit()"
+                            />
+                            <div class="inline-edit-actions">
+                              <button type="submit" class="icon-btn success" [disabled]="metricsLoading">
+                                <i class="bi bi-check-lg"></i>
+                                <span>Save</span>
+                              </button>
+                              <button type="button" class="icon-btn ghost" (click)="cancelEdit()">
+                                <i class="bi bi-x-lg"></i>
+                                <span>Cancel</span>
+                              </button>
+                            </div>
+                          </form>
                         </ng-container>
                         <ng-template #metricDisplay>
-                          <span class="metric-value">{{ formatPercent(getCellValue(row, column)) }}</span>
-                          <span *ngIf="isEditingAllowed" class="edit-hint">
-                            <i class="bi bi-pencil"></i>
-                            Edit
-                          </span>
+                          <div class="metric-display">
+                            <span class="metric-value">{{ formatPercent(getCellValue(row, column)) }}</span>
+                            <button
+                              type="button"
+                              class="icon-btn"
+                              [disabled]="!isEditingAllowed"
+                              (click)="startEdit(row, column)">
+                              <i class="bi bi-pencil-square"></i>
+                              <span>Edit</span>
+                            </button>
+                          </div>
                         </ng-template>
                       </div>
                     </ng-template>

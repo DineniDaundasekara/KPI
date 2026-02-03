@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -9,9 +8,7 @@ namespace backend.Models
     public class ServiceFulfilmentKpi
     {
         [Key]
-        public string Id { get; set; } = Guid.NewGuid().ToString();
-
-        public int No { get; set; }
+        public int Id { get; set; }   // ✅ INT IDENTITY in SQL
 
         public string Kpi { get; set; } = string.Empty;
 
@@ -34,8 +31,6 @@ namespace backend.Models
         public short Year { get; set; }
 
         public string UpdatedAt { get; set; } = string.Empty;
-
-        public int? V { get; set; }
 
         // 🔗 Navigation
         public ICollection<ServiceFulfilmentKpiMetric> Metrics { get; set; }

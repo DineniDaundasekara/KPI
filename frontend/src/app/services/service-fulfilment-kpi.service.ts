@@ -4,24 +4,24 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 export interface ServiceFulfilmentKpiDto {
-  id?: string;
-  no: number;
+  id?: number | string;
   kpi: string;
   target: string;
   calculation: string;
   platform: string;
   responsibleDgm: string;
   defineDoladetails?: string;
-  definedoladetails: string;
+  definedoladetails?: string;
   weightage: number;
   dataSources: string;
   month: number;
   year: number;
+  updatedAt?: string;
+  displayOrder?: number;
 }
 
 interface ServiceFulfilmentMetricResponse {
-  id?: string;
-  no: number;
+  id?: number | string;
   kpi: string;
   target: string;
   platform: string;
@@ -35,7 +35,7 @@ interface ServiceFulfilmentMetricResponse {
 }
 
 export interface UpsertServiceFulfilmentMetricRequest {
-  serviceFulfilmentKpiId: string;
+  serviceFulfilmentKpiId: number;
   areaCode: string;
   kpiValue: number | null;
   month: number;
@@ -43,8 +43,7 @@ export interface UpsertServiceFulfilmentMetricRequest {
 }
 
 export interface ServiceFulfilmentMetricDto {
-  id?: string;
-  no: number;
+  id?: number | string;
   kpi: string;
   target: string;
   platform: string;
@@ -81,16 +80,21 @@ export class ServiceFulfilmentKpiService {
       .get<ServiceFulfilmentKpiDto[]>(this.apiUrl, options)
       .pipe(
         map((items) =>
-          items.map((item) => ({
-            ...item,
-            definedoladetails:
-              item.definedoladetails ?? (item as any).defineDoladetails ?? ''
-          }))
+          items.map((item, index) => {
+            const definedOla =
+              item.defineDoladetails ?? (item as any).definedoladetails ?? '';
+            return {
+              ...item,
+              defineDoladetails: definedOla,
+              definedoladetails: definedOla,
+              displayOrder: (item as any).no ?? index + 1
+            } as ServiceFulfilmentKpiDto;
+          })
         )
       );
   }
 
-  getById(id: string): Observable<ServiceFulfilmentKpiDto> {
+  getById(id: number | string): Observable<ServiceFulfilmentKpiDto> {
     return this.http.get<ServiceFulfilmentKpiDto>(`${this.apiUrl}/${id}`);
   }
 
@@ -98,11 +102,11 @@ export class ServiceFulfilmentKpiService {
     return this.http.post<ServiceFulfilmentKpiDto>(`${this.apiUrl}/add`, data);
   }
 
-  update(id: string, data: ServiceFulfilmentKpiDto): Observable<ServiceFulfilmentKpiDto> {
+  update(id: number | string, data: ServiceFulfilmentKpiDto): Observable<ServiceFulfilmentKpiDto> {
     return this.http.put<ServiceFulfilmentKpiDto>(`${this.apiUrl}/update/${id}`, data);
   }
 
-  delete(id: string): Observable<void> {
+  delete(id: number | string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/delete/${id}`);
   }
 
@@ -121,12 +125,11 @@ export class ServiceFulfilmentKpiService {
         map((items) =>
           items.map((item) => ({
             id: item.id,
-            no: item.no,
             kpi: item.kpi,
             target: item.target,
             platform: item.platform,
             responsibleDgm: item.responsibleDgm,
-            definedoladetails: item.definedoladetails,
+            definedoladetails: item.definedoladetails ?? (item as any).defineDoladetails,
             weightage: item.weightage,
             area: item.area,
             kpiValue: item.kpi_value,
@@ -143,12 +146,11 @@ export class ServiceFulfilmentKpiService {
       .pipe(
         map((item) => ({
           id: item.id,
-          no: item.no,
           kpi: item.kpi,
           target: item.target,
           platform: item.platform,
           responsibleDgm: item.responsibleDgm,
-          definedoladetails: item.definedoladetails,
+          definedoladetails: item.definedoladetails ?? (item as any).defineDoladetails,
           weightage: item.weightage,
           area: item.area,
           kpiValue: item.kpi_value,

@@ -11,19 +11,12 @@
       <h2>{{ editingId ? 'Update KPI' : 'Create KPI' }}</h2>
 
       <div class="field-group">
-        <input type="number" formControlName="no" placeholder="No" required />
-        <span class="error" *ngIf="form.controls.no.invalid && form.controls.no.touched">
-          Required
-        </span>
-      </div>
-
-      <div class="field-group">
         <input type="text"
-               formControlName="network_Engineer_Kpi"
-               placeholder="KPI"
+               formControlName="networkEngineerKpi"
+               placeholder="Network Engineer KPI"
                required />
         <span class="error"
-              *ngIf="form.controls.network_Engineer_Kpi.invalid && form.controls.network_Engineer_Kpi.touched">
+              *ngIf="form.controls.networkEngineerKpi.invalid && form.controls.networkEngineerKpi.touched">
           Required
         </span>
       </div>
@@ -31,34 +24,19 @@
       <div class="field-group">
         <input type="text"
                formControlName="division"
-               placeholder="Division"
-               required />
-        <span class="error"
-              *ngIf="form.controls.division.invalid && form.controls.division.touched">
-          Required
-        </span>
+               placeholder="Division" />
       </div>
 
       <div class="field-group">
         <input type="text"
                formControlName="section"
-               placeholder="Section"
-               required />
-        <span class="error"
-              *ngIf="form.controls.section.invalid && form.controls.section.touched">
-          Required
-        </span>
+               placeholder="Section" />
       </div>
 
       <div class="field-group">
         <input type="number"
-               formControlName="kpi_Percent"
-               placeholder="KPI (%)"
-               required />
-        <span class="error"
-              *ngIf="form.controls.kpi_Percent.invalid && form.controls.kpi_Percent.touched">
-          Required
-        </span>
+               formControlName="kpiPercent"
+               placeholder="KPI (%)" />
       </div>
 
       <div class="actions">
@@ -90,7 +68,6 @@
     <table *ngIf="!loading && records.length" class="kpi-table">
       <thead>
         <tr>
-          <th>No</th>
           <th>Network Engineers KPI</th>
           <th>Division</th>
           <th>Section</th>
@@ -101,11 +78,10 @@
 
       <tbody>
         <tr *ngFor="let record of records">
-          <td>{{ record.no }}</td>
-          <td>{{ record.network_Engineer_Kpi }}</td>
+          <td>{{ record.networkEngineerKpi }}</td>
           <td>{{ record.division }}</td>
           <td>{{ record.section }}</td>
-          <td>{{ record.kpi_Percent }}</td>
+          <td>{{ record.kpiPercent }}</td>
           <td>
             <button class="edit"
                     type="button"
