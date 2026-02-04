@@ -205,40 +205,48 @@ namespace backend.Data
             modelBuilder.Entity<BbAnwKpi>(entity =>
             {
                 entity.ToTable("BbAnwKpi", "dbo");
-                entity.HasKey(x => x.KpiId);
+                entity.HasKey(x => x.Id);
 
-                entity.Property(x => x.KpiId).HasColumnName("KpiId");
-                entity.Property(x => x.MongoObjectId).HasColumnName("MongoObjectId").HasMaxLength(24);
+                entity.Property(x => x.Id).HasColumnName("id").ValueGeneratedOnAdd();
 
-                entity.Property(x => x.No).HasColumnName("No");
-                entity.Property(x => x.NetworkEngineerKpi).HasColumnName("NetworkEngineerKpi").HasMaxLength(200);
-                entity.Property(x => x.Division).HasColumnName("Division").HasMaxLength(100);
-                entity.Property(x => x.Section).HasColumnName("Section").HasMaxLength(50);
+                entity.Property(x => x.NetworkEngineerKpi).HasColumnName("network_engineer_kpi").HasMaxLength(200);
+                entity.Property(x => x.Division).HasColumnName("division").HasMaxLength(100);
+                entity.Property(x => x.Section).HasColumnName("section").HasMaxLength(50);
 
                 entity.Property(x => x.KpiPercent)
-                      .HasColumnName("KpiPercent")
-                      .HasColumnType("decimal(6,2)");
+                      .HasColumnName("kpi_percent")
+                      .HasColumnType("decimal(6,2)"); // ✅ match DB type
 
                 entity.HasMany(x => x.Nodes)
                       .WithOne(n => n.Kpi)
-                      .HasForeignKey(n => n.KpiId)
-                      .HasConstraintName("FK_BbAnwKpiNode_BbAnwKpi");
+                      .HasForeignKey(n => n.BbAnwKpiId)
+                      .OnDelete(DeleteBehavior.Cascade);
             });
 
             modelBuilder.Entity<BbAnwKpiNode>(entity =>
             {
                 entity.ToTable("BbAnwKpiNode", "dbo");
+                entity.HasKey(x => x.Id);
 
-                // composite primary key
-                entity.HasKey(x => new { x.KpiId, x.NodeCode });
+                entity.Property(x => x.Id).HasColumnName("id").ValueGeneratedOnAdd();
 
-                entity.Property(x => x.KpiId).HasColumnName("KpiId");
-                entity.Property(x => x.NodeCode).HasColumnName("NodeCode").HasMaxLength(50);
+                entity.Property(x => x.BbAnwKpiId).HasColumnName("bb_anw_kpi_id");
+                entity.Property(x => x.NodeCode).HasColumnName("node_code").HasMaxLength(50);
 
-                entity.Property(x => x.UnavailableMinutes).HasColumnName("UnavailableMinutes");
-                entity.Property(x => x.TotalMinutes).HasColumnName("TotalMinutes");
-                entity.Property(x => x.TotalNodes).HasColumnName("TotalNodes");
+                entity.Property(x => x.UnavailableMinutes).HasColumnName("unavailable_minutes");
+                entity.Property(x => x.TotalMinutes).HasColumnName("total_minutes");
+                entity.Property(x => x.TotalNodes).HasColumnName("total_nodes");
+
+                entity.Property(x => x.Month).HasColumnName("month");
+                entity.Property(x => x.Year).HasColumnName("year");
+
+                // ✅ prevent duplicates
+                entity.HasIndex(x => new { x.BbAnwKpiId, x.NodeCode, x.Month, x.Year })
+                      .IsUnique()
+                      .HasDatabaseName("UQ_BbAnwKpiNode_Row");
             });
+
+
 
             //servicefullilment
             modelBuilder.Entity<ServiceFulfilmentKpi>(entity =>

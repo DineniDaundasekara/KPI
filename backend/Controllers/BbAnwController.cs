@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using backend.Data;
 using backend.DTOs;
@@ -31,12 +30,10 @@ namespace backend.Controllers
             var data = await _context.BbAnwKpis
                 .AsNoTracking()
                 .Include(x => x.Nodes)
-                .OrderBy(x => x.No)
+                .OrderBy(x => x.Id)
                 .Select(x => new BbAnwDto
                 {
-                    KpiId = x.KpiId,
-                    MongoObjectId = x.MongoObjectId,
-                    No = x.No,
+                    Id = x.Id,
                     NetworkEngineerKpi = x.NetworkEngineerKpi,
                     Division = x.Division,
                     Section = x.Section,
@@ -46,7 +43,9 @@ namespace backend.Controllers
                         NodeCode = n.NodeCode,
                         UnavailableMinutes = n.UnavailableMinutes,
                         TotalMinutes = n.TotalMinutes,
-                        TotalNodes = n.TotalNodes
+                        TotalNodes = n.TotalNodes,
+                        Month = n.Month,
+                        Year = n.Year
                     }).ToList()
                 })
                 .ToListAsync();
@@ -54,19 +53,17 @@ namespace backend.Controllers
             return Ok(data);
         }
 
-        // GET: /api/bb-anw/{kpiId} (FULL)
-        [HttpGet("{kpiId:guid}")]
-        public async Task<IActionResult> GetById(Guid kpiId)
+        // GET: /api/bb-anw/{id} (FULL)
+        [HttpGet("{id:int}")]
+        public async Task<IActionResult> GetById(int id)
         {
             var item = await _context.BbAnwKpis
                 .AsNoTracking()
                 .Include(x => x.Nodes)
-                .Where(x => x.KpiId == kpiId)
+                .Where(x => x.Id == id)
                 .Select(x => new BbAnwDto
                 {
-                    KpiId = x.KpiId,
-                    MongoObjectId = x.MongoObjectId,
-                    No = x.No,
+                    Id = x.Id,
                     NetworkEngineerKpi = x.NetworkEngineerKpi,
                     Division = x.Division,
                     Section = x.Section,
@@ -76,7 +73,9 @@ namespace backend.Controllers
                         NodeCode = n.NodeCode,
                         UnavailableMinutes = n.UnavailableMinutes,
                         TotalMinutes = n.TotalMinutes,
-                        TotalNodes = n.TotalNodes
+                        TotalNodes = n.TotalNodes,
+                        Month = n.Month,
+                        Year = n.Year
                     }).ToList()
                 })
                 .FirstOrDefaultAsync();
@@ -91,90 +90,106 @@ namespace backend.Controllers
         {
             if (dto == null) return BadRequest("Body is empty.");
 
-            // guard: duplicate node codes
-            var duplicateNode = (dto.Nodes ?? new())
-                .GroupBy(n => n.NodeCode?.Trim().ToLower())
-                .FirstOrDefault(g => !string.IsNullOrWhiteSpace(g.Key) && g.Count() > 1);
+            // guard: duplicate (node_code + month + year)
+            var duplicate = (dto.Nodes ?? new())
+                .Select(n => new
+                {
+                    Node = (n.NodeCode ?? "").Trim().ToLower(),
+                    n.Month,
+                    n.Year
+                })
+                .GroupBy(x => new { x.Node, x.Month, x.Year })
+                .FirstOrDefault(g => !string.IsNullOrWhiteSpace(g.Key.Node) && g.Count() > 1);
 
-            if (duplicateNode != null)
-                return BadRequest($"Duplicate NodeCode found: {duplicateNode.Key}");
+            if (duplicate != null)
+                return BadRequest($"Duplicate node/month/year found: {duplicate.Key.Node}, {duplicate.Key.Month}/{duplicate.Key.Year}");
 
             var header = new BbAnwKpi
             {
-                KpiId = Guid.NewGuid(),
-                MongoObjectId = dto.MongoObjectId,
-                No = dto.No,
                 NetworkEngineerKpi = dto.NetworkEngineerKpi,
                 Division = dto.Division,
                 Section = dto.Section,
                 KpiPercent = dto.KpiPercent
             };
 
-            header.Nodes = (dto.Nodes ?? new()).Select(n => new BbAnwKpiNode
+            _context.BbAnwKpis.Add(header);
+            await _context.SaveChangesAsync(); // ✅ get header.Id
+
+            var nodes = (dto.Nodes ?? new()).Select(n => new BbAnwKpiNode
             {
-                KpiId = header.KpiId,
+                BbAnwKpiId = header.Id,
                 NodeCode = (n.NodeCode ?? "").Trim(),
                 UnavailableMinutes = n.UnavailableMinutes,
                 TotalMinutes = n.TotalMinutes,
-                TotalNodes = n.TotalNodes
+                TotalNodes = n.TotalNodes,
+                Month = n.Month,
+                Year = n.Year
             }).ToList();
 
-            _context.BbAnwKpis.Add(header);
+            _context.BbAnwKpiNodes.AddRange(nodes);
             await _context.SaveChangesAsync();
 
-            return Ok(new { header.KpiId });
+            return Ok(new { header.Id });
         }
 
-        // PUT: /api/bb-anw/update/{kpiId}  (FULL replace nodes)
-        [HttpPut("update/{kpiId:guid}")]
-        public async Task<IActionResult> Update(Guid kpiId, [FromBody] BbAnwDto dto)
+        // PUT: /api/bb-anw/update/{id}  (FULL replace nodes)
+        [HttpPut("update/{id:int}")]
+        public async Task<IActionResult> Update(int id, [FromBody] BbAnwDto dto)
         {
             if (dto == null) return BadRequest("Body is empty.");
 
             var header = await _context.BbAnwKpis
                 .Include(x => x.Nodes)
-                .FirstOrDefaultAsync(x => x.KpiId == kpiId);
+                .FirstOrDefaultAsync(x => x.Id == id);
 
             if (header == null) return NotFound();
 
-            // guard: duplicate node codes
-            var duplicateNode = (dto.Nodes ?? new())
-                .GroupBy(n => n.NodeCode?.Trim().ToLower())
-                .FirstOrDefault(g => !string.IsNullOrWhiteSpace(g.Key) && g.Count() > 1);
+            // guard: duplicate (node_code + month + year)
+            var duplicate = (dto.Nodes ?? new())
+                .Select(n => new
+                {
+                    Node = (n.NodeCode ?? "").Trim().ToLower(),
+                    n.Month,
+                    n.Year
+                })
+                .GroupBy(x => new { x.Node, x.Month, x.Year })
+                .FirstOrDefault(g => !string.IsNullOrWhiteSpace(g.Key.Node) && g.Count() > 1);
 
-            if (duplicateNode != null)
-                return BadRequest($"Duplicate NodeCode found: {duplicateNode.Key}");
+            if (duplicate != null)
+                return BadRequest($"Duplicate node/month/year found: {duplicate.Key.Node}, {duplicate.Key.Month}/{duplicate.Key.Year}");
 
-            header.MongoObjectId = dto.MongoObjectId;
-            header.No = dto.No;
             header.NetworkEngineerKpi = dto.NetworkEngineerKpi;
             header.Division = dto.Division;
             header.Section = dto.Section;
             header.KpiPercent = dto.KpiPercent;
 
-            // remove old nodes then add new nodes
+            // remove old nodes and insert new set
             _context.BbAnwKpiNodes.RemoveRange(header.Nodes);
 
-            header.Nodes = (dto.Nodes ?? new()).Select(n => new BbAnwKpiNode
+            var nodes = (dto.Nodes ?? new()).Select(n => new BbAnwKpiNode
             {
-                KpiId = header.KpiId,
+                BbAnwKpiId = header.Id,
                 NodeCode = (n.NodeCode ?? "").Trim(),
                 UnavailableMinutes = n.UnavailableMinutes,
                 TotalMinutes = n.TotalMinutes,
-                TotalNodes = n.TotalNodes
+                TotalNodes = n.TotalNodes,
+                Month = n.Month,
+                Year = n.Year
             }).ToList();
 
+            _context.BbAnwKpiNodes.AddRange(nodes);
+
             await _context.SaveChangesAsync();
-            return Ok(new { header.KpiId });
+            return Ok(new { header.Id });
         }
 
-        // DELETE: /api/bb-anw/delete/{kpiId}
-        [HttpDelete("delete/{kpiId:guid}")]
-        public async Task<IActionResult> Delete(Guid kpiId)
+        // DELETE: /api/bb-anw/delete/{id}
+        [HttpDelete("delete/{id:int}")]
+        public async Task<IActionResult> Delete(int id)
         {
             var header = await _context.BbAnwKpis
                 .Include(x => x.Nodes)
-                .FirstOrDefaultAsync(x => x.KpiId == kpiId);
+                .FirstOrDefaultAsync(x => x.Id == id);
 
             if (header == null) return NotFound();
 
@@ -186,7 +201,7 @@ namespace backend.Controllers
         }
 
         // =========================================================
-        // ADMIN PAGE (HEADER ONLY CRUD) ✅ DOES NOT TOUCH NODES
+        // ADMIN PAGE (HEADER ONLY CRUD)
         // =========================================================
 
         // GET: /api/bb-anw/headers
@@ -195,12 +210,10 @@ namespace backend.Controllers
         {
             var headers = await _context.BbAnwKpis
                 .AsNoTracking()
-                .OrderBy(x => x.No)
+                .OrderBy(x => x.Id)
                 .Select(x => new BbAnwHeaderDto
                 {
-                    KpiId = x.KpiId,
-                    MongoObjectId = x.MongoObjectId,
-                    No = x.No,
+                    Id = x.Id,
                     NetworkEngineerKpi = x.NetworkEngineerKpi,
                     Division = x.Division,
                     Section = x.Section,
@@ -219,9 +232,6 @@ namespace backend.Controllers
 
             var header = new BbAnwKpi
             {
-                KpiId = Guid.NewGuid(),
-                MongoObjectId = dto.MongoObjectId,
-                No = dto.No,
                 NetworkEngineerKpi = dto.NetworkEngineerKpi,
                 Division = dto.Division,
                 Section = dto.Section,
@@ -231,27 +241,25 @@ namespace backend.Controllers
             _context.BbAnwKpis.Add(header);
             await _context.SaveChangesAsync();
 
-            return Ok(new { header.KpiId });
+            return Ok(new { header.Id });
         }
 
-        // PUT: /api/bb-anw/update-header/{kpiId}
-        [HttpPut("update-header/{kpiId:guid}")]
-        public async Task<IActionResult> UpdateHeader(Guid kpiId, [FromBody] BbAnwHeaderDto dto)
+        // PUT: /api/bb-anw/update-header/{id}
+        [HttpPut("update-header/{id:int}")]
+        public async Task<IActionResult> UpdateHeader(int id, [FromBody] BbAnwHeaderDto dto)
         {
             if (dto == null) return BadRequest("Body is empty.");
 
-            var header = await _context.BbAnwKpis.FirstOrDefaultAsync(x => x.KpiId == kpiId);
+            var header = await _context.BbAnwKpis.FirstOrDefaultAsync(x => x.Id == id);
             if (header == null) return NotFound();
 
-            header.MongoObjectId = dto.MongoObjectId;
-            header.No = dto.No;
             header.NetworkEngineerKpi = dto.NetworkEngineerKpi;
             header.Division = dto.Division;
             header.Section = dto.Section;
             header.KpiPercent = dto.KpiPercent;
 
             await _context.SaveChangesAsync();
-            return Ok(new { header.KpiId });
+            return Ok(new { header.Id });
         }
     }
 }
