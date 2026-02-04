@@ -291,7 +291,7 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
         0
       )
     );
-
+ 
     // ✅ Normalized: percentage of total possible points
     this.totalPointsNormalized = this.totalPointsAchievedByRegion.map((total) =>
       this.totalPointsApplicable ? +((total / this.totalPointsApplicable) * 100).toFixed(2) : 0
