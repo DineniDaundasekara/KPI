@@ -1,214 +1,68 @@
 <div class="page-container">
   <div class="kpi-overlay"></div>
 
-  <!-- HEADER -->
-  <section class="page-header">
-    <div class="header-left">
-      <p class="eyebrow">Admin / BB & ANW</p>
-      <h1>{{ pageTitle }}</h1>
-      <p class="page-subtitle">
-        Configure KPI definitions for BB & ANW network metrics.
-        <span class="muted">Node-level metrics are managed separately.</span>
-      </p>
-    </div>
-
-    <div class="header-right">
-      <span class="count-pill">
-        <i class="bi bi-table"></i>
-        {{ data.length }} KPI headers
-      </span>
-
-      <button
-        type="button"
-        class="primary-btn add-btn"
-        (click)="showForm ? closeForm() : openForm()"
-      >
-        <span class="material-symbols-outlined" aria-hidden="true">
-          {{ showForm ? 'close' : 'add_circle' }}
-        </span>
-        {{ showForm ? 'Close form' : 'Add KPI header' }}
-      </button>
-    </div>
-  </section>
-
-  <!-- ERROR -->
-  <div *ngIf="error" class="alert alert-danger">
-    <i class="bi bi-exclamation-triangle-fill"></i>
-    <div>
-      <strong>Operation failed</strong>
-      <div>{{ error }}</div>
-    </div>
+<section class="page-header">
+  <div class="header-left"> <p class="eyebrow">Admin / BB & ANW</p>
+    <h1>{{ pageTitle }}</h1>
+    <p class="page-subtitle">
+      Configure KPI definitions for BB & ANW network metrics.
+    </p>
   </div>
-
-  <!-- MAIN GRID -->
-  <div class="admin-grid" [class.no-form]="!showForm">
-
-    <!-- FORM -->
-    <section class="card form-card" *ngIf="showForm">
-      <div class="form-card-header">
-        <div>
-          <p class="eyebrow">
-            {{ editingId ? 'Editing KPI header' : 'Create KPI header' }}
-          </p>
-          <h2>{{ editingId ? 'Edit KPI Header' : 'Add KPI Header' }}</h2>
-        </div>
-
-        <button
-          type="button"
-          class="ghost-icon-btn"
-          aria-label="Close form"
-          (click)="closeForm()"
-        >
-          <span class="material-symbols-outlined">close</span>
-        </button>
-      </div>
-
-      <p class="form-subtitle">
-        Provide KPI target metadata for BB & ANW dashboards.
-      </p>
+</section>
+  <div class="admin-grid">
+    <section class="card form-card">
+      <h2>Create KPI Row</h2>
 
       <form class="region-form" (ngSubmit)="submitForm()">
-        <div class="form-row">
-          <div class="form-group">
-            <label>Row No *</label>
-            <input
-              type="number"
-              [(ngModel)]="form.no"
-              name="no"
-              min="1"
-              required
-              placeholder="e.g. 12"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>KPI Target (%) *</label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              max="100"
-              [(ngModel)]="form.kpiPercent"
-              name="kpiPercent"
-              required
-              placeholder="e.g. 99.90"
-            />
-          </div>
+        <div class="form-group">
+          <input type="text" [(ngModel)]="form.networkEngineerKpi" name="kpi" required placeholder="Network Engineer KPI" />
         </div>
 
-        <div class="form-row">
-          <div class="form-group full-span">
-            <label>KPI Name *</label>
-            <input
-              type="text"
-              [(ngModel)]="form.networkEngineerKpi"
-              name="networkEngineerKpi"
-              required
-              placeholder="e.g. MSAN availability (With power)"
-            />
-          </div>
+        <div class="form-group">
+          <input type="text" [(ngModel)]="form.division" name="division" placeholder="Division" />
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>Division</label>
-            <input
-              type="text"
-              [(ngModel)]="form.division"
-              name="division"
-              placeholder="e.g. TRANSPORT & ACCESS"
-            />
-          </div>
-
-          <div class="form-group">
-            <label>Section</label>
-            <input
-              type="text"
-              [(ngModel)]="form.section"
-              name="section"
-              placeholder="e.g. BB&ANW"
-            />
-          </div>
+        <div class="form-group">
+          <input type="text" [(ngModel)]="form.section" name="section" placeholder="Section" />
         </div>
 
-        <div class="form-buttons">
-          <button class="primary-btn" [disabled]="saving">
-            {{ editingId ? 'Update header' : 'Add header' }}
-          </button>
-
-          <button
-            type="button"
-            class="secondary-btn"
-            (click)="closeForm()"
-          >
-            Cancel
-          </button>
+        <div class="form-group">
+          <input type="number" [(ngModel)]="form.kpiPercent" name="kpiPercent" required placeholder="KPI (%)" />
         </div>
+
+        <button class="add-btn" [disabled]="saving" type="submit">
+          Add
+        </button>
       </form>
-
-      <div *ngIf="editingId" class="edit-tip">
-        You are editing an existing KPI header. Save or cancel to exit.
-      </div>
     </section>
 
-    <!-- TABLE -->
     <section class="card table-card">
-      <div class="table-header-row">
-        <div>
-          <p class="eyebrow">KPI overview</p>
-          <h2>KPI Headers</h2>
-        </div>
-        <p class="hint">
-          These define KPI targets only. Availability metrics are handled in Platform KPI.
-        </p>
-      </div>
-
-      <div *ngIf="loading" class="table-loader">Loading KPI data…</div>
-
-      <div class="table-wrapper" *ngIf="!loading && data.length">
+      <div class="table-wrapper">
         <table class="kpi-table">
           <thead>
             <tr>
-              <th style="width: 70px;">No</th>
-              <th>KPI</th>
-              <th style="width: 240px;">Division</th>
-              <th style="width: 160px;">Section</th>
-              <th class="center" style="width: 120px;">Target %</th>
-              <th class="actions-col">Actions</th>
+              <th>Network Engineer KPI</th>
+              <th>Division</th>
+              <th>Section</th>
+              <th>KPI (%)</th>
+              <th style="text-align: center;">Actions</th>
             </tr>
           </thead>
-
           <tbody>
-            <tr
-              *ngFor="let row of data; trackBy: trackRow"
-              [class.is-editing]="row.kpiId === editingId"
-            >
-              <td class="mono">{{ row.no }}</td>
-              <td class="kpi-cell">{{ row.networkEngineerKpi }}</td>
-              <td>{{ row.division || '-' }}</td>
-              <td>{{ row.section || '-' }}</td>
-              <td class="center">
-                <span class="pct-badge">{{ row.kpiPercent ?? '-' }}%</span>
-              </td>
-
-              <td class="actions-col">
+            <tr *ngFor="let row of data">
+              <td>{{ row.networkEngineerKpi }}</td>
+              <td>{{ row.division }}</td>
+              <td>{{ row.section }}</td>
+              <td>{{ row.kpiPercent }}</td>
+              <td>
                 <div class="action-group">
-                  <button class="icon-btn edit" type="button" (click)="editRow(row)" title="Edit">
-                    <i class="bi bi-pencil"></i>
-                  </button>
-
-                  <button class="icon-btn delete" type="button" (click)="deleteRow(row.kpiId)" title="Delete">
-                    <i class="bi bi-trash"></i>
-                  </button>
+                  <button type="button" class="icon-btn edit" (click)="editRow(row)">Edit</button>
+                  <button type="button" class="icon-btn delete" (click)="deleteRow(row.kpiId)">Delete</button>
                 </div>
               </td>
             </tr>
           </tbody>
         </table>
-      </div>
-
-      <div *ngIf="!loading && !data.length" class="empty-state">
-        No KPI headers created yet
       </div>
     </section>
   </div>
