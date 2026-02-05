@@ -270,31 +270,72 @@ namespace backend.Data
                       .HasDatabaseName("UQ_BbAnwKpiNode_Row");
             });
 
-             // KPI DEFINITIONS
+            // KPI DEFINITIONS
+            // KPI DEFINITIONS (finaldatatables) - UPDATED (rowNumber + v removed)
             modelBuilder.Entity<KpiDefinition>(entity =>
             {
                 entity.ToTable("finaldatatables", "dbo");
                 entity.HasKey(x => x.Id);
-                
+
                 entity.Property(x => x.Id)
                     .HasColumnName("id")
-                    .ValueGeneratedOnAdd(); // Identity column
+                    .ValueGeneratedOnAdd();
 
-                entity.Property(x => x.RowNumber).HasColumnName("rowNumber");
-                entity.Property(x => x.Perspectives).HasColumnName("perspectives").HasMaxLength(50);
-                entity.Property(x => x.StrategicObjectives).HasColumnName("strategicObjectives").HasMaxLength(50);
-                entity.Property(x => x.KeyPerformanceIndicators).HasColumnName("keyPerformanceIndicators").HasMaxLength(100);
-                entity.Property(x => x.Unit).HasColumnName("unit").HasMaxLength(50);
-                entity.Property(x => x.DescriptionOfKPI).HasColumnName("descriptionOfKPI").HasMaxLength(50);
+                // ❌ removed: rowNumber
+
+                entity.Property(x => x.Perspectives)
+                    .HasColumnName("perspectives")
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(x => x.StrategicObjectives)
+                    .HasColumnName("strategicObjectives")
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(x => x.KeyPerformanceIndicators)
+                    .HasColumnName("keyPerformanceIndicators")
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.Property(x => x.Unit)
+                    .HasColumnName("unit")
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(x => x.DescriptionOfKPI)
+                    .HasColumnName("descriptionOfKPI")
+                    .HasMaxLength(50)
+                    .IsRequired();
+
                 entity.Property(x => x.Weightage)
                     .HasColumnName("weightage")
-                    .HasColumnType("decimal(10,4)");
-                entity.Property(x => x.PointsApplicable).HasColumnName("pointsApplicable");
-                entity.Property(x => x.CreatedAt).HasColumnName("createdAt").HasMaxLength(50);
-                entity.Property(x => x.UpdatedAt).HasColumnName("updatedAt").HasMaxLength(50);
-                entity.Property(x => x.V).HasColumnName("v");
-                entity.Property(x => x.Month).HasColumnName("month");
-                entity.Property(x => x.Year).HasColumnName("year");
+                    .HasColumnType("decimal(10,4)")
+                    .IsRequired();
+
+                entity.Property(x => x.CreatedAt)
+                    .HasColumnName("createdAt")
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(x => x.UpdatedAt)
+                    .HasColumnName("updatedAt")
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(x => x.Month)
+                    .HasColumnName("month")
+                    .IsRequired();
+
+                entity.Property(x => x.Year)
+                    .HasColumnName("year")
+                    .IsRequired();
+
+                entity.Property(x => x.PointsApplicable)
+                    .HasColumnName("pointsApplicable")
+                    .IsRequired();
+
+                // ❌ removed: v
             });
 
             //servicefullilment

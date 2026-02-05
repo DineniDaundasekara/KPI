@@ -10,7 +10,6 @@ import { finalize } from 'rxjs/operators';
 
 export type KpiDefinition = {
   id: number;
-  rowNumber: number;
   perspectives: string;
   strategicObjectives: string;
   keyPerformanceIndicators: string;
@@ -29,7 +28,6 @@ export type KpiDefinition = {
 
 // ✅ REQUEST: remove weightage (backend calculates)
 export type UpsertKpiDefinitionRequest = {
-  rowNumber: number;
   perspectives: string;
   strategicObjectives: string;
   keyPerformanceIndicators: string;
@@ -66,7 +64,6 @@ export class FinalTableComponent implements OnInit {
 
   // ✅ weightage is displayed but NOT editable, so keep a disabled control
   form = this.fb.nonNullable.group({
-    rowNumber: [0, [Validators.required, Validators.min(1)]],
     perspectives: ['', [Validators.required]],
     strategicObjectives: ['', [Validators.required]],
     keyPerformanceIndicators: ['', [Validators.required]],
@@ -93,7 +90,7 @@ export class FinalTableComponent implements OnInit {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (res) => {
-          this.records = (res ?? []).sort((a, b) => a.rowNumber - b.rowNumber);
+          this.records = (res ?? []).sort((a, b) => a.id - b.id);
 
           // ✅ If editing, refresh the displayed weightage from server (after recalculation)
           if (this.editingId) {
@@ -143,7 +140,6 @@ export class FinalTableComponent implements OnInit {
 
     // ✅ patchValue because weightage control is disabled
     this.form.patchValue({
-      rowNumber: record.rowNumber ?? 0,
       perspectives: record.perspectives ?? '',
       strategicObjectives: record.strategicObjectives ?? '',
       keyPerformanceIndicators: record.keyPerformanceIndicators ?? '',
@@ -193,7 +189,6 @@ export class FinalTableComponent implements OnInit {
     const now = new Date();
 
     return {
-      rowNumber: Number(raw.rowNumber),
       perspectives: raw.perspectives.trim(),
       strategicObjectives: raw.strategicObjectives.trim(),
       keyPerformanceIndicators: raw.keyPerformanceIndicators.trim(),
@@ -210,7 +205,6 @@ export class FinalTableComponent implements OnInit {
 
   private resetForm(): void {
     this.form.reset({
-      rowNumber: 0,
       perspectives: '',
       strategicObjectives: '',
       keyPerformanceIndicators: '',
@@ -231,6 +225,19 @@ export class FinalTableComponent implements OnInit {
   formatWeightage(val: number | null | undefined): string {
     const n = Number(val ?? 0);
     return `${n.toFixed(4)}%`;
+  }
+
+  /** Total points from saved records (table display) */
+  private calculateTotalPointsForRecords(): number {
+    return this.records.reduce((sum, r) => sum + (r.pointsApplicable ?? 0), 0);
+  }
+
+  /** Display weightage normalized to total points (table display) */
+  getComputedWeightageForRecord(record: KpiDefinition): string {
+    const totalPoints = this.calculateTotalPointsForRecords();
+    if (totalPoints <= 0) return '0.0000%';
+    const weightage = (Number(record.pointsApplicable ?? 0) / totalPoints) * 100;
+    return `${weightage.toFixed(4)}%`;
   }
 
   /** Calculate total points from all records + current input for live preview */
