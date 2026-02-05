@@ -97,6 +97,7 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
   totalPointsApplicable = 0;
   totalPointsAchievedByRegion: number[] = [];
   totalPointsNormalized: number[] = [];
+  totalMaximumPointsPerKpi = 0;
 
   private readonly rowChangesSub = new Subscription();
   private pendingFrame: number | null = null;
@@ -287,6 +288,12 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
       0
     );
 
+    // ✅ Calculate total maximum points per KPI (sum across all engineers for all KPIs)
+    this.totalMaximumPointsPerKpi = this.kpiRows.reduce(
+      (sum, row) => sum + (row.pointsApplicable ?? 0),
+      0
+    ) * this.engineersFlat.length;
+
     // ✅ Calculate total points achieved by region
     this.totalPointsAchievedByRegion = this.engineersFlat.map((_, colIndex) =>
       this.kpiRows.reduce(
@@ -296,8 +303,9 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
     );
 
     // ✅ Normalized: percentage of total possible points
+    // Formula: (Total Points Achieved) / (Total Maximum Points Per KPI) × 100%
     this.totalPointsNormalized = this.totalPointsAchievedByRegion.map((total) =>
-      this.totalPointsApplicable ? +((total / this.totalPointsApplicable) * 100).toFixed(2) : 0
+      this.totalMaximumPointsPerKpi ? +((total / this.totalMaximumPointsPerKpi) * 100).toFixed(2) : 0
     );
   }
 
