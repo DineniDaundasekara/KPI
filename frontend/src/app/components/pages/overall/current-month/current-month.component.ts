@@ -100,6 +100,7 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private readonly rowChangesSub = new Subscription();
   private pendingFrame: number | null = null;
+  private refreshInterval: any = null;
 
   constructor(private http: HttpClient, private regionService: RegionService) {
     const now = new Date();
@@ -109,6 +110,8 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadRegions();
+    // Auto-refresh every 5 seconds to sync with changes from admin panel
+    this.refreshInterval = setInterval(() => this.loadRegions(), 5000);
   }
 
   @HostListener('window:focus')
@@ -131,6 +134,7 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.rowChangesSub.unsubscribe();
     if (this.pendingFrame !== null) cancelAnimationFrame(this.pendingFrame);
+    if (this.refreshInterval !== null) clearInterval(this.refreshInterval);
   }
 
   @HostListener('window:resize')
@@ -327,5 +331,12 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
       leftRows[i].style.height = `${maxHeight}px`;
       rightRows[i].style.height = `${maxHeight}px`;
     }
+  }
+
+  /** Compute weightage dynamically based on total points (normalized to 100%) */
+  getComputedWeightage(row: KpiRow): string {
+    if (this.totalPointsApplicable <= 0) return '0.00%';
+    const weightage = (Number(row.pointsApplicable ?? 0) / this.totalPointsApplicable) * 100;
+    return `${weightage.toFixed(2)}%`;
   }
 }

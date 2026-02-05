@@ -62,7 +62,7 @@
             </td>
 
             <td class="col-weight">
-              {{ row.weightage | number : '1.0-2' }}%
+              {{ getComputedWeightage(row) }}
             </td>
 
             <td class="col-points">
