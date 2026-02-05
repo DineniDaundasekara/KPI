@@ -16,10 +16,14 @@ interface RegionRow {
 	lea?: string;
 }
 
+interface NodeMeta {
+	month: number;
+	year: number;
+}
+
 interface BbAnwEntry {
-	kpiId: string;
-	mongoObjectId?: string | null;
-	no: number;
+	id: number;
+	order: number;
 	networkEngineerKpi: string;
 	division?: string | null;
 	section?: string | null;
@@ -27,10 +31,11 @@ interface BbAnwEntry {
 	totalMinutes: Dict<number | null>;
 	unavailableMinutes: Dict<number | null>;
 	totalNodes: Dict<number | null>;
+	nodeMeta: Dict<NodeMeta>;
 }
 
 interface EditCellState {
-	rowId: string | null;
+	rowId: number | null;
 	key: string | null;
 	value: string;
 }
@@ -71,6 +76,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 	pageTitle = 'Platform KPI — BB & ANW';
 
 	data: BbAnwEntry[] = [];
+	private allEntries: BbAnwEntry[] = [];
 	regionTable: RegionRow[] = [...LOCAL_REGION_TABLE];
 	adminRows: BbAnwDto[] = [];
 
@@ -84,12 +90,6 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 
 	private permissionTimer: ReturnType<typeof setInterval> | null = null;
 
-	readonly daysInMonth: number = new Date(
-		new Date().getFullYear(),
-		new Date().getMonth() + 1,
-		0
-	).getDate();
-
 	formValues = {
 		dropdown1: '',
 		dropdown2: '',
@@ -100,6 +100,24 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 	dropdown2Options: string[] = [];
 	dropdown3Options: string[] = [];
 	dropdown4Options: string[] = [];
+
+	selectedYear: number = new Date().getFullYear();
+	selectedMonth: number = new Date().getMonth() + 1;
+	yearOptions: number[] = [];
+	readonly monthOptions: Array<{ label: string; value: number }> = [
+		{ value: 1, label: 'January' },
+		{ value: 2, label: 'February' },
+		{ value: 3, label: 'March' },
+		{ value: 4, label: 'April' },
+		{ value: 5, label: 'May' },
+		{ value: 6, label: 'June' },
+		{ value: 7, label: 'July' },
+		{ value: 8, label: 'August' },
+		{ value: 9, label: 'September' },
+		{ value: 10, label: 'October' },
+		{ value: 11, label: 'November' },
+		{ value: 12, label: 'December' },
+	];
 
 	editCell: EditCellState = {
 		rowId: null,
@@ -150,6 +168,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 
 	ngOnInit(): void {
 		this.buildFriendlyMap();
+		this.initializePeriodDefaults();
 		this.loadRole();
 		this.loadRegionTable();
 		this.initializeFilters();
@@ -183,6 +202,13 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		return this.optionMapping[key] ?? key.toUpperCase();
 	}
 
+	get selectedMonthLabel(): string {
+		return (
+			this.monthOptions.find((month) => month.value === this.selectedMonth)?.label ??
+			'Month'
+		);
+	}
+
 	get showAreaMetrics(): boolean {
 		return Boolean(this.selectedKey);
 	}
@@ -201,7 +227,8 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		if (!hasData) {
 			return '--';
 		}
-		const pct = this.calculatePercentage(total, unavailable, nodes);
+		const meta = entry.nodeMeta?.[key];
+		const pct = this.calculatePercentage(total, unavailable, nodes, meta);
 		return `${pct.toFixed(2)}%`;
 	}
 
@@ -223,6 +250,11 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 
 	private norm(value: string | null | undefined): string {
 		return value ? value.replace(/[^A-Za-z0-9]/g, '').toLowerCase() : '';
+	}
+
+	private hasAreaData(entry: BbAnwEntry, key: string): boolean {
+		const pools = [entry.unavailableMinutes, entry.totalMinutes, entry.totalNodes];
+		return pools.some((pool) => pool && pool[key] !== undefined && pool[key] !== null);
 	}
 
 	private buildFriendlyMap(): void {
@@ -329,7 +361,8 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 			next: (rows) => {
 				const list = Array.isArray(rows) ? rows : [];
 				this.adminRows = list;
-				this.data = list.map((row) => this.mapDtoToEntry(row));
+				this.allEntries = list.map((row, index) => this.mapDtoToEntry(row, index + 1));
+				this.applyPeriodFilter();
 				this.loading = false;
 			},
 			error: (err) => {
@@ -342,11 +375,10 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		});
 	}
 
-	private mapDtoToEntry(dto: BbAnwDto): BbAnwEntry {
+	private mapDtoToEntry(dto: BbAnwDto, order = 0): BbAnwEntry {
 		const entry: BbAnwEntry = {
-			kpiId: dto.kpiId ?? crypto.randomUUID(),
-			mongoObjectId: dto.mongoObjectId ?? null,
-			no: dto.no,
+			id: dto.id ?? 0,
+			order,
 			networkEngineerKpi: dto.networkEngineerKpi,
 			division: dto.division ?? null,
 			section: dto.section ?? null,
@@ -354,6 +386,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 			totalMinutes: {},
 			unavailableMinutes: {},
 			totalNodes: {},
+			nodeMeta: {},
 		};
 
 		(dto.nodes ?? []).forEach((node) => {
@@ -362,6 +395,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 			entry.unavailableMinutes[code] = node.unavailableMinutes ?? null;
 			entry.totalMinutes[code] = node.totalMinutes ?? null;
 			entry.totalNodes[code] = node.totalNodes ?? null;
+			entry.nodeMeta[code] = this.normalizeNodeMeta(node?.month, node?.year);
 		});
 
 		return entry;
@@ -369,17 +403,20 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 
 	private buildDtoFromEntry(entry: BbAnwEntry): BbAnwDto {
 		const codes = this.collectNodeCodes(entry);
-		const nodes = codes.map((code) => ({
-			nodeCode: code,
-			unavailableMinutes: this.toNullableNumber(entry.unavailableMinutes[code]),
-			totalMinutes: this.toNullableNumber(entry.totalMinutes[code]),
-			totalNodes: this.toNullableNumber(entry.totalNodes[code]),
-		}));
+		const nodes = codes.map((code) => {
+			const meta = this.ensureNodeMeta(entry, code);
+			return {
+				nodeCode: code,
+				unavailableMinutes: this.toNullableNumber(entry.unavailableMinutes[code]),
+				totalMinutes: this.toNullableNumber(entry.totalMinutes[code]),
+				totalNodes: this.toNullableNumber(entry.totalNodes[code]),
+				month: meta.month,
+				year: meta.year,
+			};
+		});
 
 		return {
-			kpiId: entry.kpiId,
-			mongoObjectId: entry.mongoObjectId ?? null,
-			no: entry.no,
+			id: entry.id,
 			networkEngineerKpi: entry.networkEngineerKpi,
 			division: entry.division ?? null,
 			section: entry.section ?? null,
@@ -393,7 +430,34 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		Object.keys(entry.unavailableMinutes || {}).forEach((key) => codes.add(key));
 		Object.keys(entry.totalMinutes || {}).forEach((key) => codes.add(key));
 		Object.keys(entry.totalNodes || {}).forEach((key) => codes.add(key));
+		Object.keys(entry.nodeMeta || {}).forEach((key) => codes.add(key));
 		return Array.from(codes).filter((code): code is string => Boolean(code));
+	}
+
+	private ensureNodeMeta(entry: BbAnwEntry, key: string): NodeMeta {
+		if (!entry.nodeMeta[key]) {
+			entry.nodeMeta[key] = this.getDefaultNodeMeta();
+		}
+		return entry.nodeMeta[key];
+	}
+
+	private getDefaultNodeMeta(): NodeMeta {
+		return this.normalizeNodeMeta(this.selectedMonth, this.selectedYear);
+	}
+
+	private normalizeNodeMeta(month?: number | null, year?: number | null): NodeMeta {
+		const now = new Date();
+		const fallbackMonth = now.getMonth() + 1;
+		const fallbackYear = now.getFullYear();
+		const safeMonth =
+			typeof month === 'number' && month >= 1 && month <= 12 ? month : fallbackMonth;
+		const safeYear = typeof year === 'number' && year >= 1900 ? year : fallbackYear;
+		return { month: safeMonth, year: safeYear };
+	}
+
+	private getDaysInMonth(month?: number | null, year?: number | null): number {
+		const meta = this.normalizeNodeMeta(month, year);
+		return new Date(meta.year, meta.month, 0).getDate();
 	}
 
 	private toNullableNumber(value: any): number | null {
@@ -473,6 +537,60 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		this.filtersInitialized = true;
 	}
 
+	private initializePeriodDefaults(): void {
+		const now = new Date();
+		const currentYear = now.getFullYear();
+		this.yearOptions = [currentYear - 2, currentYear - 1, currentYear];
+		const previous = new Date(currentYear, now.getMonth() - 1, 1);
+		this.selectedYear = previous.getFullYear();
+		this.selectedMonth = previous.getMonth() + 1;
+		this.applyPeriodFilter();
+	}
+
+	private applyPeriodFilter(): void {
+		if (!this.allEntries.length) {
+			this.data = [];
+			return;
+		}
+
+		const month = this.selectedMonth;
+		const year = this.selectedYear;
+		this.data = this.allEntries.map((entry) =>
+			this.createPeriodScopedEntry(entry, month, year)
+		);
+	}
+
+	private createPeriodScopedEntry(entry: BbAnwEntry, month: number, year: number): BbAnwEntry {
+		const filteredUnavailable: Dict<number | null> = {};
+		const filteredTotal: Dict<number | null> = {};
+		const filteredNodes: Dict<number | null> = {};
+		const filteredMeta: Dict<NodeMeta> = {};
+		const codes = this.collectNodeCodes(entry);
+
+		codes.forEach((code) => {
+			const rawMeta = entry.nodeMeta?.[code];
+			const normalized = rawMeta
+				? this.normalizeNodeMeta(rawMeta.month, rawMeta.year)
+				: { month, year };
+			const matchesPeriod = normalized.month === month && normalized.year === year;
+			if (!matchesPeriod) {
+				return;
+			}
+			filteredUnavailable[code] = entry.unavailableMinutes?.[code] ?? null;
+			filteredTotal[code] = entry.totalMinutes?.[code] ?? null;
+			filteredNodes[code] = entry.totalNodes?.[code] ?? null;
+			filteredMeta[code] = normalized;
+		});
+
+		return {
+			...entry,
+			unavailableMinutes: filteredUnavailable,
+			totalMinutes: filteredTotal,
+			totalNodes: filteredNodes,
+			nodeMeta: filteredMeta,
+		};
+	}
+
 	onDropdownChange(
 		name: 'dropdown1' | 'dropdown2' | 'dropdown3' | 'dropdown4',
 		value: string
@@ -514,13 +632,24 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		this.cancelEdit();
 	}
 
-	calculatePercentage(totalMinutes: any, unavailableMinutes: any, totalNodes: any): number {
+	onPeriodChange(): void {
+		this.cancelEdit();
+		this.applyPeriodFilter();
+	}
+
+	calculatePercentage(
+		totalMinutes: any,
+		unavailableMinutes: any,
+		totalNodes: any,
+		meta?: NodeMeta
+	): number {
 		const tm = Number(totalMinutes) || 0;
 		const um = Number(unavailableMinutes) || 0;
 		const tn = Number(totalNodes) || 0;
 
 		const totalAvailableMinutes = tm - um;
-		const totalMin = 24 * 60 * this.daysInMonth * tn;
+		const days = this.getDaysInMonth(meta?.month, meta?.year);
+		const totalMin = 24 * 60 * days * tn;
 		if (totalMin <= 0) {
 			return 100;
 		}
@@ -536,7 +665,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		const value = (entry as any)[key]?.[this.selectedKey];
 
 		this.editCell = {
-			rowId: entry.kpiId,
+			rowId: entry.id,
 			key: nestedKey,
 			value: value === undefined || value === null ? '' : String(value),
 		};
@@ -547,7 +676,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 	}
 
 	async doneEdit(): Promise<void> {
-		if (!this.editCell.rowId || !this.editCell.key) return;
+		if (this.editCell.rowId === null || !this.editCell.key) return;
 
 		const [rawParentKey, childKey] = this.editCell.key.split('.');
 		const parentKey = rawParentKey as MetricKey;
@@ -563,11 +692,16 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 			this.cancelEdit();
 			return;
 		}
+		if (!updatedEntry.id) {
+			this.showToast('danger', 'Missing KPI identifier. Please reload and try again.');
+			this.cancelEdit();
+			return;
+		}
 
 		this.cellSaving = true;
 		try {
 			await firstValueFrom(
-				this.bbAnwService.update(updatedEntry.kpiId, this.buildDtoFromEntry(updatedEntry))
+				this.bbAnwService.update(updatedEntry.id, this.buildDtoFromEntry(updatedEntry))
 			);
 			const metricLabel = this.metricLabelMap[parentKey] || 'KPI metric';
 			this.showToast('success', `${metricLabel} saved.`);
@@ -585,10 +719,10 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		childKey: string,
 		newValue: string
 	): BbAnwEntry | null {
-		let updatedEntry: BbAnwEntry | null = null;
+		let filteredEntry: BbAnwEntry | null = null;
 
 		this.data = this.data.map((entry) => {
-			if (entry.kpiId !== this.editCell.rowId) {
+			if (entry.id !== this.editCell.rowId) {
 				return entry;
 			}
 
@@ -597,24 +731,61 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 				totalMinutes: { ...entry.totalMinutes },
 				unavailableMinutes: { ...entry.unavailableMinutes },
 				totalNodes: { ...entry.totalNodes },
+				nodeMeta: { ...entry.nodeMeta },
 			};
 
 			(next as any)[parentKey][childKey] = newValue;
 
 			if (parentKey === 'totalNodes') {
 				const nodes = Number(newValue) || 0;
-				const computed = 24 * 60 * this.daysInMonth * nodes;
+				const meta = this.ensureNodeMeta(next, childKey);
+				const days = this.getDaysInMonth(meta.month, meta.year);
+				const computed = 24 * 60 * days * nodes;
 				next.totalMinutes = {
 					...(next.totalMinutes || {}),
 					[childKey]: computed,
 				};
 			}
 
-			updatedEntry = next;
+			filteredEntry = next;
 			return next;
 		});
 
-		return updatedEntry;
+		if (!filteredEntry) {
+			return null;
+		}
+
+		const targetEntry = filteredEntry as BbAnwEntry;
+		const targetId = targetEntry.id;
+		this.allEntries = this.allEntries.map((entry) => {
+			if (entry.id !== targetId) {
+				return entry;
+			}
+
+			const next: BbAnwEntry = {
+				...entry,
+				totalMinutes: { ...entry.totalMinutes },
+				unavailableMinutes: { ...entry.unavailableMinutes },
+				totalNodes: { ...entry.totalNodes },
+				nodeMeta: { ...entry.nodeMeta },
+			};
+
+			const meta = this.ensureNodeMeta(next, childKey);
+			(next as any)[parentKey][childKey] = this.toNullableNumber(newValue);
+
+			if (parentKey === 'totalNodes') {
+				const nodes = Number(newValue) || 0;
+				const days = this.getDaysInMonth(meta.month, meta.year);
+				next.totalMinutes = {
+					...next.totalMinutes,
+					[childKey]: 24 * 60 * days * nodes,
+				};
+			}
+
+			return next;
+		});
+
+		return this.allEntries.find((entry) => entry.id === targetId) ?? null;
 	}
 
 	isEditingCell(entry: BbAnwEntry, key: 'unavailableMinutes' | 'totalMinutes' | 'totalNodes'): boolean {
@@ -622,7 +793,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		if (!selected) {
 			return false;
 		}
-		return this.editCell.rowId === entry.kpiId && this.editCell.key === `${key}.${selected}`;
+		return this.editCell.rowId === entry.id && this.editCell.key === `${key}.${selected}`;
 	}
 
 	cancelEdit(): void {
@@ -632,19 +803,30 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 	async exportToExcel(): Promise<void> {
 		const workbook = new ExcelJS.Workbook();
 		const worksheet = workbook.addWorksheet('BB & ANW KPI');
+		const exportEntries = this.selectedKey
+			? this.data.filter((entry) => this.hasAreaData(entry, this.selectedKey!))
+			: this.data;
+		const areaKeys = this.selectedKey ? [this.selectedKey] : Object.keys(this.optionMapping);
 
 		worksheet.addRow(['KPI (MSAN / OLT / IP Core - Network Availability)']);
 		worksheet.addRow([`Generated Date: ${new Date().toISOString().split('T')[0]}`]);
 		worksheet.addRow([]);
 
-		const areaKeys = Object.keys(this.optionMapping);
 		const headers = [
 			'No',
 			'Network Engineer KPI',
 			'Division',
 			'Section',
 			'KPI Percent',
-			...areaKeys.map((key) => this.optionMapping[key] || key),
+			...areaKeys.flatMap((key) => {
+				const label = this.optionMapping[key] || key;
+				return [
+					`${label} Availability (%)`,
+					`${label} Unavailable Minutes`,
+					`${label} Total Minutes`,
+					`${label} Total Nodes`,
+				];
+			}),
 		];
 
 		const headerRow = worksheet.addRow(headers);
@@ -660,9 +842,9 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 			};
 		});
 
-		this.data.forEach((entry) => {
+		exportEntries.forEach((entry) => {
 			const row: any[] = [
-				entry.no,
+				entry.order,
 				entry.networkEngineerKpi,
 				entry.division,
 				entry.section,
@@ -673,9 +855,13 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 				const pct = this.calculatePercentage(
 					entry.totalMinutes?.[key],
 					entry.unavailableMinutes?.[key],
-					entry.totalNodes?.[key]
+					entry.totalNodes?.[key],
+					entry.nodeMeta?.[key]
 				);
 				row.push(isNaN(pct) ? '' : `${pct.toFixed(2)}%`);
+				row.push(entry.unavailableMinutes?.[key] ?? '');
+				row.push(entry.totalMinutes?.[key] ?? '');
+				row.push(entry.totalNodes?.[key] ?? '');
 			});
 
 			const bodyRow = worksheet.addRow(row);
@@ -689,28 +875,6 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 				};
 			});
 
-			const unavailableRow: any[] = [' ', 'Unavailable Minutes', ' ', ' ', ' '];
-			const totalRow: any[] = [' ', 'Total Minutes', ' ', ' ', ' '];
-			const nodesRow: any[] = [' ', 'Total Nodes', ' ', ' ', ' '];
-
-			areaKeys.forEach((key) => {
-				unavailableRow.push(entry.unavailableMinutes?.[key] ?? '');
-				totalRow.push(entry.totalMinutes?.[key] ?? '');
-				nodesRow.push(entry.totalNodes?.[key] ?? '');
-			});
-
-			[unavailableRow, totalRow, nodesRow].forEach((dataRow) => {
-				const subRow = worksheet.addRow(dataRow);
-				subRow.eachCell((cell: ExcelJS.Cell) => {
-					cell.alignment = { vertical: 'middle', horizontal: 'center' };
-					cell.border = {
-						top: { style: 'thin' },
-						left: { style: 'thin' },
-						bottom: { style: 'thin' },
-						right: { style: 'thin' },
-					};
-				});
-			});
 		});
 
 		worksheet.columns.forEach((column) => {

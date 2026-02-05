@@ -69,19 +69,7 @@
 
       <form class="region-form" (ngSubmit)="submitForm()">
         <div class="form-row">
-          <div class="form-group">
-            <label>Row No *</label>
-            <input
-              type="number"
-              [(ngModel)]="form.no"
-              name="no"
-              min="1"
-              required
-              placeholder="e.g. 12"
-            />
-          </div>
-
-          <div class="form-group">
+          <div class="form-group full-span">
             <label>KPI Target (%) *</label>
             <input
               type="number"
@@ -180,10 +168,10 @@
 
           <tbody>
             <tr
-              *ngFor="let row of data; trackBy: trackRow"
-              [class.is-editing]="row.kpiId === editingId"
+              *ngFor="let row of data; let i = index; trackBy: trackRow"
+              [class.is-editing]="row.id === editingId"
             >
-              <td class="mono">{{ row.no }}</td>
+              <td class="mono">{{ i + 1 }}</td>
               <td class="kpi-cell">{{ row.networkEngineerKpi }}</td>
               <td>{{ row.division || '-' }}</td>
               <td>{{ row.section || '-' }}</td>
@@ -197,7 +185,7 @@
                     <i class="bi bi-pencil"></i>
                   </button>
 
-                  <button class="icon-btn delete" type="button" (click)="deleteRow(row.kpiId)" title="Delete">
+                  <button class="icon-btn delete" type="button" (click)="deleteRow(row.id)" title="Delete">
                     <i class="bi bi-trash"></i>
                   </button>
                 </div>

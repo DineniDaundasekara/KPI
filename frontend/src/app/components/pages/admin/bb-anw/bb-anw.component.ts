@@ -19,7 +19,7 @@ export class BbAnwComponent implements OnInit {
   saving = false;
   error = '';
 
-  editingId: string | null = null;
+  editingId: number | null = null;
   showForm = false;
 
   form: BbAnwHeaderDto = this.emptyForm();
@@ -32,9 +32,7 @@ export class BbAnwComponent implements OnInit {
 
   private emptyForm(): BbAnwHeaderDto {
     return {
-      kpiId: undefined,
-      mongoObjectId: undefined,
-      no: 1,
+      id: undefined,
       networkEngineerKpi: '',
       division: '',
       section: '',
@@ -63,7 +61,7 @@ export class BbAnwComponent implements OnInit {
 
     const payload = this.normalizeForm();
 
-    const request$ = this.editingId
+    const request$ = this.editingId !== null
       ? this.service.updateHeader(this.editingId, payload)
       : this.service.addHeader(payload);
 
@@ -83,12 +81,10 @@ export class BbAnwComponent implements OnInit {
 
   editRow(row: BbAnwHeaderDto): void {
     this.showForm = true;
-    this.editingId = row.kpiId ?? null;
+    this.editingId = row.id ?? null;
 
     this.form = {
-      kpiId: row.kpiId,
-      mongoObjectId: row.mongoObjectId ?? '',
-      no: row.no,
+      id: row.id,
       networkEngineerKpi: row.networkEngineerKpi,
       division: row.division ?? '',
       section: row.section ?? '',
@@ -96,8 +92,8 @@ export class BbAnwComponent implements OnInit {
     };
   }
 
-  deleteRow(id?: string): void {
-    if (!id || !confirm('Delete this KPI header? (This will also delete node rows in DB)')) return;
+  deleteRow(id?: number): void {
+    if (typeof id !== 'number' || !confirm('Delete this KPI header? (This will also delete node rows in DB)')) return;
 
     this.saving = true;
     this.service.delete(id).subscribe({
@@ -120,14 +116,12 @@ export class BbAnwComponent implements OnInit {
   }
 
   trackRow(index: number, row: BbAnwHeaderDto): string {
-    return row.kpiId ?? `row-${index}`;
+    return row.id !== undefined ? row.id.toString() : `row-${index}`;
   }
 
   private normalizeForm(): BbAnwHeaderDto {
     return {
-      kpiId: this.editingId ?? undefined,
-      mongoObjectId: this.form.mongoObjectId?.trim() || null,
-      no: Number(this.form.no) || 0,
+      id: this.editingId ?? undefined,
       networkEngineerKpi: (this.form.networkEngineerKpi || '').trim(),
       division: this.form.division?.trim() || null,
       section: this.form.section?.trim() || null,
