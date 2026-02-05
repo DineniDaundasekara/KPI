@@ -9,7 +9,7 @@ import { finalize } from 'rxjs/operators';
 ======================= */
 
 export type KpiDefinition = {
-  id: string;
+  id: number;
   rowNumber: number;
   perspectives: string;
   strategicObjectives: string;
@@ -56,7 +56,7 @@ export class FinalTableComponent implements OnInit {
   pageTitle = 'Strategic KPI Management';
 
   records: KpiDefinition[] = [];
-  editingId: string | null = null;
+    editingId: number | null = null;
 
   loading = false;
   saving = false;
@@ -163,7 +163,7 @@ export class FinalTableComponent implements OnInit {
     }, 0);
   }
 
-  onDelete(id: string): void {
+ onDelete(id: number): void {
     if (!window.confirm('Delete this KPI row?')) return;
 
     this.saving = true;

@@ -4,7 +4,7 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angula
 import { HttpClient } from '@angular/common/http';
 
 interface TowerKpi {
-  id: string;
+  id: number;  // Changed from string to number (int identity)
   no: number;
   responsibility: string;
   frequency: string;
@@ -33,7 +33,7 @@ export class TowerMtceAchievementComponent implements OnInit {
   loading = false;
   saving = false;
   errorMessage = '';
-  editingId: string | null = null;
+  editingId: number | null = null;
 
   // MUST MATCH BACKEND CONTROLLER
   private apiUrl = 'http://localhost:5043/api/kpitower';
@@ -133,7 +133,7 @@ export class TowerMtceAchievementComponent implements OnInit {
   // =========================
   // DELETE
   // =========================
-  onDelete(id: string): void {
+  onDelete(id: number): void {
     if (!confirm('Delete this KPI?')) return;
 
     this.saving = true;

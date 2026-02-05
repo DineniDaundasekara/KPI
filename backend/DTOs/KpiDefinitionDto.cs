@@ -2,7 +2,7 @@
 {
     public class KpiDefinitionDto
     {
-        public string Id { get; set; } = "";
+        public int Id { get; set; }
         public int RowNumber { get; set; }
         public string Perspectives { get; set; } = "";
         public string StrategicObjectives { get; set; } = "";

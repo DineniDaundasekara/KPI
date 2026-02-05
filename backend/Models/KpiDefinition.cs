@@ -8,7 +8,8 @@ namespace backend.Models
     {
         [Key]
         [Column("id")]
-        public string Id { get; set; } = string.Empty;
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
+        public int Id { get; set; }
 
         [Column("rowNumber")]
         public byte RowNumber { get; set; }
