@@ -62,7 +62,7 @@
             </td>
 
             <td class="col-weight">
-              {{ row.weightage | number : '1.0-2' }}%
+              {{ getComputedWeightage(row) }}
             </td>
 
             <td class="col-points">
@@ -146,7 +146,9 @@
           <tr class="summary-row" #rightRowRef>
             <ng-container *ngFor="let total of totalPointsAchievedByRegion; let idx = index">
               <td></td>
-              <td></td>
+              <td class="text-center maximum-points-cell">
+                <b>{{ totalMaximumPointsPerKpi | number : '1.4-4' }}</b>
+              </td>
               <td class="text-center points-achieved-cell">
                 <b>{{ total | number : '1.4-4' }}</b>
               </td>
