@@ -3,8 +3,6 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace backend.Models
 {
-
-    
     [Table("finaldatatables", Schema = "dbo")]
     public class KpiDefinition
     {
