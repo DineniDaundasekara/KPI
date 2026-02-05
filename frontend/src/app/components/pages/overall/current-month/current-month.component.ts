@@ -29,7 +29,7 @@ interface KpiMetric {
 }
 
 interface KpiRow {
-  rowNumber: number;
+  number: number;
   perspectives: string;
   strategicObjectives: string;
   kpi: string;
@@ -44,8 +44,7 @@ interface KpiRow {
 
 /** final table API response */
 type KpiDefinition = {
-  id: string;
-  rowNumber: number;
+  id: number;
   perspectives: string;
   strategicObjectives: string;
   keyPerformanceIndicators: string;
@@ -229,7 +228,7 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (res) => {
-          const list = (res ?? []).sort((a, b) => a.rowNumber - b.rowNumber);
+          const list = (res ?? []).sort((a, b) => a.id - b.id);
 
           this.kpiRows = list.map((row, rowIndex) => {
             const metrics: KpiMetric[] = this.engineersFlat.map(
@@ -242,7 +241,7 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
             );
 
             return {
-              rowNumber: row.rowNumber,
+              number: rowIndex + 1,
               perspectives: row.perspectives,
               strategicObjectives: row.strategicObjectives,
               kpi: row.keyPerformanceIndicators,
