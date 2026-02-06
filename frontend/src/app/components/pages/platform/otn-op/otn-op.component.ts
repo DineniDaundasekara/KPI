@@ -216,7 +216,7 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 	}
 
 	get selectedKey(): string {
-		return this.formValues.dropdown4 ? this.norm(this.formValues.dropdown4) : '';
+		return this.formValues.dropdown4 ? this.toCanonicalSiteKey(this.formValues.dropdown4) : '';
 	}
 
 	get selectedLeaLabel(): string {
@@ -317,6 +317,14 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 
 	private norm(value: string | null | undefined): string {
 		return value ? value.replace(/[^A-Za-z0-9]/g, '').toLowerCase() : '';
+	}
+
+	private toCanonicalSiteKey(value: string | null | undefined): string {
+		const normalized = this.norm(value);
+		if (!normalized) {
+			return '';
+		}
+		return this.friendlyToDbKey[normalized] || normalized;
 	}
 
 	private buildFriendlyMap(): void {
@@ -521,7 +529,7 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 		if (Array.isArray(metrics)) {
 			console.log(`OtnOp1 KPI ${record.id} metrics:`, metrics);
 			metrics.forEach((metric: any) => {
-				const siteKey = this.norm(metric.site || '');
+				const siteKey = this.toCanonicalSiteKey(metric.site);
 				if (siteKey) {
 					totalMinutes[siteKey] = metric.totalMinutes ?? 0;
 					unavailableMinutes[siteKey] = metric.unavailableMinutes ?? 0;
@@ -560,7 +568,7 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 		if (Array.isArray(metrics)) {
 			console.log(`OtnOp2 KPI ${record.id} metrics:`, metrics);
 			metrics.forEach((metric: any) => {
-				const siteKey = this.norm(metric.site || '');
+				const siteKey = this.toCanonicalSiteKey(metric.site);
 				if (siteKey) {
 					totalFailedLinks[siteKey] = metric.totalFailedLinks ?? 0;
 					linksSlaNotViolated[siteKey] = metric.linksSlaNotViolated ?? 0;
@@ -785,10 +793,7 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 					row.province === this.formValues.dropdown2 &&
 					row.networkEngineer === engineer
 			)
-			.map((row) => {
-				const normalized = this.norm(row.lea);
-				return this.friendlyToDbKey[normalized] || normalized;
-			})
+			.map((row) => this.toCanonicalSiteKey(row.lea))
 			.filter(Boolean);
 
 		this.dropdown4Options = Array.from(new Set(leas));
