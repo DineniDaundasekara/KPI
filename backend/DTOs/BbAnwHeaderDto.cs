@@ -2,10 +2,7 @@
 {
     public class BbAnwHeaderDto
     {
-        public Guid? KpiId { get; set; }
-        public string? MongoObjectId { get; set; }
-
-        public int No { get; set; }
+        public int Id { get; set; }
         public string NetworkEngineerKpi { get; set; } = string.Empty;
         public string? Division { get; set; }
         public string? Section { get; set; }

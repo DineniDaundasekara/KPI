@@ -6,5 +6,7 @@
         public int? UnavailableMinutes { get; set; }
         public long? TotalMinutes { get; set; }
         public int? TotalNodes { get; set; }
+        public byte Month { get; set; }
+        public short Year { get; set; }
     }
 }

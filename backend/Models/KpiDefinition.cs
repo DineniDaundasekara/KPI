@@ -11,9 +11,6 @@ namespace backend.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        [Column("rowNumber")]
-        public byte RowNumber { get; set; }
-
         [Column("perspectives")]
         public string Perspectives { get; set; } = string.Empty;
 
@@ -29,12 +26,11 @@ namespace backend.Models
         [Column("descriptionOfKPI")]
         public string DescriptionOfKPI { get; set; } = string.Empty;
 
-        // ✅ Weightage auto-calculated (% with decimals)
-        // Recommended DB column type: decimal(10,4)
+        // DB: decimal(10,4)
         [Column("weightage", TypeName = "decimal(10,4)")]
         public decimal Weightage { get; set; } = 0m;
 
-        // ✅ User enters points; NOT NULL default 0
+        // DB: int NOT NULL DEFAULT 0
         [Column("pointsApplicable")]
         public int PointsApplicable { get; set; } = 0;
 
@@ -44,12 +40,11 @@ namespace backend.Models
         [Column("updatedAt")]
         public string? UpdatedAt { get; set; }
 
-        [Column("v")]
-        public byte V { get; set; }
-
+        // DB: tinyint NOT NULL
         [Column("month")]
         public byte Month { get; set; }
 
+        // DB: smallint NOT NULL
         [Column("year")]
         public short Year { get; set; }
     }

@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace backend.Models
 {
@@ -7,26 +8,20 @@ namespace backend.Models
     public class BbAnwKpi
     {
         [Key]
-        [Column("KpiId")]
-        public Guid KpiId { get; set; } = Guid.NewGuid();
+        [Column("id")]
+        public int Id { get; set; }   // ✅ INT identity in DB
 
-        [Column("MongoObjectId")]
-        public string? MongoObjectId { get; set; }
-
-        [Column("No")]
-        public int No { get; set; }
-
-        [Column("NetworkEngineerKpi")]
+        [Column("network_engineer_kpi")]
         public string NetworkEngineerKpi { get; set; } = string.Empty;
 
-        [Column("Division")]
+        [Column("division")]
         public string? Division { get; set; }
 
-        [Column("Section")]
+        [Column("section")]
         public string? Section { get; set; }
 
-        [Column("KpiPercent")]
-        public decimal? KpiPercent { get; set; }
+        [Column("kpi_percent")]
+        public decimal? KpiPercent { get; set; }   // ✅ DECIMAL -> C# decimal
 
         public List<BbAnwKpiNode> Nodes { get; set; } = new();
     }

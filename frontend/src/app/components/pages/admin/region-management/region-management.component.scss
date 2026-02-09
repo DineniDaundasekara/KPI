@@ -1,14 +1,65 @@
-.region-page {
-  padding: 2rem;
-  background: linear-gradient(135deg, #f0f7ff 0%, #f8fafc 100%);
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap');
+
+:host {
+  display: block;
   min-height: 100vh;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
-    sans-serif;
-  color: #0f172a;
+  position: relative;
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+  color: #102136;
+
+  background-image: url('/assets/admin/SLT-Mobitel.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
 
-/* HEADER */
+:host::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(248, 250, 252, 0.55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  z-index: 0;
+}
 
+/* =========================
+   REGION PAGE (LIGHT / GLASS)
+   ========================= */
+.region-page {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  padding: 3rem 1.5rem 4rem;
+  overflow: hidden;
+
+  background: linear-gradient(135deg, rgba(240, 247, 255, 0.55), rgba(198, 224, 255, 0.35));
+  border: 1px solid rgba(16, 33, 54, 0.06);
+}
+
+/* overlay grid (optional but looks modern) */
+.region-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    url('/assets/admin/network-grid.svg') center/600px repeat,
+    linear-gradient(135deg, rgba(16, 33, 54, 0.08), rgba(0, 122, 211, 0.10));
+  opacity: 0.55;
+  z-index: 0;
+}
+
+/* keep content above overlay */
+.region-header,
+.card {
+  position: relative;
+  z-index: 1;
+}
+
+/* =========================
+   HEADER
+   ========================= */
 .region-header {
   display: flex;
   justify-content: space-between;
@@ -20,21 +71,24 @@
 
 .header-left h1 {
   margin: 0;
-  font-size: 1.9rem;
+  font-size: clamp(1.8rem, 3vw, 2.4rem);
   font-weight: 600;
+  letter-spacing: 0.3px;
+  color: #0f1b2c;
 }
 
 .eyebrow {
   text-transform: uppercase;
   font-size: 0.75rem;
   letter-spacing: 0.16em;
-  color: #2563eb;
+  color: #1f7ae0;
   margin-bottom: 0.2rem;
 }
 
 .subtitle {
   margin-top: 0.3rem;
-  color: #6b7280;
+  color: #1d3557;
+  opacity: 0.85;
   font-size: 0.95rem;
 }
 
@@ -47,26 +101,31 @@
 .count-pill {
   padding: 0.35rem 0.9rem;
   border-radius: 999px;
-  background: #e0edff;
-  color: #1d4ed8;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(16, 33, 54, 0.10);
+  color: #0a48a4;
   font-size: 0.85rem;
   font-weight: 600;
 }
 
-/* CARDS */
-
+/* =========================
+   CARDS
+   ========================= */
 .card {
-  background: #ffffff;
-  border-radius: 18px;
-  box-shadow: 0 18px 35px rgba(15, 23, 42, 0.1);
-  border: 1px solid #e2e8f0;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 20px;
+  box-shadow: 0 25px 60px rgba(16, 33, 54, 0.12);
+  border: 1px solid rgba(16, 33, 54, 0.06);
 }
 
 /* form card */
-
 .form-card {
   padding: 1.5rem;
   margin-bottom: 1.5rem;
+
+  width: min(820px, 100%);   /* ✅ reduce card width (try 700px too) */
+  margin-left: auto;         /* ✅ center */
+  margin-right: auto;
 }
 
 .form-card-header {
@@ -78,16 +137,17 @@
 .form-card-header h2 {
   margin: 0;
   font-size: 1.3rem;
+  color: #0f1b2c;
+  font-weight: 600;
 }
 
 .form-subtitle {
   margin: 0.5rem 0 1rem 0;
   font-size: 0.9rem;
-  color: #6b7280;
+  color: rgba(29, 53, 87, 0.85);
 }
 
 /* table card */
-
 .table-card {
   padding: 1.5rem;
 }
@@ -101,17 +161,20 @@
   h2 {
     margin: 0;
     font-size: 1.3rem;
+    color: #0f1b2c;
+    font-weight: 600;
   }
 
   .hint {
     margin: 0;
     font-size: 0.85rem;
-    color: #9ca3af;
+    color: rgba(107, 114, 128, 0.95);
   }
 }
 
-/* FORM */
-
+/* =========================
+   FORM
+   ========================= */
 .region-form {
   display: flex;
   flex-direction: column;
@@ -140,19 +203,19 @@
   }
 
   input {
-    padding: 0.55rem 0.85rem;
+    padding: 0.85rem 1rem;
+    border: 1px solid #d7dfee;
     border-radius: 10px;
-    border: 1px solid #cbd5e1;
-    font-size: 0.9rem;
-    background: #f9fafb;
-    transition: border-color 0.18s ease, box-shadow 0.18s ease,
-      background-color 0.18s ease;
+    font-size: 0.95rem;
+    background: #f9fbff;
+    color: #0f1b2c;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 
     &:focus {
       outline: none;
-      border-color: #2563eb;
+      border-color: #1f7ae0;
       background: #ffffff;
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22);
+      box-shadow: 0 0 0 3px rgba(31, 122, 224, 0.2);
     }
   }
 }
@@ -171,8 +234,9 @@
   }
 }
 
-/* BUTTONS */
-
+/* =========================
+   BUTTONS
+   ========================= */
 .primary-btn,
 .secondary-btn,
 .ghost-icon-btn,
@@ -182,21 +246,19 @@
 
 .primary-btn {
   border-radius: 999px;
-  padding: 0.55rem 1.4rem;
+  padding: 0.65rem 1.4rem;
   border: none;
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
-  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  background: linear-gradient(135deg, #1f7ae0, #0a48a4);
   color: #ffffff;
-  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.4);
-  transition: background 0.18s ease, transform 0.1s ease,
-    box-shadow 0.18s ease;
+  box-shadow: 0 10px 20px rgba(31, 122, 224, 0.30);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
 
   &:hover:not(:disabled) {
-    background: linear-gradient(135deg, #1d4ed8, #1e40af);
     transform: translateY(-1px);
-    box-shadow: 0 16px 28px rgba(37, 99, 235, 0.45);
+    box-shadow: 0 16px 28px rgba(31, 122, 224, 0.35);
   }
 
   &:disabled {
@@ -208,16 +270,16 @@
 
 .secondary-btn {
   border-radius: 999px;
-  padding: 0.55rem 1.3rem;
-  border: 1px solid #d1d5db;
-  background: #ffffff;
-  color: #111827;
+  padding: 0.65rem 1.3rem;
+  border: 1px solid rgba(10, 72, 164, 0.25);
+  background: #ecf2ff;
+  color: #0a48a4;
   font-size: 0.9rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
 
   &:hover {
-    background: #f3f4f6;
+    background: #e3edff;
   }
 }
 
@@ -233,8 +295,7 @@
   }
 }
 
-/* ICON BUTTON (edit / delete / small actions) */
-
+/* icon button (used for inline edit pencil and delete icon) */
 .icon-btn {
   background: transparent;
   border: none;
@@ -246,16 +307,12 @@
   border-radius: 999px;
   min-width: 28px;
   min-height: 28px;
-  transition:
-    background 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.1s ease,
-    color 0.15s ease;
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
 
   .material-icons-round,
   .material-symbols-outlined {
     font-size: 18px;
-    color: #64748b; /* slate-500 */
+    color: #64748b;
     line-height: 1;
   }
 
@@ -266,17 +323,10 @@
 
   &:hover .material-icons-round,
   &:hover .material-symbols-outlined {
-    color: #1d4ed8; /* blue-700 */
+    color: #0a48a4;
     transform: scale(1.05);
   }
-
-  &:active {
-    transform: translateY(0.5px) scale(0.97);
-    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
-  }
 }
-
-/* delete variant */
 
 .icon-btn.danger {
   background: #fef2f2;
@@ -297,8 +347,9 @@
   }
 }
 
-/* MESSAGES */
-
+/* =========================
+   MESSAGES
+   ========================= */
 .message {
   margin-top: 0.8rem;
   padding: 0.55rem 0.75rem;
@@ -318,8 +369,9 @@
   color: #15803d;
 }
 
-/* TABLE */
-
+/* =========================
+   TABLE
+   ========================= */
 .table-wrapper {
   overflow-x: auto;
 }
@@ -330,14 +382,14 @@
   font-size: 0.9rem;
 
   thead {
-    background: #eef2ff;
+    background: linear-gradient(135deg, #0f66c3, #0a48a4);
+    color: #ffffff;
 
     th {
-      padding: 0.7rem 0.9rem;
+      padding: 0.8rem 0.9rem;
       text-align: left;
       font-weight: 600;
-      color: #1f2937;
-      border-bottom: 1px solid #e5e7eb;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.18);
       cursor: pointer;
       -webkit-user-select: none;
       user-select: none;
@@ -346,13 +398,14 @@
   }
 
   tbody td {
-    padding: 0.6rem 0.9rem;
-    border-bottom: 1px solid #e5e7eb;
+    padding: 0.7rem 0.9rem;
+    border-bottom: 1px solid rgba(15, 27, 44, 0.08);
     vertical-align: middle;
+    color: #0f1b2c;
   }
 
   tbody tr:hover {
-    background: #f9fafb;
+    background: rgba(15, 102, 195, 0.05);
   }
 
   .no-data {
@@ -363,12 +416,55 @@
 }
 
 .actions-col {
-  width: 80px;
+  width: 130px;
   text-align: center;
 }
 
-/* inline editable cell */
+/* =========================
+   EXACT EDIT / DELETE BUTTONS (LIKE YOUR IMAGE)
+   ========================= */
+.row-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-start;
+}
 
+.mini-btn {
+  border: none;
+  outline: none;
+  cursor: pointer;
+
+  padding: 8px 16px;
+  border-radius: 8px;
+
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+
+  color: #fff;
+  transition: transform 0.12s ease, filter 0.12s ease;
+}
+
+.mini-btn.edit {
+  background: #28a745;
+}
+
+.mini-btn.delete {
+  background: #dc3545;
+}
+
+.mini-btn:hover {
+  filter: brightness(0.95);
+}
+
+.mini-btn:active {
+  transform: translateY(1px);
+}
+
+/* =========================
+   INLINE EDITABLE CELL
+   ========================= */
 .editable-cell {
   display: flex;
   align-items: center;
@@ -376,13 +472,13 @@
   gap: 0.5rem;
   padding: 0.25rem 0.6rem;
   border-radius: 999px;
-  background: #f9fafb;
+  background: #f9fbff;
   border: 1px solid transparent;
   cursor: pointer;
 
   &:hover {
     border-color: #d1d5db;
-    background: #f3f4f6;
+    background: #f3f7ff;
   }
 
   span {
@@ -391,42 +487,37 @@
   }
 }
 
-
-/* (legacy) plain edit + delete buttons if used anywhere else */
-
-.edit-btn {
-  border: none;
-  background: transparent;
-  font-size: 0.8rem;
-  cursor: pointer;
-  color: #6b7280;
-
-  &:hover {
-    color: #111827;
-  }
-}
-
 .edit-input {
   width: 100%;
-  padding: 0.35rem 0.6rem;
+  padding: 0.45rem 0.65rem;
   border-radius: 8px;
-  border: 1px solid #3b82f6;
-  font-size: 0.88rem;
+  border: 1px solid #1f7ae0;
+  font-size: 0.9rem;
 
   &:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+    box-shadow: 0 0 0 2px rgba(31, 122, 224, 0.25);
   }
 }
 
-/* RESPONSIVE */
-
+/* =========================
+   RESPONSIVE
+   ========================= */
 @media (max-width: 768px) {
   .region-page {
-    padding: 1.25rem;
+    padding: 2rem 1rem 3rem;
   }
 
   .region-header {
     align-items: flex-start;
+  }
+
+  .row-actions {
+    gap: 10px;
+  }
+
+  .mini-btn {
+    padding: 8px 14px;
+    font-size: 13px;
   }
 }

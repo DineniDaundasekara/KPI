@@ -12,17 +12,12 @@
 
       <div *ngIf="editingId" class="edit-info">
         <span class="edit-message">
-          You are editing Row #{{ form.value.rowNumber }}. Update Points Applicable and other fields, then click Update.
+          You are editing Number #{{ editingId }}. Update Points Applicable and other fields, then click Update.
           Weightage will be recalculated automatically.
         </span>
       </div>
 
       <div class="field-grid">
-        <div class="field-group">
-          <input type="number" formControlName="rowNumber" placeholder="Row Number" />
-          <span class="error" *ngIf="form.controls.rowNumber.touched && form.controls.rowNumber.invalid">Required</span>
-        </div>
-
         <div class="field-group">
           <input type="text" formControlName="perspectives" placeholder="Perspectives" />
           <span class="error" *ngIf="form.controls.perspectives.touched && form.controls.perspectives.invalid">Required</span>
@@ -109,7 +104,7 @@
     <table class="kpi-table" *ngIf="!loading && records.length">
       <thead>
         <tr>
-          <th>Row Number</th>
+          <th>Number</th>
           <th>Perspectives</th>
           <th>Strategic Objectives</th>
           <th>Key Performance Indicators</th>
@@ -127,16 +122,16 @@
       </thead>
 
       <tbody>
-        <tr *ngFor="let record of records" [class.editing-row]="editingId === record.id">
-          <td>{{ record.rowNumber }}</td>
+        <tr *ngFor="let record of records; let idx = index" [class.editing-row]="editingId === record.id">
+          <td>{{ idx + 1 }}</td>
           <td>{{ record.perspectives }}</td>
           <td>{{ record.strategicObjectives }}</td>
           <td>{{ record.keyPerformanceIndicators }}</td>
           <td>{{ record.unit }}</td>
           <td>{{ record.descriptionOfKPI }}</td>
 
-          <!-- ✅ show % with 4 decimals -->
-          <td>{{ formatWeightage(record.weightage) }}</td>
+          <!-- ✅ normalized % from points -->
+          <td>{{ getComputedWeightageForRecord(record) }}</td>
 
           <td>{{ record.pointsApplicable }}</td>
 

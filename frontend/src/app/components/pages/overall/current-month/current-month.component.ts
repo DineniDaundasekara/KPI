@@ -29,7 +29,7 @@ interface KpiMetric {
 }
 
 interface KpiRow {
-  rowNumber: number;
+  number: number;
   perspectives: string;
   strategicObjectives: string;
   kpi: string;
@@ -44,8 +44,7 @@ interface KpiRow {
 
 /** final table API response */
 type KpiDefinition = {
-  id: string;
-  rowNumber: number;
+  id: number;
   perspectives: string;
   strategicObjectives: string;
   keyPerformanceIndicators: string;
@@ -98,9 +97,11 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
   totalPointsApplicable = 0;
   totalPointsAchievedByRegion: number[] = [];
   totalPointsNormalized: number[] = [];
+  totalMaximumPointsPerKpi = 0;
 
   private readonly rowChangesSub = new Subscription();
   private pendingFrame: number | null = null;
+  private refreshInterval: any = null;
 
   constructor(private http: HttpClient, private regionService: RegionService) {
     const now = new Date();
@@ -110,6 +111,8 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadRegions();
+    // Auto-refresh every 5 seconds to sync with changes from admin panel
+    this.refreshInterval = setInterval(() => this.loadRegions(), 5000);
   }
 
   @HostListener('window:focus')
@@ -132,6 +135,7 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.rowChangesSub.unsubscribe();
     if (this.pendingFrame !== null) cancelAnimationFrame(this.pendingFrame);
+    if (this.refreshInterval !== null) clearInterval(this.refreshInterval);
   }
 
   @HostListener('window:resize')
@@ -229,7 +233,7 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (res) => {
-          const list = (res ?? []).sort((a, b) => a.rowNumber - b.rowNumber);
+          const list = (res ?? []).sort((a, b) => a.id - b.id);
 
           this.kpiRows = list.map((row, rowIndex) => {
             const metrics: KpiMetric[] = this.engineersFlat.map(
@@ -242,7 +246,7 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
             );
 
             return {
-              rowNumber: row.rowNumber,
+              number: rowIndex + 1,
               perspectives: row.perspectives,
               strategicObjectives: row.strategicObjectives,
               kpi: row.keyPerformanceIndicators,
@@ -284,6 +288,12 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
       0
     );
 
+    // ✅ Calculate total maximum points per KPI (sum across all engineers for all KPIs)
+    this.totalMaximumPointsPerKpi = this.kpiRows.reduce(
+      (sum, row) => sum + (row.pointsApplicable ?? 0),
+      0
+    ) * this.engineersFlat.length;
+
     // ✅ Calculate total points achieved by region
     this.totalPointsAchievedByRegion = this.engineersFlat.map((_, colIndex) =>
       this.kpiRows.reduce(
@@ -293,8 +303,9 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
     );
  
     // ✅ Normalized: percentage of total possible points
+    // Formula: (Total Points Achieved) / (Total Maximum Points Per KPI) × 100%
     this.totalPointsNormalized = this.totalPointsAchievedByRegion.map((total) =>
-      this.totalPointsApplicable ? +((total / this.totalPointsApplicable) * 100).toFixed(2) : 0
+      this.totalMaximumPointsPerKpi ? +((total / this.totalMaximumPointsPerKpi) * 100).toFixed(2) : 0
     );
   }
 
@@ -328,5 +339,12 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
       leftRows[i].style.height = `${maxHeight}px`;
       rightRows[i].style.height = `${maxHeight}px`;
     }
+  }
+
+  /** Compute weightage dynamically based on total points (normalized to 100%) */
+  getComputedWeightage(row: KpiRow): string {
+    if (this.totalPointsApplicable <= 0) return '0.00%';
+    const weightage = (Number(row.pointsApplicable ?? 0) / this.totalPointsApplicable) * 100;
+    return `${weightage.toFixed(2)}%`;
   }
 }

@@ -1,9 +1,12 @@
-/* Add these styles to your existing CSS */
+/* ✅ FULL UPDATED CSS (includes fixed button layout + no Bootstrap btn-close conflict) */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap');
+
 :host {
   --accent-primary: #0057a6;
   --accent-secondary: #02b28c;
   --card-shadow: 0 18px 35px rgba(8, 50, 94, 0.12);
   --card-border: rgba(255, 255, 255, 0.45);
+
   display: block;
   min-height: 100vh;
   background-image: radial-gradient(circle at top, rgba(0, 87, 166, 0.35), transparent 55%),
@@ -12,6 +15,7 @@
   background-position: center;
   background-attachment: fixed;
   position: relative;
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
 }
 
 :host::before {
@@ -55,7 +59,7 @@
   bottom: 0;
   height: 3px;
   border-radius: 999px;
-  background: linear-gradient(90deg, #0057a6, #02b28c);
+  background: linear-gradient(90deg, var(--accent-primary), var(--accent-secondary));
   box-shadow: 0 6px 18px rgba(2, 178, 140, 0.25);
 }
 
@@ -165,47 +169,6 @@
   flex: 1;
 }
 
-.form-placeholder {
-  border: 1px dashed rgba(0, 87, 166, 0.35);
-  border-radius: 16px;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  background: rgba(0, 87, 166, 0.04);
-  color: #334155;
-  font-size: 0.95rem;
-  line-height: 1.6;
-}
-
-.form-placeholder strong {
-  color: var(--accent-primary);
-}
-
-.btn-add {
-  background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 0.75rem 1.5rem;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: 0 12px 24px rgba(0, 87, 166, 0.25);
-}
-
-.btn-add:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 18px 28px rgba(2, 178, 140, 0.25);
-}
-
-.btn-add span {
-  font-size: 1.2rem;
-  font-weight: 300;
-}
-
 /* KPI Form */
 .kpi-form {
   display: flex;
@@ -241,19 +204,16 @@
 }
 
 .form-group input,
-.form-group select,
 .form-group textarea {
   padding: 0.75rem;
   border: 2px solid rgba(0, 0, 0, 0.08);
   border-radius: 10px;
   font-size: 0.95rem;
-  font-family: Arial, sans-serif;
   background: rgba(255, 255, 255, 0.9);
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .form-group input:focus,
-.form-group select:focus,
 .form-group textarea:focus {
   outline: none;
   border-color: rgba(0, 87, 166, 0.8);
@@ -266,7 +226,6 @@
 }
 
 .form-group input.invalid,
-.form-group select.invalid,
 .form-group textarea.invalid {
   border-color: #dc3545;
 }
@@ -277,67 +236,70 @@
   margin-top: 0.25rem;
 }
 
-/* Form Actions */
+/* ✅ FIXED Form Actions */
 .form-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 1rem;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
   padding-top: 1rem;
   border-top: 1px solid #E8E8E8;
 }
 
-.btn-cancel,
-.btn-submit {
+.form-actions button {
+  min-width: 110px;
+}
+
+/* Reset */
+.btn-cancel {
   padding: 0.75rem 1.5rem;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  border: none;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.btn-cancel {
+  border: 2px solid #E8E8E8;
   background: #f8f9fa;
   color: #666;
-  border: 2px solid #E8E8E8;
 }
 
 .btn-cancel:hover {
   background: #e9ecef;
 }
 
-.btn-close {
+/* ✅ Close button renamed */
+.btn-close-form {
   background: #ffffff;
   color: var(--accent-primary);
   border: 2px solid rgba(0, 87, 166, 0.25);
-  border-radius: 10px;
+  border-radius: 8px;
   padding: 0.75rem 1.5rem;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease, background 0.2s ease;
   box-shadow: 0 8px 16px rgba(0, 87, 166, 0.08);
+  transition: 0.2s ease;
 }
 
-.btn-close:hover {
+.btn-close-form:hover {
   border-color: rgba(2, 178, 140, 0.8);
   color: var(--accent-secondary);
   box-shadow: 0 12px 24px rgba(2, 178, 140, 0.15);
   transform: translateY(-1px);
 }
 
-.btn-close:focus-visible {
-  outline: none;
-  border-color: rgba(0, 87, 166, 0.85);
-  background: rgba(0, 87, 166, 0.05);
-  box-shadow: 0 0 0 3px rgba(0, 87, 166, 0.12);
-}
-
+/* Submit */
 .btn-submit {
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
   background: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
   color: white;
   box-shadow: 0 12px 24px rgba(0, 87, 166, 0.25);
+  transition: 0.2s ease;
 }
 
 .btn-submit:hover:not(:disabled) {
@@ -347,36 +309,12 @@
 
 .btn-submit:disabled {
   background: linear-gradient(135deg, rgba(0, 87, 166, 0.6), rgba(2, 178, 140, 0.55));
-  color: rgba(255, 255, 255, 0.85);
   box-shadow: none;
   cursor: not-allowed;
   opacity: 0.75;
 }
 
-@media (max-width: 640px) {
-  .form-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .form-actions button {
-    width: 100%;
-    text-align: center;
-  }
-}
-
-/* KPI List Table */
-.kpi-list-container {
-  margin-top: 3rem;
-}
-
-.kpi-list-container h3 {
-  color: #0057A6;
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin-bottom: 1.5rem;
-}
-
+/* KPI Table */
 .table-responsive {
   overflow-x: auto;
   border-radius: 18px;
@@ -389,26 +327,20 @@
   background: rgba(255, 255, 255, 0.98);
   border-radius: 18px;
   overflow: hidden;
-  box-shadow: var(--card-shadow);
   border: 1px solid rgba(0, 87, 166, 0.08);
 }
 
 .kpi-table thead {
-  background: linear-gradient(90deg, rgba(0, 87, 166, 0.08), rgba(2, 178, 140, 0.08));
-  position: sticky;
-  top: 0;
-  z-index: 1;
+  background: #0b5fb4;
 }
 
 .kpi-table th {
-  color: var(--accent-primary);
+  color: #ffffff;
   font-weight: 600;
   padding: 1rem;
   text-align: left;
-  border-bottom: 2px solid #E8E8E8;
   font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  white-space: nowrap;
 }
 
 .kpi-table td {
@@ -417,21 +349,8 @@
   color: #333;
 }
 
-.kpi-table tbody tr:nth-child(odd) {
-  background: rgba(248, 250, 252, 0.9);
-}
-
-.kpi-table tbody tr:nth-child(even) {
-  background: rgba(255, 255, 255, 0.98);
-}
-
-.kpi-table tbody tr {
-  transition: background 0.2s ease, transform 0.2s ease;
-}
-
 .kpi-table tbody tr:hover {
   background: rgba(0, 87, 166, 0.04);
-  transform: translateX(4px);
 }
 
 .platform-badge {
@@ -442,37 +361,6 @@
   border-radius: 20px;
   font-size: 0.85rem;
   font-weight: 600;
-  box-shadow: inset 0 0 0 1px rgba(0, 87, 166, 0.2);
-}
-
-.weightage-display {
-  position: relative;
-  width: 100%;
-  height: 24px;
-  background: #f0f0f0;
-  border-radius: 4px;
-  overflow: hidden;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.05);
-}
-
-.weightage-bar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  background: #0057A6;
-  transition: width 0.3s ease;
-}
-
-.weightage-display span {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: white;
-  font-size: 0.85rem;
-  font-weight: 600;
-  z-index: 1;
 }
 
 .action-buttons {
@@ -483,77 +371,28 @@
 .btn-edit,
 .btn-delete {
   padding: 0.5rem 1rem;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   border: none;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .btn-edit {
-  background: #e3f2fd;
-  color: #0057A6;
-}
-
-.btn-edit:hover {
-  background: #bbdefb;
-  transform: translateY(-2px);
-  box-shadow: 0 12px 20px rgba(0, 87, 166, 0.18);
+  background: #28a745;
+  color: #fff;
 }
 
 .btn-delete {
-  background: #fde8e8;
-  color: #dc3545;
-}
-
-.btn-delete:hover {
-  background: #fbd5d5;
-  transform: translateY(-2px);
-  box-shadow: 0 12px 20px rgba(220, 53, 69, 0.18);
+  background: #dc3545;
+  color: #fff;
 }
 
 @media (max-width: 768px) {
   .page-container {
     padding: 1.25rem;
   }
-
   .form-container {
     padding: 1.5rem;
   }
-
-  .form-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .btn-add {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .form-actions {
-    flex-direction: column;
-  }
-
-  .btn-cancel,
-  .btn-submit {
-    width: 100%;
-  }
-}
-
-/* Animation for new entries */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.kpi-table tbody tr {
-  animation: fadeInUp 0.3s ease;
 }

@@ -127,7 +127,7 @@ namespace backend.Controllers
             [FromQuery] byte month)
         {
             var exists = await _db.OtnOp2.AsNoTracking().AnyAsync(x => x.Id == id);
-            if (!exists) return NotFound("KPI not found.");
+            if (!exists) return NotFound("OtnOp2 KPI not found. Use the KPI id from /api/OtnOp2, not a metric id.");
 
             var rows = await _db.OtnOp2Metrics
                 .AsNoTracking()
@@ -153,7 +153,7 @@ namespace backend.Controllers
         public async Task<IActionResult> UpsertMetrics(int id, [FromBody] List<OtnOp2MetricDto> metrics)
         {
             var exists = await _db.OtnOp2.AnyAsync(x => x.Id == id);
-            if (!exists) return NotFound("KPI not found.");
+            if (!exists) return NotFound("OtnOp2 KPI not found. Use the KPI id from /api/OtnOp2, not a metric id.");
 
             if (metrics == null || metrics.Count == 0)
                 return BadRequest("Metrics list is empty.");
