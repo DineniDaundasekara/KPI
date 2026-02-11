@@ -99,26 +99,33 @@ export class ServiceFulfilmentComponent implements OnInit {
   };
 
   optionMapping: { [key: string]: string } = {
-    CENHKMD: 'CEN/HK/MD',
-    CENHKMD1: 'CEN/HK/MD 1',
-    GQKINTB: 'GQ / KI / NTB',
-    NDRM: 'ND / RM',
-    AWHO: 'AW / HO',
-    KONKX: 'KON / KK',
-    NGWT: 'NG / WT',
-    KGKLY: 'KG / KLY',
-    CWPX: 'CW / PX',
-    DBKYMT: 'DB / KY / MT',
-    GPHTNW: 'GP / HT / NW',
-    ADPR: 'AD / PR',
-    BDBWMRG: 'BD / BW / MRG',
-    KERN: 'KE / RN',
-    EBMHMBH: 'EMB / HB / MH',
-    AGGL: 'AG / GL',
-    HRKTPH: 'HR / KT / PH',
-    BCAPKLTC: 'BC / AP / KL / TC',
+    CENHK: 'CEN/HK',
+    CENMD: 'CEN/MD',
+    GQKINTB: 'GQ/KI/NTB',
+    NDRM: 'ND/RM',
+    AWHO: 'AW/HO',
+    KONKX: 'KON/KX',
+    KONIX: 'KON/KX',
+    NGWT: 'NG/WT',
+    NGIVT: 'NG/WT',
+    KGKLY: 'KG/KLY',
+    CWPX: 'CW/PX',
+    KYMT: 'KY/MT',
+    GPHTNW: 'GP/HT/NW',
+    ADPR: 'AD/PR',
+    ADIPR: 'AD/PR',
+    BDBWMRG: 'BD/BW/MRG',
+    BDDWMRG: 'BD/BW/MRG',
+    KERN: 'KE/RN',
+    KEIRN: 'KE/RN',
+    EMBHBMH: 'EMB/HB/MH',
+    EMBMBMH: 'EMB/HB/MH',
+    AGGL: 'AG/GL',
+    HRKTPH: 'HR/KT/PH',
+    BCAPKLTC: 'BC/AP/KL/TC',
+    BCJRDKLTC: 'BC/AP/KL/TC',
     JA: 'JA',
-    KOMLTMBVA: 'KO / MLT / MB / VA'
+    KOMLTMBVA: 'KO/MLT/MB/VA'
   };
 
   metricsRows: ServiceFulfilmentMetricDto[] = [];
@@ -146,26 +153,27 @@ export class ServiceFulfilmentComponent implements OnInit {
 
   // Region data (simplified for now - in real app, this would come from API)
   regionData: RegionData[] = [
-    { id: 1, region: 'Region 3', province: 'NP', networkEngineer: 'NW/NP-2', lea: 'KOMLTMBVA' },
-    { id: 2, region: 'Region 3', province: 'NP', networkEngineer: 'NW/NP-1', lea: 'JA' },
-    { id: 3, region: 'Region 3', province: 'EP', networkEngineer: 'NW/EP', lea: 'BCAPKLTC' },
-    { id: 4, region: 'Region 2', province: 'WPS & SP', networkEngineer: 'NW/WPS', lea: 'HRKTPH' },
-    { id: 5, region: 'Region 2', province: 'WPS & SP', networkEngineer: 'NW/SPW', lea: 'AGGL' },
-    { id: 6, region: 'Region 2', province: 'WPS & SP', networkEngineer: 'NW/SPE', lea: 'EBMHMBH' },
-    { id: 7, region: 'Region 2', province: 'SAB & UVA', networkEngineer: 'NW/SAB', lea: 'KERN' },
-    { id: 8, region: 'Region 2', province: 'SAB & UVA', networkEngineer: 'NW/UVA', lea: 'BDBWMRG' },
-    { id: 9, region: 'Region 1', province: 'CP & NCP', networkEngineer: 'NW/NCP', lea: 'ADPR' },
-    { id: 10, region: 'Region 1', province: 'CP & NCP', networkEngineer: 'NW/CPS', lea: 'GPHTNW' },
-    { id: 11, region: 'Region 1', province: 'CP & NCP', networkEngineer: 'NW/CPN', lea: 'DBKYMT' },
-    { id: 12, region: 'Region 1', province: 'WPN & NWP', networkEngineer: 'NW/NWPW', lea: 'CWPX' },
-    { id: 13, region: 'Region 1', province: 'WPN & NWP', networkEngineer: 'NW/NWPE', lea: 'KGKLY' },
-    { id: 14, region: 'Region 1', province: 'WPN & NWP', networkEngineer: 'NW/WPN', lea: 'NGWT' },
-    { id: 15, region: 'Metro', province: 'Metro 2', networkEngineer: 'NWWPE', lea: 'KONKX' },
-    { id: 16, region: 'Metro', province: 'Metro 2', networkEngineer: 'NWWPSE', lea: 'AWHO' },
-    { id: 17, region: 'Metro', province: 'Metro 2', networkEngineer: 'NWWPSW', lea: 'NDRM' },
-    { id: 18, region: 'Metro', province: 'Metro 1', networkEngineer: 'NWWPNE', lea: 'GQKINTB' },
-    { id: 19, region: 'Metro', province: 'Metro 1', networkEngineer: 'NWWPC-2 (CEN/HKMD)', lea: 'CENHKMD' },
-    { id: 20, region: 'Metro', province: 'Metro 1', networkEngineer: 'NWWPC-1 (CEN/HK/MD)', lea: 'CENHKMD1' }
+    { id: 1, region: 'metro', province: 'metro 1', networkEngineer: 'NW/WPC1', lea: 'CEN/HK' },
+    { id: 2, region: 'metro', province: 'metro 1', networkEngineer: 'NW/WPC2', lea: 'CEN/MD' },
+    { id: 3, region: 'metro', province: 'metro 1', networkEngineer: 'NW/WPE', lea: 'KON/KX' },
+    { id: 4, region: 'metro', province: 'metro 2', networkEngineer: 'NW/WP S-W', lea: 'ND/RM' },
+    { id: 5, region: 'metro', province: 'metro 2', networkEngineer: 'NW/WP S-E', lea: 'AW/HO' },
+    { id: 6, region: 'metro', province: 'metro 2', networkEngineer: 'NW/WPE', lea: 'KON/KX' },
+    { id: 7, region: 'Region01', province: 'WPN', networkEngineer: 'NW/WPN', lea: 'NG/WT' },
+    { id: 8, region: 'Region01', province: 'WPN', networkEngineer: 'NW/WP N-E', lea: 'GQ/KI/NTB' },
+    { id: 9, region: 'Region01', province: 'NWP', networkEngineer: 'NW/NWP-E', lea: 'KG/KLY' },
+    { id: 10, region: 'Region01', province: 'NWP', networkEngineer: 'NW/NWP-W', lea: 'CW/PX' },
+    { id: 11, region: 'Region01', province: 'CP', networkEngineer: 'NW/CPN', lea: 'KY/MT' },
+    { id: 12, region: 'Region01', province: 'CP', networkEngineer: 'NW/CPS', lea: 'GP/HT/NW' },
+    { id: 13, region: 'Region02', province: 'SAB & UVA', networkEngineer: 'NW/UVA', lea: 'BD/BW/MRG' },
+    { id: 14, region: 'Region02', province: 'SAB & UVA', networkEngineer: 'NW/SAB', lea: 'KE/RN' },
+    { id: 15, region: 'Region02', province: 'SP', networkEngineer: 'NW/SPE', lea: 'EMB/HB/MH' },
+    { id: 16, region: 'Region02', province: 'SP', networkEngineer: 'NW/SPW', lea: 'AG/GL' },
+    { id: 17, region: 'Region02', province: 'WPS', networkEngineer: 'WPS', lea: 'HR/KT/PH' },
+    { id: 18, region: 'Region03', province: 'EP', networkEngineer: 'NW/EP', lea: 'BC/AP/KL/TC' },
+    { id: 19, region: 'Region03', province: 'NP', networkEngineer: 'NW/NP-1', lea: 'JA' },
+    { id: 20, region: 'Region03', province: 'NP', networkEngineer: 'NW/NP-2', lea: 'KO/MLT/MB/VA' },
+    { id: 6002, region: 'Region 3', province: 'NP', networkEngineer: 'NW/NCP', lea: 'AD/PR' }
   ];
 
   constructor(
@@ -488,6 +496,49 @@ export class ServiceFulfilmentComponent implements OnInit {
   }
 
   private buildKpiDataFromMetrics(metrics: ServiceFulfilmentMetricDto[]): KpiData[] {
+    const baseRows = this.buildBaseKpiDataFromAdmin();
+
+    if (!metrics || !metrics.length) {
+      return baseRows;
+    }
+
+    if (!baseRows.length) {
+      return this.buildKpiDataFromMetricsFallback(metrics);
+    }
+
+    const rowsByKey = new Map<string, KpiData>();
+    baseRows.forEach(row => {
+      const key = this.getRowMatchKey(row);
+      if (key) {
+        rowsByKey.set(key, row);
+      }
+    });
+
+    const extraRows: KpiData[] = [];
+
+    metrics.forEach((metric, metricIndex) => {
+      const metricKey = this.getRowMatchKey(metric) ?? `metric-${metricIndex}`;
+      let targetRow = rowsByKey.get(metricKey);
+
+      if (!targetRow) {
+        targetRow = this.createRowFromMetric(metric, baseRows.length + extraRows.length + 1);
+        rowsByKey.set(metricKey, targetRow);
+        extraRows.push(targetRow);
+      }
+
+      this.applyMetricValueToRow(targetRow, metric);
+    });
+
+    const combined = [...baseRows, ...extraRows].sort((a, b) => a.no - b.no);
+    console.log('Service Fulfilment: Built KPI data with base rows', {
+      totalBaseRows: baseRows.length,
+      extraRows: extraRows.length,
+      metricsApplied: metrics.length
+    });
+    return combined;
+  }
+
+  private buildKpiDataFromMetricsFallback(metrics: ServiceFulfilmentMetricDto[]): KpiData[] {
     if (!metrics || !metrics.length) {
       return [];
     }
@@ -532,46 +583,76 @@ export class ServiceFulfilmentComponent implements OnInit {
       }
 
       const row = grouped.get(groupKey)!;
-      const areaCode = metric.area ? metric.area.trim().toUpperCase() : '';
-      const areaKey = this.normalizeAreaKey(areaCode);
-
-      console.log('Service Fulfilment: Building metric row', {
-        no: row.no,
-        areaCode,
-        areaKey,
-        kpiValue: metric.kpiValue,
-        form4Dropdown4: this.formValues.dropdown4
-      });
-
-      if (!row.areas) {
-        row.areas = {};
-      }
-
-      row.areas[areaKey] = metric.kpiValue;
-      row[areaKey] = metric.kpiValue;
-
-      if (areaCode && areaCode !== areaKey) {
-        row.areas[areaCode] = metric.kpiValue;
-        row[areaCode] = metric.kpiValue;
-      }
-
-      if (this.formValues.dropdown4 && this.formValues.dropdown4 !== areaKey && this.formValues.dropdown4 !== areaCode) {
-        row.areas[this.formValues.dropdown4] = metric.kpiValue;
-        row[this.formValues.dropdown4] = metric.kpiValue;
-      }
+      this.applyMetricValueToRow(row, metric);
     });
 
-    const result = Array.from(grouped.values()).sort((a, b) => a.no - b.no);
-    console.log('Service Fulfilment: Built KPI data', {
-      rowCount: result.length,
-      firstRowAreas: result[0]?.areas,
-      firstRowKeys: result[0] ? Object.keys(result[0]).filter(k => !this.baseColumns.includes(k) && k !== '_id' && k !== '__v') : []
-    });
-    return result;
+    return Array.from(grouped.values()).sort((a, b) => a.no - b.no);
   }
 
   private normalizeAreaValue(value?: string | null): string {
     return value ? value.replace(/[^A-Za-z0-9]/g, '').toUpperCase() : '';
+  }
+
+  private getRowMatchKey(source: Partial<KpiData | AdminKpiRow | ServiceFulfilmentMetricDto> | null | undefined): string | null {
+    if (!source) {
+      return null;
+    }
+    const numericKey = this.resolveNumericId((source as any).kpiId ?? (source as any).id ?? undefined);
+    if (numericKey !== undefined) {
+      return `num:${numericKey}`;
+    }
+
+    const rawId = (source as any).id ?? (source as any)._id;
+    if (typeof rawId === 'string' && rawId.trim()) {
+      return `str:${rawId.trim()}`;
+    }
+    if (typeof rawId === 'number' && !Number.isNaN(rawId)) {
+      return `num:${rawId}`;
+    }
+    if (rawId && typeof rawId === 'object' && typeof rawId.$oid === 'string') {
+      return `oid:${rawId.$oid}`;
+    }
+    return null;
+  }
+
+  private createRowFromMetric(metric: ServiceFulfilmentMetricDto, fallbackOrder: number): KpiData {
+    const numericId = this.resolveNumericId(metric.id);
+    return {
+      _id: this.buildRowId(metric.id, fallbackOrder),
+      kpiId: numericId,
+      no: fallbackOrder,
+      kpi: metric.kpi ?? '',
+      target: metric.target ?? '',
+      calculation: '',
+      platform: metric.platform ?? '',
+      responsibledgm: metric.responsibleDgm ?? '',
+      definedoladetails: this.resolveDefinedOlaValue(metric),
+      weightage: this.formatWeightageValue(metric.weightage),
+      datasources: '',
+      areas: {}
+    };
+  }
+
+  private applyMetricValueToRow(row: KpiData, metric: ServiceFulfilmentMetricDto) {
+    const areaCode = metric.area ? metric.area.trim().toUpperCase() : '';
+    const areaKey = this.normalizeAreaKey(areaCode);
+
+    if (!row.areas) {
+      row.areas = {};
+    }
+
+    row.areas[areaKey] = metric.kpiValue;
+    row[areaKey] = metric.kpiValue;
+
+    if (areaCode && areaCode !== areaKey) {
+      row.areas[areaCode] = metric.kpiValue;
+      row[areaCode] = metric.kpiValue;
+    }
+
+    if (this.formValues.dropdown4 && this.formValues.dropdown4 !== areaKey && this.formValues.dropdown4 !== areaCode) {
+      row.areas[this.formValues.dropdown4] = metric.kpiValue;
+      row[this.formValues.dropdown4] = metric.kpiValue;
+    }
   }
 
   private resolveAreaCode(value?: string | null): string {
@@ -962,10 +1043,10 @@ export class ServiceFulfilmentComponent implements OnInit {
   }
 
   getColumnsToRender(): string[] {
-    if (this.formValues.dropdown4) {
-      return [...this.baseColumns, this.formValues.dropdown4];
+    if (this.visibleColumns.length) {
+      return this.visibleColumns;
     }
-    return this.baseColumns;
+    return [...this.baseColumns];
   }
 
   getAreaKeys(): string[] {
