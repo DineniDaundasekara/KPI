@@ -29,6 +29,7 @@ interface KpiMetric {
 }
 
 interface KpiRow {
+  id: number;
   number: number;
   perspectives: string;
   strategicObjectives: string;
@@ -61,6 +62,17 @@ type KpiDefinition = {
   year?: number;
 };
 
+type OverallKpiResultApi = {
+  id: number;
+  kpiDefinitionId: number;
+  areaCode: string;
+  achievedKpi: number;
+  maximumPointsPerKpi: number;
+  pointsAchieved: number;
+  month: number;
+  year: number;
+};
+
 @Component({
   selector: 'app-current-month',
   standalone: true,
@@ -77,6 +89,7 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** same API you used in FinalTableComponent */
   private readonly apiBase = 'http://localhost:5043/api/kpi-definitions';
+  private readonly overallResultsApiBase = 'http://localhost:5043/api/overall-kpi-results';
 
   @ViewChildren('leftRowRef', { read: ElementRef })
   private leftRowElements!: QueryList<ElementRef<HTMLTableRowElement>>;
@@ -97,7 +110,7 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
   totalPointsApplicable = 0;
   totalPointsAchievedByRegion: number[] = [];
   totalPointsNormalized: number[] = [];
-  totalMaximumPointsPerKpi = 0;
+  totalMaximumPointsByRegion: number[] = [];
 
   private readonly rowChangesSub = new Subscription();
   private pendingFrame: number | null = null;
@@ -237,15 +250,13 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
 
           this.kpiRows = list.map((row, rowIndex) => {
             const metrics: KpiMetric[] = this.engineersFlat.map(
-              (_, colIndex) => {
-                const achieved = 100 - (rowIndex * 2 + colIndex);
-                const maximumPoints = row.pointsApplicable;
-                const pointsAchieved = +(((achieved / 100) * maximumPoints).toFixed(4));
-                return { achieved, maximumPoints, pointsAchieved };
+              () => {
+                return { achieved: 0, maximumPoints: 0, pointsAchieved: 0 };
               }
             );
 
             return {
+              id: row.id,
               number: rowIndex + 1,
               perspectives: row.perspectives,
               strategicObjectives: row.strategicObjectives,
@@ -265,6 +276,7 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
 
           this.computeTotals();
           this.scheduleRowSync();
+          this.loadOverallResultsFromApi();
         },
         error: (err) => {
           console.error('Failed loading final table KPI rows:', err);
@@ -274,6 +286,63 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
           this.scheduleRowSync();
         },
       });
+  }
+
+  private loadOverallResultsFromApi(): void {
+    const month = new Date().getMonth() + 1;
+    const year = new Date().getFullYear();
+    const url = `${this.overallResultsApiBase}/calculate?month=${month}&year=${year}`;
+
+    this.http.post<OverallKpiResultApi[]>(url, {}).subscribe({
+      next: (rows) => {
+        const list = Array.isArray(rows) ? rows : [];
+        const grouped = new Map<number, OverallKpiResultApi[]>();
+
+        list.forEach((row) => {
+          const bucket = grouped.get(row.kpiDefinitionId) ?? [];
+          bucket.push(row);
+          grouped.set(row.kpiDefinitionId, bucket);
+        });
+
+        this.kpiRows = this.kpiRows.map((kpiRow) => {
+          const byKpi = grouped.get(kpiRow.id) ?? [];
+          const metrics = this.engineersFlat.map((engineer) => {
+            const match = this.findOverallResultForArea(byKpi, engineer.lea);
+            return {
+              achieved: Number(match?.achievedKpi ?? 0),
+              maximumPoints: Number(match?.maximumPointsPerKpi ?? 0),
+              pointsAchieved: Number(match?.pointsAchieved ?? 0),
+            };
+          });
+
+          return { ...kpiRow, metrics };
+        });
+
+        this.computeTotals();
+        this.scheduleRowSync();
+      },
+      error: (err) => {
+        console.error('Failed loading overall KPI results:', err);
+        this.computeTotals();
+        this.scheduleRowSync();
+      },
+    });
+  }
+
+  private findOverallResultForArea(rows: OverallKpiResultApi[], areaCode: string): OverallKpiResultApi | undefined {
+    const normalizedTarget = this.normalizeArea(areaCode);
+    const exact = rows.find((x) => this.normalizeArea(x.areaCode) === normalizedTarget);
+    if (exact) return exact;
+
+    const partial = rows.find((x) => {
+      const n = this.normalizeArea(x.areaCode);
+      return n.includes(normalizedTarget) || normalizedTarget.includes(n);
+    });
+    return partial;
+  }
+
+  private normalizeArea(value: string): string {
+    return (value ?? '').replace(/[^A-Za-z0-9]/g, '').toLowerCase();
   }
 
   private computeTotals(): void {
@@ -288,11 +357,12 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
       0
     );
 
-    // ✅ Calculate total maximum points per KPI (sum across all engineers for all KPIs)
-    this.totalMaximumPointsPerKpi = this.kpiRows.reduce(
-      (sum, row) => sum + (row.pointsApplicable ?? 0),
-      0
-    ) * this.engineersFlat.length;
+    this.totalMaximumPointsByRegion = this.engineersFlat.map((_, colIndex) =>
+      this.kpiRows.reduce(
+        (sum, row) => sum + (row.metrics[colIndex]?.maximumPoints ?? 0),
+        0
+      )
+    );
 
     // ✅ Calculate total points achieved by region
     this.totalPointsAchievedByRegion = this.engineersFlat.map((_, colIndex) =>
@@ -304,8 +374,10 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // ✅ Normalized: percentage of total possible points
     // Formula: (Total Points Achieved) / (Total Maximum Points Per KPI) × 100%
-    this.totalPointsNormalized = this.totalPointsAchievedByRegion.map((total) =>
-      this.totalMaximumPointsPerKpi ? +((total / this.totalMaximumPointsPerKpi) * 100).toFixed(2) : 0
+    this.totalPointsNormalized = this.totalPointsAchievedByRegion.map((total, colIndex) =>
+      this.totalMaximumPointsByRegion[colIndex]
+        ? +((total / this.totalMaximumPointsByRegion[colIndex]) * 100).toFixed(2)
+        : 0
     );
   }
 

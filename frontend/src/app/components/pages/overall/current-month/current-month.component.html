@@ -147,7 +147,7 @@
             <ng-container *ngFor="let total of totalPointsAchievedByRegion; let idx = index">
               <td></td>
               <td class="text-center maximum-points-cell">
-                <b>{{ totalMaximumPointsPerKpi | number : '1.4-4' }}</b>
+                <b>{{ totalMaximumPointsByRegion[idx] | number : '1.4-4' }}</b>
               </td>
               <td class="text-center points-achieved-cell">
                 <b>{{ total | number : '1.4-4' }}</b>
