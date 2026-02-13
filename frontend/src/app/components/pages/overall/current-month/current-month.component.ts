@@ -124,8 +124,6 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadRegions();
-    // Auto-refresh every 5 seconds to sync with changes from admin panel
-    this.refreshInterval = setInterval(() => this.loadRegions(), 5000);
   }
 
   @HostListener('window:focus')
@@ -149,6 +147,11 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
     this.rowChangesSub.unsubscribe();
     if (this.pendingFrame !== null) cancelAnimationFrame(this.pendingFrame);
     if (this.refreshInterval !== null) clearInterval(this.refreshInterval);
+  }
+
+  /** Manually trigger calculation/refresh of KPI results */
+  calculate(): void {
+    this.loadRegions();
   }
 
   @HostListener('window:resize')

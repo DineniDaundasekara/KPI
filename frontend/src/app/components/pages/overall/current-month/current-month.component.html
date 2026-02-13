@@ -11,6 +11,9 @@
 
     <div class="header-right">
       <span class="count-pill">{{ engineersFlat.length }} NEs</span>
+      <button class="primary-btn calculate-btn" type="button" (click)="calculate()" [disabled]="loading">
+        {{ loading ? 'Calculating...' : 'Calculate' }}
+      </button>
       <button class="primary-btn" type="button">
         Export to Excel
       </button>

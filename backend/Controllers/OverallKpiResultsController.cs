@@ -150,7 +150,10 @@ namespace backend.Controllers
                     var maxPoints = hasNodeBasedWeight && totalNodes > 0m
                         ? Math.Round(((decimal)kpi.PointsApplicable * (snapshot?.TotalNodes ?? 0m)) / totalNodes, 4)
                         : Math.Round(equalShare, 4);
-                    var pointsAchieved = Math.Round((maxPoints * achieved) / 100m, 4);
+                    
+                    // Calculate pointsAchieved based on target value
+                    var targetValue = TryParseTargetValue(kpi.DescriptionOfKPI);
+                    var pointsAchieved = CalculatePointsAchieved(maxPoints, achieved, targetValue);
 
                     results.Add(new OverallKpiResult
                     {
@@ -159,7 +162,7 @@ namespace backend.Controllers
                         KpiName = kpi.KeyPerformanceIndicators,
                         Platform = kpi.Perspectives,
                         AreaCode = area,
-                        TargetValue = TryParseTargetValue(kpi.DescriptionOfKPI),
+                        TargetValue = targetValue,
                         AchievedKpi = achieved,
                         MaximumPointsPerKpi = maxPoints,
                         PointsAchieved = pointsAchieved,
@@ -243,7 +246,7 @@ namespace backend.Controllers
                     var area = NormalizeArea(row.Site);
                     if (area == string.Empty) continue;
                     var achieved = CalculateSlaRatio(row.TotalFailedLinks, row.LinksSlaNotViolated);
-                    result[area] = new AreaSnapshot(achieved, 0);
+                    result[area] = new AreaSnapshot(achieved, row.TotalFailedLinks);
                 }
                 return result;
             }
@@ -375,6 +378,25 @@ namespace backend.Controllers
 
         private sealed record NamedKpi(string Source, int Id, string Name);
         private sealed record AreaSnapshot(decimal Achieved, decimal TotalNodes);
+
+        private static decimal CalculatePointsAchieved(decimal maxPoints, decimal achieved, decimal? targetValue)
+        {
+            // If no target value or target is 0 or negative, use simple linear scaling: points = maxPoints * achieved / 100
+            if (!targetValue.HasValue || targetValue.Value <= 0)
+            {
+                return Math.Round((maxPoints * achieved) / 100m, 4);
+            }
+
+            // Target-based formula:
+            // If achieved > target: pointsAchieved = maxPoints
+            // Else: pointsAchieved = maxPoints * achieved / target
+            var target = targetValue.Value;
+            var points = achieved > target
+                ? maxPoints
+                : Math.Round((maxPoints * achieved) / target, 4);
+
+            return points;
+        }
 
         private static decimal? TryParseTargetValue(string? text)
         {
