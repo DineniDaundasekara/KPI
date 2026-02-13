@@ -37,6 +37,9 @@ namespace backend.Models
         [Column("PointsAchieved", TypeName = "decimal(18,4)")]
         public decimal PointsAchieved { get; set; }
 
+        [Column("OverallKpiValuePercent", TypeName = "decimal(10,4)")]
+        public decimal OverallKpiValuePercent { get; set; }
+
         [Column("Month")]
         public byte Month { get; set; }
 

@@ -69,6 +69,7 @@ type OverallKpiResultApi = {
   achievedKpi: number;
   maximumPointsPerKpi: number;
   pointsAchieved: number;
+  overallKpiValuePercent: number;
   month: number;
   year: number;
 };
@@ -114,7 +115,6 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private readonly rowChangesSub = new Subscription();
   private pendingFrame: number | null = null;
-  private refreshInterval: any = null;
 
   constructor(private http: HttpClient, private regionService: RegionService) {
     const now = new Date();
@@ -146,7 +146,6 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
   ngOnDestroy(): void {
     this.rowChangesSub.unsubscribe();
     if (this.pendingFrame !== null) cancelAnimationFrame(this.pendingFrame);
-    if (this.refreshInterval !== null) clearInterval(this.refreshInterval);
   }
 
   /** Manually trigger calculation/refresh of KPI results */
@@ -322,6 +321,18 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
         });
 
         this.computeTotals();
+        const percentByArea = new Map<string, number>();
+        list.forEach((row) => {
+          if (row.overallKpiValuePercent !== undefined && row.overallKpiValuePercent !== null) {
+            percentByArea.set(this.normalizeArea(row.areaCode), Number(row.overallKpiValuePercent));
+          }
+        });
+        if (percentByArea.size > 0) {
+          this.totalPointsNormalized = this.engineersFlat.map((engineer, index) => {
+            const value = percentByArea.get(this.normalizeArea(engineer.lea));
+            return value !== undefined ? Number(value.toFixed(2)) : this.totalPointsNormalized[index] ?? 0;
+          });
+        }
         this.scheduleRowSync();
       },
       error: (err) => {

@@ -1,20 +1,70 @@
 import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { trigger, transition, style, animate, state } from '@angular/animations';
+import { forkJoin } from 'rxjs';
+
+interface MeterData {
+  code: string;
+  label: string;
+}
 
 interface RegionData {
   title: string;
-  meters: string[];
+  meters: MeterData[];
 }
 
 interface TotalsData {
   [key: string]: number;
 }
 
+type RegionApi = {
+  id: number;
+  region: string;
+  province: string;
+  networkEngineer: string;
+  leaCode: string;
+};
+
+type RtomAreaApi = {
+  areaCode: string;
+  displayName: string;
+};
+
+type OverallKpiResultApi = {
+  areaCode: string;
+  overallKpiValuePercent: number;
+  kpiDefinitionId: number;
+  kpiName?: string;
+  achievedKpi: number;
+  maximumPointsPerKpi: number;
+  pointsAchieved: number;
+};
+
+type MeterKpiRow = {
+  kpiDefinitionId: number;
+  kpiName: string;
+  achievedKpi: number;
+  maximumPointsPerKpi: number;
+  pointsAchieved: number;
+};
+
+type MeterDetails = {
+  region: string;
+  province: string;
+  networkEngineer: string;
+  leaCode: string;
+  displayName: string;
+  overallPercent: number;
+  totalMaximumPoints: number;
+  totalPointsAchieved: number;
+  kpiRows: MeterKpiRow[];
+};
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, HttpClientModule],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
   animations: [
@@ -52,32 +102,35 @@ export class DashboardComponent implements OnInit, OnDestroy {
   regions: RegionData[] = [];
   totals: TotalsData = {};
   loading = true;
+  error: string | null = null;
+  selectedDetails: MeterDetails | null = null;
+  selectedRegionTitle = '';
+  regionCount = 0;
+  engineerCount = 0;
+  provinceCount = 0;
+  leaCount = 0;
   
   // Hover state management
   regionHoverStates: { [key: number]: boolean } = {};
   meterHoverStates: { [key: string]: boolean } = {};
 
-  private storageEventListener?: (event: StorageEvent) => void;
+  private readonly regionApiBase = 'http://localhost:5043/api/regiondata';
+  private readonly rtomApiBase = 'http://localhost:5043/api/rtom-areas';
+  private readonly overallKpiApiBase = 'http://localhost:5043/api/overall-kpi-results';
 
-  constructor(@Inject(PLATFORM_ID) private platformId: any) {}
+  private regionRows: RegionApi[] = [];
+  private overallRows: OverallKpiResultApi[] = [];
+
+  constructor(
+    private http: HttpClient,
+    @Inject(PLATFORM_ID) private platformId: any
+  ) {}
 
   ngOnInit(): void {
-    this.loadRegionData();
-    this.initializeTotals();
+    this.loadDashboardData();
   }
 
   ngOnDestroy(): void {
-    if (this.storageEventListener && isPlatformBrowser(this.platformId)) {
-      window.removeEventListener('storage', this.storageEventListener);
-    }
-  }
-
-  private baseMeter(col: string): string {
-    return String(col || '').replace(/-\d+$/, '');
-  }
-
-  private normalizeEngineer(str: string = ''): string {
-    return String(str).split('(')[0].trim();
   }
 
   private sortRegionNames(a: string, b: string): number {
@@ -91,109 +144,133 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return a.localeCompare(b);
   }
 
-  private readRow12FromLocalStorage(): TotalsData | null {
-    if (!isPlatformBrowser(this.platformId)) return null;
-
-    try {
-      const raw = localStorage.getItem('row12Payload');
-      if (!raw) return null;
-
-      const parsed = JSON.parse(raw);
-
-      if (parsed?.valuesByMeter && typeof parsed.valuesByMeter === 'object') {
-        return parsed.valuesByMeter;
-      }
-
-      if (Array.isArray(parsed?.columns) && Array.isArray(parsed?.values)) {
-        const map: TotalsData = {};
-        parsed.columns.forEach((m: string, i: number) => {
-          const v = parseFloat(parsed.values[i]);
-          map[m] = Number.isFinite(v) ? v : 0;
-        });
-        return map;
-      }
-    } catch (e) {
-      console.warn('Failed to parse localStorage row12Payload', e);
-    }
-
-    return null;
-  }
-
-  private async loadRegionData(): Promise<void> {
-    // Hardcoded regions to match React component exactly
-    this.regions = [
-      { title: 'Metro', meters: ['NW/WPC', 'NW/WPNE', 'NW/WPSW', 'NW/WPSE', 'NW/WPE'] },
-      { title: 'Region1', meters: ['NW/WPN', 'NW/NWPE', 'NW/NWPW', 'NW/CPN', 'NW/CPS', 'NW/NCP'] },
-      { title: 'Region2', meters: ['NW/UVA', 'NW/SAB', 'NW/SPE', 'NW/SPW', 'NW/WPS'] },
-      { title: 'Region3', meters: ['NW/EP', 'NW/NP-1', 'NW/NP-2'] },
-    ];
-  }
-
-  private initializeTotals(): void {
+  private loadDashboardData(): void {
     if (!isPlatformBrowser(this.platformId)) {
       this.loading = false;
       return;
     }
 
-    // Check immediately first
-    const ls = this.readRow12FromLocalStorage();
-    if (ls && Object.keys(ls).length) {
-      this.totals = ls;
-      this.loading = false;
-    } else {
-      // If no data, show dashboard with empty totals (will display 0.00%)
-      this.totals = {};
-      this.loading = false;
-    }
+    this.loading = true;
+    this.error = null;
 
-    // Set up storage event listener for future updates
-    this.storageEventListener = (event: StorageEvent) => {
-      if (event.key === 'row12Payload') {
-        const map = this.readRow12FromLocalStorage();
-        if (map) {
-          this.totals = map;
-        }
-      }
-    };
+    const now = new Date();
+    const month = now.getMonth() + 1;
+    const year = now.getFullYear();
 
-    window.addEventListener('storage', this.storageEventListener);
+    forkJoin({
+      regions: this.http.get<RegionApi[]>(this.regionApiBase),
+      rtomAreas: this.http.get<RtomAreaApi[]>(this.rtomApiBase),
+      overall: this.http.get<OverallKpiResultApi[]>(`${this.overallKpiApiBase}?month=${month}&year=${year}`),
+    }).subscribe({
+      next: ({ regions, rtomAreas, overall }) => {
+        this.regionRows = regions ?? [];
+        this.overallRows = overall ?? [];
+        const rtomLookup = new Map<string, string>();
+        (rtomAreas ?? []).forEach((area) => {
+          const code = this.normalizeArea((area as any).areaCode ?? (area as any).AreaCode ?? '');
+          const name = (area as any).displayName ?? (area as any).DisplayName ?? '';
+          if (code) rtomLookup.set(code, name || (area as any).areaCode || (area as any).AreaCode || '');
+        });
 
-    // Also listen for same-tab localStorage changes (using a custom event or polling)
-    // For now, we'll check periodically if data becomes available
-    const checkInterval = setInterval(() => {
-      const currentData = this.readRow12FromLocalStorage();
-      if (currentData && Object.keys(currentData).length > 0 && Object.keys(this.totals).length === 0) {
-        this.totals = currentData;
-        clearInterval(checkInterval);
-      }
-    }, 2000);
+        const percentLookup = new Map<string, number>();
+        (overall ?? []).forEach((row) => {
+          const code = this.normalizeArea((row as any).areaCode ?? (row as any).AreaCode ?? '');
+          if (!code || percentLookup.has(code)) return;
+          const raw = (row as any).overallKpiValuePercent ?? (row as any).OverallKpiValuePercent ?? 0;
+          percentLookup.set(code, Number(raw) || 0);
+        });
 
-    // Clean up interval after 60 seconds
-    setTimeout(() => clearInterval(checkInterval), 60000);
+        const regionMap = new Map<string, Set<string>>();
+        (regions ?? []).forEach((row) => {
+          const regionName = (row as any).region ?? (row as any).Region ?? 'Unknown';
+          const areaCode = (row as any).leaCode ?? (row as any).LeaCode ?? '';
+          if (!areaCode) return;
+          const set = regionMap.get(regionName) ?? new Set<string>();
+          set.add(areaCode);
+          regionMap.set(regionName, set);
+        });
+
+        const uniqueRegions = new Set<string>();
+        const uniqueEngineers = new Set<string>();
+        const uniqueProvinces = new Set<string>();
+        const uniqueLeas = new Set<string>();
+        (regions ?? []).forEach((row) => {
+          const regionName = (row as any).region ?? (row as any).Region ?? '';
+          if (regionName) uniqueRegions.add(regionName.trim());
+
+          const engineer = this.normalizeName((row as any).networkEngineer ?? (row as any).NetworkEngineer ?? '');
+          if (engineer) uniqueEngineers.add(engineer);
+
+          const province = this.normalizeName((row as any).province ?? (row as any).Province ?? '');
+          if (province) uniqueProvinces.add(province);
+
+          const leaCode = this.normalizeName((row as any).leaCode ?? (row as any).LeaCode ?? '');
+          if (leaCode) uniqueLeas.add(leaCode);
+        });
+        this.regionCount = uniqueRegions.size;
+        this.engineerCount = uniqueEngineers.size;
+        this.provinceCount = uniqueProvinces.size;
+        this.leaCount = uniqueLeas.size;
+
+        this.regions = Array.from(regionMap.entries())
+          .map(([regionName, areaCodes]) => {
+            const meters = Array.from(areaCodes)
+              .map((code) => {
+                const label = rtomLookup.get(this.normalizeArea(code)) || code;
+                return { code, label } as MeterData;
+              })
+              .sort((a, b) => a.label.localeCompare(b.label));
+            return { title: regionName, meters } as RegionData;
+          })
+          .sort((a, b) => this.sortRegionNames(a.title, b.title));
+
+        const totals: TotalsData = {};
+        percentLookup.forEach((value, code) => {
+          totals[code] = value;
+        });
+        this.totals = totals;
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load dashboard data', err);
+        this.error = 'Unable to load dashboard data.';
+        this.loading = false;
+        this.regions = [];
+        this.totals = {};
+        this.regionCount = 0;
+        this.engineerCount = 0;
+        this.provinceCount = 0;
+        this.leaCount = 0;
+      },
+    });
   }
 
-  valueForMeter(meter: string): number {
-    const exact = this.totals[meter];
-    if (Number.isFinite(exact)) return exact;
-
-    const base = this.totals[this.baseMeter(meter)];
-    if (Number.isFinite(base)) return base;
-
-    return 0;
+  private normalizeArea(value: string): string {
+    return String(value ?? '').replace(/[^A-Za-z0-9]/g, '').toLowerCase();
   }
 
-  getMaxValue(meters: string[]): number {
-    const values = meters.map(m => this.valueForMeter(m));
+  private normalizeName(value: string): string {
+    return String(value ?? '').trim();
+  }
+
+  valueForMeter(meter: MeterData): number {
+    const key = this.normalizeArea(meter.code);
+    const exact = this.totals[key];
+    return Number.isFinite(exact) ? exact : 0;
+  }
+
+  getMaxValue(meters: MeterData[]): number {
+    const values = meters.map((m) => this.valueForMeter(m));
     return values.length ? Math.max(...values) : 0;
   }
 
-  isMaxValue(meter: string, meters: string[]): boolean {
+  isMaxValue(meter: MeterData, meters: MeterData[]): boolean {
     const value = this.valueForMeter(meter);
     const max = this.getMaxValue(meters);
     return Math.abs(value - max) < 0.0001 && max > 0;
   }
 
-  getProgressBarColor(meter: string, meters: string[]): string {
+  getProgressBarColor(meter: MeterData, meters: MeterData[]): string {
     const value = this.valueForMeter(meter);
     const isMax = this.isMaxValue(meter, meters);
     
@@ -207,16 +284,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return `rgba(0, 87, 166, ${opacity})`;
   }
 
-  getMeterTextColor(meter: string, meters: string[]): string {
+  getMeterTextColor(meter: MeterData, meters: MeterData[]): string {
     // 10% Accent - Green for max values (good KPIs)
     return this.isMaxValue(meter, meters) ? '#28A745' : '#000';
   }
 
-  getMeterFontWeight(meter: string, meters: string[]): string {
+  getMeterFontWeight(meter: MeterData, meters: MeterData[]): string {
     return this.isMaxValue(meter, meters) ? 'bold' : 'normal';
   }
 
-  getCircularProgressBackground(meter: string, meters: string[]): string {
+  getCircularProgressBackground(meter: MeterData, meters: MeterData[]): string {
     const value = this.valueForMeter(meter);
     const isMax = this.isMaxValue(meter, meters);
     const maxValue = 102; // Match React's maxValue
@@ -229,7 +306,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return `conic-gradient(${color} 0% ${normalizedValue}%, ${trailColor} ${normalizedValue}% 100%)`;
   }
 
-  getProgressTextColor(meter: string, meters: string[]): string {
+  getProgressTextColor(meter: MeterData, meters: MeterData[]): string {
     // 10% Accent - Green for max values (good KPIs)
     return this.isMaxValue(meter, meters) ? '#28A745' : '#000';
   }
@@ -243,7 +320,69 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return region.title;
   }
 
-  trackByMeter(index: number, meter: string): string {
-    return meter;
+  trackByMeter(index: number, meter: MeterData): string {
+    return meter.code;
+  }
+
+  openMeterDetails(region: RegionData, meter: MeterData): void {
+    console.log('🎯 Opening meter details for:', { region: region.title, meter: meter.label, code: meter.code });
+    const areaKey = this.normalizeArea(meter.code);
+    const matchingRegion = this.regionRows.find((row) =>
+      this.normalizeArea((row as any).leaCode ?? (row as any).LeaCode ?? '') === areaKey
+    );
+    console.log('📍 Matching region found:', matchingRegion);
+
+    const networkEngineer = matchingRegion?.networkEngineer ?? '—';
+    const province = matchingRegion?.province ?? '—';
+    const regionName = matchingRegion?.region ?? region.title;
+    const leaCode = matchingRegion?.leaCode ?? meter.code;
+
+    const rows = this.overallRows.filter((row) =>
+      this.normalizeArea((row as any).areaCode ?? (row as any).AreaCode ?? '') === areaKey
+    );
+
+    const totalMaximumPoints = rows.reduce(
+      (sum, row) => sum + Number((row as any).maximumPointsPerKpi ?? (row as any).MaximumPointsPerKpi ?? 0),
+      0
+    );
+
+    const totalPointsAchieved = rows.reduce(
+      (sum, row) => sum + Number((row as any).pointsAchieved ?? (row as any).PointsAchieved ?? 0),
+      0
+    );
+
+    const overallPercentRaw = rows[0]?.overallKpiValuePercent;
+    const overallPercent = Number.isFinite(Number(overallPercentRaw))
+      ? Number(overallPercentRaw)
+      : totalMaximumPoints > 0
+        ? (totalPointsAchieved / totalMaximumPoints) * 100
+        : 0;
+
+    const kpiRows: MeterKpiRow[] = rows.map((row) => ({
+      kpiDefinitionId: Number((row as any).kpiDefinitionId ?? (row as any).KpiDefinitionId ?? 0),
+      kpiName: String((row as any).kpiName ?? (row as any).KpiName ?? ''),
+      achievedKpi: Number((row as any).achievedKpi ?? (row as any).AchievedKpi ?? 0),
+      maximumPointsPerKpi: Number((row as any).maximumPointsPerKpi ?? (row as any).MaximumPointsPerKpi ?? 0),
+      pointsAchieved: Number((row as any).pointsAchieved ?? (row as any).PointsAchieved ?? 0),
+    }));
+
+    this.selectedRegionTitle = regionName;
+    this.selectedDetails = {
+      region: regionName,
+      province,
+      networkEngineer,
+      leaCode,
+      displayName: meter.label,
+      overallPercent: Number(overallPercent.toFixed(2)),
+      totalMaximumPoints: Number(totalMaximumPoints.toFixed(4)),
+      totalPointsAchieved: Number(totalPointsAchieved.toFixed(4)),
+      kpiRows,
+    };
+    console.log('✅ Modal details set:', this.selectedDetails);
+  }
+
+  closeDetails(): void {
+    this.selectedDetails = null;
+    this.selectedRegionTitle = '';
   }
 }

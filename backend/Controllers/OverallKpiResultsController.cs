@@ -173,6 +173,28 @@ namespace backend.Controllers
                 }
             }
 
+            var overallPercentByArea = results
+                .GroupBy(x => x.AreaCode, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(
+                    g => g.Key,
+                    g =>
+                    {
+                        var totalMax = g.Sum(x => x.MaximumPointsPerKpi);
+                        var totalAchieved = g.Sum(x => x.PointsAchieved);
+                        return totalMax > 0m
+                            ? Math.Round((totalAchieved / totalMax) * 100m, 4)
+                            : 0m;
+                    },
+                    StringComparer.OrdinalIgnoreCase);
+
+            foreach (var row in results)
+            {
+                if (overallPercentByArea.TryGetValue(row.AreaCode, out var percent))
+                {
+                    row.OverallKpiValuePercent = percent;
+                }
+            }
+
             var existing = await _db.OverallKpiResults
                 .Where(x => x.Month == month && x.Year == year)
                 .ToListAsync();
@@ -368,10 +390,12 @@ namespace backend.Controllers
         {
             Id = x.Id,
             KpiDefinitionId = x.KpiDefinitionId,
+            KpiName = x.KpiName,
             AreaCode = x.AreaCode,
             AchievedKpi = x.AchievedKpi,
             MaximumPointsPerKpi = x.MaximumPointsPerKpi,
             PointsAchieved = x.PointsAchieved,
+            OverallKpiValuePercent = x.OverallKpiValuePercent,
             Month = x.Month,
             Year = x.Year
         };
