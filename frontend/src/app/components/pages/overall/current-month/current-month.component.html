@@ -14,7 +14,7 @@
       <button class="primary-btn calculate-btn" type="button" (click)="calculate()" [disabled]="loading">
         {{ loading ? 'Calculating...' : 'Calculate' }}
       </button>
-      <button class="primary-btn" type="button">
+      <button class="primary-btn" type="button" (click)="exportToExcel()">
         Export to Excel
       </button>
     </div>
