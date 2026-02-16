@@ -24,7 +24,7 @@ type Region = {
   networkEngineer: string;
   lea: string;
 };
-
+//kpi rows from backend with metrics initialized to 0 (until we fetch results)
 interface KpiMetric {
   achieved: number; // %
   maximumPoints: number; // Points Per KPI
