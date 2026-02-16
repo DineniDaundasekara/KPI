@@ -26,6 +26,7 @@ namespace backend.Controllers
             [FromQuery] int? year)
         {
             var q = _db.KpiDefinitions.AsNoTracking();
+            var hasFilters = month.HasValue || year.HasValue;
 
             if (month.HasValue)
                 q = q.Where(x => x.Month == (byte)month.Value);
@@ -36,6 +37,25 @@ namespace backend.Controllers
             var data = await q
                 .OrderBy(x => x.Id) // ✅ RowNumber removed, so order by Id
                 .ToListAsync();
+
+            if (hasFilters && data.Count == 0)
+            {
+                var latest = await _db.KpiDefinitions
+                    .AsNoTracking()
+                    .OrderByDescending(x => x.Year)
+                    .ThenByDescending(x => x.Month)
+                    .Select(x => new { x.Month, x.Year })
+                    .FirstOrDefaultAsync();
+
+                if (latest != null)
+                {
+                    data = await _db.KpiDefinitions
+                        .AsNoTracking()
+                        .Where(x => x.Month == latest.Month && x.Year == latest.Year)
+                        .OrderBy(x => x.Id)
+                        .ToListAsync();
+                }
+            }
 
             return Ok(data.Select(ToDto));
         }

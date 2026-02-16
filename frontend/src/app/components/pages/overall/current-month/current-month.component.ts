@@ -1,4 +1,5 @@
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import {
   AfterViewInit,
   Component,
@@ -79,7 +80,7 @@ type OverallKpiResultApi = {
 @Component({
   selector: 'app-current-month',
   standalone: true,
-  imports: [CommonModule, HttpClientModule],
+  imports: [CommonModule, FormsModule, HttpClientModule],
   templateUrl: './current-month.component.html',
   styleUrls: ['./current-month.component.scss'],
 })
@@ -87,8 +88,15 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
   currentMonth: string;
   currentYear: number;
 
+  selectedMonth: number;
+  selectedYear: number;
+  monthOptions: { value: number; label: string }[] = [];
+  yearOptions: number[] = [];
+
   loading = false;
   error: string | null = null;
+  noDefinitions = false;
+  noOverallResults = false;
 
   /** same API you used in FinalTableComponent */
   private readonly apiBase = 'http://localhost:5043/api/kpi-definitions';
@@ -108,6 +116,7 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
   }[] = [];
   engineersFlat: Region[] = [];
 
+  // Current month data
   kpiRows: KpiRow[] = [];
   weightageSum = 0;
   totalPointsApplicable = 0;
@@ -122,10 +131,55 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
     const now = new Date();
     this.currentYear = now.getFullYear();
     this.currentMonth = now.toLocaleString('en-US', { month: 'long' });
+
+    this.selectedMonth = now.getMonth() + 1;
+    this.selectedYear = now.getFullYear();
+
+    // Generate month options
+    this.monthOptions = [
+      { value: 1, label: 'January' },
+      { value: 2, label: 'February' },
+      { value: 3, label: 'March' },
+      { value: 4, label: 'April' },
+      { value: 5, label: 'May' },
+      { value: 6, label: 'June' },
+      { value: 7, label: 'July' },
+      { value: 8, label: 'August' },
+      { value: 9, label: 'September' },
+      { value: 10, label: 'October' },
+      { value: 11, label: 'November' },
+      { value: 12, label: 'December' }
+    ];
+
+    // Generate year options (current year first)
+    this.yearOptions = [this.currentYear, this.currentYear - 1, this.currentYear - 2];
+
+    this.syncDisplayedPeriod();
   }
 
   ngOnInit(): void {
     this.loadRegions();
+  }
+
+  onMonthChange(month: number): void {
+    this.selectedMonth = Number(month);
+    this.syncDisplayedPeriod();
+    this.loadLeftTableFromApi();
+  }
+
+  onYearChange(year: number): void {
+    this.selectedYear = Number(year);
+    this.syncDisplayedPeriod();
+    this.loadLeftTableFromApi();
+  }
+
+  private getMonthLabel(month: number): string {
+    return this.monthOptions.find((m) => m.value === month)?.label ?? '';
+  }
+
+  private syncDisplayedPeriod(): void {
+    this.currentMonth = this.getMonthLabel(this.selectedMonth);
+    this.currentYear = this.selectedYear;
   }
 
   @HostListener('window:focus')
@@ -244,13 +298,28 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
   private loadLeftTableFromApi(): void {
     this.loading = true;
     this.error = null;
+    this.noDefinitions = false;
+    this.noOverallResults = false;
+
+    const month = this.selectedMonth;
+    const year = this.selectedYear;
+    const url = `${this.apiBase}?month=${month}&year=${year}`;
 
     this.http
-      .get<KpiDefinition[]>(this.apiBase)
+      .get<KpiDefinition[]>(url)
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (res) => {
           const list = (res ?? []).sort((a, b) => a.id - b.id);
+
+          this.noDefinitions = list.length === 0;
+          if (this.noDefinitions) {
+            this.kpiRows = [];
+            this.computeTotals();
+            this.scheduleRowSync();
+            this.noOverallResults = true;
+            return;
+          }
 
           this.kpiRows = list.map((row, rowIndex) => {
             const metrics: KpiMetric[] = this.engineersFlat.map(
@@ -285,6 +354,8 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
         error: (err) => {
           console.error('Failed loading final table KPI rows:', err);
           this.error = 'Unable to load KPI rows from backend.';
+          this.noDefinitions = true;
+          this.noOverallResults = true;
           this.kpiRows = [];
           this.computeTotals();
           this.scheduleRowSync();
@@ -293,13 +364,15 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private loadOverallResultsFromApi(): void {
-    const month = new Date().getMonth() + 1;
-    const year = new Date().getFullYear();
+    this.noOverallResults = false;
+    const month = this.selectedMonth;
+    const year = this.selectedYear;
     const url = `${this.overallResultsApiBase}/calculate?month=${month}&year=${year}`;
 
     this.http.post<OverallKpiResultApi[]>(url, {}).subscribe({
       next: (rows) => {
         const list = Array.isArray(rows) ? rows : [];
+        this.noOverallResults = list.length === 0;
         const grouped = new Map<number, OverallKpiResultApi[]>();
 
         list.forEach((row) => {
@@ -339,6 +412,7 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       error: (err) => {
         console.error('Failed loading overall KPI results:', err);
+        this.noOverallResults = true;
         this.computeTotals();
         this.scheduleRowSync();
       },
@@ -367,7 +441,6 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
       0
     );
 
-    // ✅ Calculate total points applicable
     this.totalPointsApplicable = this.kpiRows.reduce(
       (sum, row) => sum + (row.pointsApplicable ?? 0),
       0
@@ -380,7 +453,6 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
       )
     );
 
-    // ✅ Calculate total points achieved by region
     this.totalPointsAchievedByRegion = this.engineersFlat.map((_, colIndex) =>
       this.kpiRows.reduce(
         (sum, row) => sum + (row.metrics[colIndex]?.pointsAchieved ?? 0),
@@ -388,8 +460,6 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
       )
     );
 
-    // ✅ Normalized: percentage of total possible points
-    // Formula: (Total Points Achieved) / (Total Maximum Points Per KPI) × 100%
     this.totalPointsNormalized = this.totalPointsAchievedByRegion.map((total, colIndex) =>
       this.totalMaximumPointsByRegion[colIndex]
         ? +((total / this.totalMaximumPointsByRegion[colIndex]) * 100).toFixed(2)
@@ -719,6 +789,7 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
     // Generate and download
     const buffer = await workbook.xlsx.writeBuffer();
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    saveAs(blob, `Current_Month_KPI_${this.currentMonth}_${this.currentYear}.xlsx`);
+    const selectedLabel = this.getMonthLabel(this.selectedMonth) || 'Month';
+    saveAs(blob, `Current_Month_KPI_${selectedLabel}_${this.selectedYear}.xlsx`);
   }
 }

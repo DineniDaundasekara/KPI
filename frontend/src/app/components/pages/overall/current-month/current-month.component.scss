@@ -1,5 +1,6 @@
 /* Container for the entire component */
 .final-tables-container {
+  background: linear-gradient(135deg, #f0f7ff 0%, #f8fafc 100%);
   background-size: cover;
   background-position: center;
   min-height: 100vh;
@@ -229,10 +230,13 @@
   justify-content: space-between;
   align-items: flex-start;
   gap: 1rem;
-  margin-bottom: 1.5rem;
-  padding: 0 10px 8px;
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.75rem;
   width: 100%;
-  border-bottom: 1px solid #e5e7eb;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
   flex-wrap: wrap;
 }
 
@@ -257,16 +261,56 @@
 }
 
 .current-month-header .subtitle {
-  margin-top: 0.3rem;
+  margin-top: 0.15rem;
   color: #6b7280;
   font-size: 0.95rem;
   font-family: 'Poppins', sans-serif;
+}
+
+.header-filters {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.25rem 0.5rem;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'Poppins', sans-serif;
+  color: #0f172a;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.filter-select {
+  min-width: 140px;
+  padding: 0.4rem 0.6rem;
+  border-radius: 10px;
+  border: 1px solid #cbd5f5;
+  background: #ffffff;
+  color: #0f172a;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.06);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
 }
 
 .current-month-header .header-right {
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  flex-wrap: wrap;
 }
 
 .current-month-header .count-pill {
@@ -277,6 +321,7 @@
   font-size: 0.85rem;
   font-weight: 600;
   font-family: 'Poppins', sans-serif;
+  border: 1px solid #c7dcff;
 }
 
 .current-month-header .primary-btn {
@@ -327,6 +372,19 @@
   cursor: not-allowed;
 }
 
+.no-data-banner {
+  width: 100%;
+  margin: 0.6rem 10px 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  color: #9a3412;
+  font-family: 'Poppins', sans-serif;
+  font-weight: 600;
+  text-align: center;
+}
+
 @media screen and (max-width: 768px) {
   .current-month-header {
     flex-direction: column;
@@ -337,4 +395,15 @@
   .current-month-header .header-right {
     align-items: flex-start;
   }
+
+  .header-filters {
+    flex-direction: column;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .filter-select {
+    width: 100%;
+  }
+
 }

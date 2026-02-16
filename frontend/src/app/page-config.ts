@@ -6,14 +6,9 @@ export interface NavOption {
 
 export const overallNavOptions: NavOption[] = [
   {
-    label: 'Current Month',
+    label: 'Overall KPI Table',
     path: 'overall/current-month',
     title: 'Overall KPI — Current Month'
-  },
-  {
-    label: 'Previous Month',
-    path: 'overall/previous-month',
-    title: 'Overall KPI — Previous Month'
   }
 ];
 
