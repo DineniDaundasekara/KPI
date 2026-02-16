@@ -35,6 +35,7 @@ namespace backend.Data
         // KPI DEFINITIONS
         // =========================
         public DbSet<KpiDefinition> KpiDefinitions { get; set; } = null!;
+        public DbSet<OverallKpiResult> OverallKpiResults { get; set; } = null!;
 
         // =========================
         // FORMS (2025)
@@ -336,6 +337,33 @@ namespace backend.Data
                     .IsRequired();
 
                 // ❌ removed: v
+            });
+
+            modelBuilder.Entity<OverallKpiResult>(entity =>
+            {
+                entity.ToTable("OverallKpiResult", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                    .HasColumnName("Id")
+                    .ValueGeneratedOnAdd();
+
+                entity.Property(x => x.KpiCode).HasColumnName("KpiCode").HasMaxLength(50);
+                entity.Property(x => x.KpiDefinitionId).HasColumnName("KpiDefinitionId");
+                entity.Property(x => x.KpiName).HasColumnName("KpiName").HasMaxLength(255);
+                entity.Property(x => x.Platform).HasColumnName("Platform").HasMaxLength(100);
+                entity.Property(x => x.AreaCode).HasColumnName("AreaCode").HasMaxLength(50).IsRequired();
+                entity.Property(x => x.TargetValue).HasColumnName("TargetValue").HasColumnType("decimal(18,4)");
+                entity.Property(x => x.AchievedKpi).HasColumnName("AchievedValue").HasColumnType("decimal(10,4)");
+                entity.Property(x => x.MaximumPointsPerKpi).HasColumnName("PointsApplicable").HasColumnType("decimal(18,4)");
+                entity.Property(x => x.PointsAchieved).HasColumnName("PointsAchieved").HasColumnType("decimal(18,4)");
+                entity.Property(x => x.Month).HasColumnName("Month");
+                entity.Property(x => x.Year).HasColumnName("Year");
+                entity.Property(x => x.CalculatedAt).HasColumnName("CalculatedAt");
+
+                entity.HasIndex(x => new { x.KpiDefinitionId, x.AreaCode, x.Month, x.Year })
+                      .IsUnique()
+                      .HasDatabaseName("UQ_OverallKpiResult_Row");
             });
 
             //servicefullilment

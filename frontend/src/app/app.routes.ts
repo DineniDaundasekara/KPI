@@ -6,7 +6,6 @@ import { DashboardComponent } from './components/dashboard/dashboard.component';
 // Overall KPI Components
 // =====================
 import { CurrentMonthComponent } from './components/pages/overall/current-month/current-month.component';
-import { PreviousMonthComponent } from './components/pages/overall/previous-month/previous-month.component';
 
 // =====================
 // Platform KPI Components
@@ -49,8 +48,7 @@ export const routes: Routes = [
   { path: 'dashboard', component: DashboardComponent, canActivate: [MsalGuard] },
 
   // Overall KPI Routes
-  { path: 'overall/current-month', component: CurrentMonthComponent, canActivate: [MsalGuard] },
-  { path: 'overall/previous-month', component: PreviousMonthComponent, canActivate: [MsalGuard] },
+  { path: 'overall/current-month', component: CurrentMonthComponent },
 
   // Platform KPI Routes
   { path: 'platform/service-fulfilment', component: ServiceFulfilmentComponent, canActivate: [MsalGuard] },

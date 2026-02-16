@@ -1,21 +1,47 @@
 <div class="final-tables-container">
-  <!-- CURRENT MONTH HEADER -->
+  <!-- HEADER WITH FILTERS -->
   <header class="current-month-header">
     <div class="header-left">
-      <p class="eyebrow">OVERALL KPI / CURRENT MONTH</p>
-      <h1>Current Month KPI</h1>
+      <p class="eyebrow">OVERALL KPI / KPI DATA</p>
+      <h1>KPI Monthly Data</h1>
       <p class="subtitle">
-        Current month KPI metrics, region performance and weighted scores.
+        KPI metrics for {{ currentMonth }} {{ currentYear }} with region performance and weighted scores.
       </p>
+    </div>
+
+    <div class="header-filters">
+      <div class="filter-group">
+        <label for="month-select">Month:</label>
+        <select id="month-select" class="filter-select" [(ngModel)]="selectedMonth" (ngModelChange)="onMonthChange($event)">
+          <option *ngFor="let month of monthOptions" [ngValue]="month.value">
+            {{ month.label }}
+          </option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="year-select">Year:</label>
+        <select id="year-select" class="filter-select" [(ngModel)]="selectedYear" (ngModelChange)="onYearChange($event)">
+          <option *ngFor="let year of yearOptions" [ngValue]="year">
+            {{ year }}
+          </option>
+        </select>
+      </div>
     </div>
 
     <div class="header-right">
       <span class="count-pill">{{ engineersFlat.length }} NEs</span>
-      <button class="primary-btn" type="button">
+      <button class="primary-btn calculate-btn" type="button" (click)="calculate()" [disabled]="loading">
+        {{ loading ? 'Calculating...' : 'Calculate' }}
+      </button>
+      <button class="primary-btn" type="button" (click)="exportToExcel()">
         Export to Excel
       </button>
     </div>
   </header>
+
+  <div class="no-data-banner" *ngIf="!loading && (noDefinitions || noOverallResults)">
+    No data for the selected month and year.
+  </div>
 
   <div class="side-by-side-tables">
     <!-- LEFT: KPI definition table (UPDATED STRUCTURE) -->
@@ -147,7 +173,7 @@
             <ng-container *ngFor="let total of totalPointsAchievedByRegion; let idx = index">
               <td></td>
               <td class="text-center maximum-points-cell">
-                <b>{{ totalMaximumPointsPerKpi | number : '1.4-4' }}</b>
+                <b>{{ totalMaximumPointsByRegion[idx] | number : '1.4-4' }}</b>
               </td>
               <td class="text-center points-achieved-cell">
                 <b>{{ total | number : '1.4-4' }}</b>
@@ -168,4 +194,5 @@
       </table>
     </div>
   </div>
+
 </div>
