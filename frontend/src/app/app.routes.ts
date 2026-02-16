@@ -5,7 +5,6 @@ import { DashboardComponent } from './components/dashboard/dashboard.component';
 // Overall KPI Components
 // =====================
 import { CurrentMonthComponent } from './components/pages/overall/current-month/current-month.component';
-import { PreviousMonthComponent } from './components/pages/overall/previous-month/previous-month.component';
 
 // =====================
 // Platform KPI Components
@@ -48,7 +47,6 @@ export const routes: Routes = [
 
   // Overall KPI Routes
   { path: 'overall/current-month', component: CurrentMonthComponent },
-  { path: 'overall/previous-month', component: PreviousMonthComponent },
 
   // Platform KPI Routes
   { path: 'platform/service-fulfilment', component: ServiceFulfilmentComponent },

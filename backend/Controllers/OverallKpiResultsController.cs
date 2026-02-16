@@ -58,6 +58,25 @@ namespace backend.Controllers
                 .OrderBy(x => x.Id)
                 .ToListAsync();
 
+            if (!kpis.Any())
+            {
+                var latest = await _db.KpiDefinitions
+                    .AsNoTracking()
+                    .OrderByDescending(x => x.Year)
+                    .ThenByDescending(x => x.Month)
+                    .Select(x => new { x.Month, x.Year })
+                    .FirstOrDefaultAsync();
+
+                if (latest != null)
+                {
+                    kpis = await _db.KpiDefinitions
+                        .AsNoTracking()
+                        .Where(x => x.Month == latest.Month && x.Year == latest.Year)
+                        .OrderBy(x => x.Id)
+                        .ToListAsync();
+                }
+            }
+
             var areaCodes = await _db.RegionData
                 .AsNoTracking()
                 .Select(x => x.LeaCode)
@@ -136,9 +155,10 @@ namespace backend.Controllers
                     .Select(area => (area, snapshot: FindSnapshotForArea(snapshots, NormalizeArea(area))))
                     .ToList();
 
-                bool hasNodeBasedWeight = areaSnapshots.Any(x => (x.snapshot?.TotalNodes ?? 0m) > 0m);
+                var snapshotNodeValues = snapshots.Values.ToList();
+                bool hasNodeBasedWeight = snapshotNodeValues.Any(x => x.TotalNodes > 0m);
                 decimal totalNodes = hasNodeBasedWeight
-                    ? areaSnapshots.Sum(x => x.snapshot?.TotalNodes ?? 0m)
+                    ? snapshotNodeValues.Sum(x => x.TotalNodes)
                     : 0m;
                 decimal equalShare = normalizedAreas.Count > 0
                     ? (decimal)kpi.PointsApplicable / normalizedAreas.Count
@@ -231,8 +251,9 @@ namespace backend.Controllers
                 {
                     var area = NormalizeArea(row.AreaCode);
                     if (area == string.Empty) continue;
-                    var achieved = CalculateAvailability(row.TotalMinutes, row.UnavailableMinutes, row.TotalNodes, daysInMonth);
-                    result[area] = new AreaSnapshot(achieved, row.TotalNodes ?? 0);
+                    var nodeWeight = GetIpNodeWeight(row, daysInMonth);
+                    var achieved = CalculateAvailability(row.TotalMinutes, row.UnavailableMinutes, nodeWeight, daysInMonth);
+                    result[area] = new AreaSnapshot(achieved, nodeWeight);
                 }
                 return result;
             }
@@ -360,8 +381,22 @@ namespace backend.Controllers
             return Math.Clamp(pct, 0m, 100m);
         }
 
+        private static decimal CalculateAvailability(long? totalMinutes, int? unavailableMinutes, decimal totalNodes, int daysInMonth)
+        {
+            decimal tm = totalMinutes ?? 0;
+            decimal um = unavailableMinutes ?? 0;
+            decimal tn = totalNodes;
+
+            var denominator = 24m * 60m * daysInMonth * tn;
+            if (denominator <= 0m) return 100m;
+
+            var numerator = tm - um;
+            var pct = (numerator / denominator) * 100m;
+            return Math.Clamp(pct, 0m, 100m);
+        }
+
         private static decimal CalculateAvailability(int totalMinutes, int unavailableMinutes, int totalNodes, int daysInMonth)
-            => CalculateAvailability((long)totalMinutes, unavailableMinutes, totalNodes, daysInMonth);
+            => CalculateAvailability((long)totalMinutes, unavailableMinutes, (int?)totalNodes, daysInMonth);
 
         private static decimal CalculateSlaRatio(int totalFailedLinks, int linksSlaNotViolated)
         {
@@ -428,6 +463,19 @@ namespace backend.Controllers
             var m = Regex.Match(text, @"\d+(\.\d+)?");
             if (!m.Success) return null;
             return decimal.TryParse(m.Value, out var value) ? value : null;
+        }
+
+        private static decimal GetIpNodeWeight(IpNwOpKpiMetric row, int daysInMonth)
+        {
+            var nodes = (decimal)(row.TotalNodes ?? 0);
+            if (nodes > 0m) return nodes;
+
+            if (daysInMonth <= 0) return 0m;
+            var totalMinutes = (decimal)(row.TotalMinutes ?? 0);
+            if (totalMinutes <= 0m) return 0m;
+
+            var minutesPerNode = 24m * 60m * daysInMonth;
+            return totalMinutes / minutesPerNode;
         }
     }
 }
