@@ -305,6 +305,28 @@
   box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
 }
 
+.current-month-header .calculate-btn {
+  background: #10b981;
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.35);
+}
+
+.current-month-header .calculate-btn:hover {
+  background: #059669;
+  box-shadow: 0 12px 28px rgba(16, 185, 129, 0.4);
+  transform: translateY(-1px);
+}
+
+.current-month-header .calculate-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 18px rgba(16, 185, 129, 0.35);
+}
+
+.current-month-header .calculate-btn:disabled {
+  background: #6ee7b7;
+  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.2);
+  cursor: not-allowed;
+}
+
 @media screen and (max-width: 768px) {
   .current-month-header {
     flex-direction: column;

@@ -11,7 +11,10 @@
 
     <div class="header-right">
       <span class="count-pill">{{ engineersFlat.length }} NEs</span>
-      <button class="primary-btn" type="button">
+      <button class="primary-btn calculate-btn" type="button" (click)="calculate()" [disabled]="loading">
+        {{ loading ? 'Calculating...' : 'Calculate' }}
+      </button>
+      <button class="primary-btn" type="button" (click)="exportToExcel()">
         Export to Excel
       </button>
     </div>
@@ -147,7 +150,7 @@
             <ng-container *ngFor="let total of totalPointsAchievedByRegion; let idx = index">
               <td></td>
               <td class="text-center maximum-points-cell">
-                <b>{{ totalMaximumPointsPerKpi | number : '1.4-4' }}</b>
+                <b>{{ totalMaximumPointsByRegion[idx] | number : '1.4-4' }}</b>
               </td>
               <td class="text-center points-achieved-cell">
                 <b>{{ total | number : '1.4-4' }}</b>
