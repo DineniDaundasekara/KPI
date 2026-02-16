@@ -56,6 +56,40 @@
   padding: 0;
 }
 
+.dropdown-menu li.section-header {
+  padding: 0.4rem 1.4rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: #0f172a;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 0;
+}
+
+.dropdown-menu li.section-header.admin {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.2), rgba(16, 185, 129, 0.05));
+  color: #047857;
+}
+
+.dropdown-menu li.section-header.platform {
+  background: linear-gradient(90deg, rgba(37, 99, 235, 0.2), rgba(59, 130, 246, 0.05));
+  color: #1d4ed8;
+}
+
+.dropdown-menu li.section-header.other {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.2), rgba(99, 102, 241, 0.05));
+  color: #5b21b6;
+}
+
+.dropdown-menu li.section-divider {
+  height: 1px;
+  margin: 0.45rem 0.8rem;
+  background: linear-gradient(90deg, rgba(15, 23, 42, 0), rgba(15, 23, 42, 0.35), rgba(15, 23, 42, 0));
+}
+
 /* Menu option buttons */
 .dropdown-menu li button {
   width: 100%;
@@ -89,14 +123,33 @@
 }
 
 /* Hover state */
+/* Base hover (overridden per section) */
 .dropdown-menu li button:hover,
 .dropdown-menu li button:focus-visible {
-  background: linear-gradient(90deg, rgba(0, 87, 166, 0.1) 0%, rgba(0, 87, 166, 0.05) 100%);
   padding-left: 1.8rem;
-  color: #0057A6;
-  border-left-color: #0057A6;
   transform: translateX(2px);
   outline: none;
+}
+
+.dropdown-menu li.admin button:hover,
+.dropdown-menu li.admin button:focus-visible {
+  background: linear-gradient(90deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05));
+  color: #047857;
+  border-left-color: #10b981;
+}
+
+.dropdown-menu li.platform button:hover,
+.dropdown-menu li.platform button:focus-visible {
+  background: linear-gradient(90deg, rgba(59, 130, 246, 0.15), rgba(37, 99, 235, 0.05));
+  color: #1d4ed8;
+  border-left-color: #3b82f6;
+}
+
+.dropdown-menu li.other button:hover,
+.dropdown-menu li.other button:focus-visible {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.2), rgba(99, 102, 241, 0.08));
+  color: #5b21b6;
+  border-left-color: #8b5cf6;
 }
 
 .dropdown-menu li button:active {
