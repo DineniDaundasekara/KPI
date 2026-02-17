@@ -1,34 +1,49 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MsalService } from '@azure/msal-angular';
-import { Router } from '@angular/router';
-import { EventType } from '@azure/msal-browser';
+import { Router, ActivatedRoute } from '@angular/router';
+import { FormsModule } from '@angular/forms';
+import { AuthService } from '../../services/auth.service';
+import { first } from 'rxjs/operators';
 
 @Component({
     selector: 'app-login',
     standalone: true,
-    imports: [CommonModule],
+    imports: [CommonModule, FormsModule],
     templateUrl: './login.component.html',
     styleUrls: ['./login.component.css']
 })
-export class LoginComponent implements OnInit {
-    constructor(private authService: MsalService, private router: Router) { }
+export class LoginComponent {
+    serviceId = '';
+    loading = false;
+    error = '';
 
-    ngOnInit() {
-        if (this.authService.instance.getAllAccounts().length > 0) {
+    constructor(
+        private authService: AuthService,
+        private router: Router,
+        private route: ActivatedRoute
+    ) {
+        // Redirect if already logged in
+        if (this.authService.userValue) {
             this.router.navigate(['/dashboard']);
         }
-
-        this.authService.instance.addEventCallback((event) => {
-            if (event.eventType === EventType.LOGIN_SUCCESS || event.eventType === EventType.ACQUIRE_TOKEN_SUCCESS) {
-                if (this.authService.instance.getAllAccounts().length > 0) {
-                    this.router.navigate(['/dashboard']);
-                }
-            }
-        });
     }
 
     login() {
-        this.authService.loginRedirect();
+        this.loading = true;
+        this.error = '';
+
+        this.authService.login(this.serviceId)
+            .pipe(first())
+            .subscribe({
+                next: () => {
+                    // get return url from route parameters or default to '/'
+                    const returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
+                    this.router.navigate([returnUrl]);
+                },
+                error: error => {
+                    this.error = 'Invalid Service ID or Login Failed';
+                    this.loading = false;
+                }
+            });
     }
 }

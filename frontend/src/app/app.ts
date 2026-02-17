@@ -1,7 +1,7 @@
 import { Component, HostListener, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router, NavigationEnd, NavigationError, Event as RouterEvent } from '@angular/router';
-import { MsalService } from '@azure/msal-angular';
+// import { MsalService } from '@azure/msal-angular'; // Removed
 import { adminNavOptions, overallNavOptions, platformNavOptions } from './page-config';
 import { HeaderTitleComponent } from './components/header-title/header-title.component';
 import { DashboardButtonComponent } from './components/dashboard-button/dashboard-button.component';
@@ -9,6 +9,8 @@ import { OverallKpiDropdownComponent } from './components/overall-kpi-dropdown/o
 import { PlatformKpiDropdownComponent } from './components/platform-kpi-dropdown/platform-kpi-dropdown.component';
 import { AdminDropdownComponent } from './components/admin-dropdown/admin-dropdown.component';
 import { LogoutButtonComponent } from './components/logout-button/logout-button.component';
+import { HasRoleDirective } from './directives/has-role.directive';
+import { AuthService } from './services/auth.service';
 
 @Component({
   selector: 'app-root',
@@ -21,7 +23,8 @@ import { LogoutButtonComponent } from './components/logout-button/logout-button.
     OverallKpiDropdownComponent,
     PlatformKpiDropdownComponent,
     AdminDropdownComponent,
-    LogoutButtonComponent
+    LogoutButtonComponent,
+    HasRoleDirective
   ],
   templateUrl: './app.html',
   styleUrls: ['./app.css']
@@ -37,7 +40,7 @@ export class App implements OnInit {
   protected navError: string | null = null;
   protected lastError: string | null = null;
 
-  constructor(private msalService: MsalService, private router: Router) { }
+  constructor(private authService: AuthService, private router: Router) { }
 
   ngOnInit(): void {
     this.currentUrl = this.router.url;
@@ -51,23 +54,14 @@ export class App implements OnInit {
       }
     });
 
-    // Get the active account
-    const accounts = this.msalService.instance.getAllAccounts();
-    if (accounts.length > 0) {
-      const account = accounts[0];
-      this.userName.set(account.name || account.username || 'User');
-    } else {
-      // Listen for account changes
-      this.msalService.instance.addEventCallback((event) => {
-        if (event.eventType === 'msal:loginSuccess' || event.eventType === 'msal:acquireTokenSuccess') {
-          const accounts = this.msalService.instance.getAllAccounts();
-          if (accounts.length > 0) {
-            const account = accounts[0];
-            this.userName.set(account.name || account.username || 'User');
-          }
-        }
-      });
-    }
+    // Get user from AuthService
+    this.authService.user$.subscribe(user => {
+      if (user) {
+        this.userName.set(user.name);
+      } else {
+        this.userName.set('Guest');
+      }
+    });
   }
 
   protected handleSelection(path: string): void {
@@ -76,9 +70,7 @@ export class App implements OnInit {
 
   protected logout(): void {
     console.log('[Navigation] Logout requested');
-    this.msalService.logoutRedirect({
-      postLogoutRedirectUri: window.location.origin + '/login'
-    });
+    this.authService.logout();
     this.closeMenus();
   }
 

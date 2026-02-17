@@ -5,30 +5,30 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
 export interface User {
-  id: string;
-  username: number;
+  userId: number; // Changed from id: string
+  serviceId: string; // Changed from username: number
   name: string;
   role: string;
-  isActive: string;
+  isActive: boolean; // Changed from string
   pages: string[];
+  lastLogin?: string;
   createdAt: string;
-  updatedAt: string;
-  v: boolean;
+  updatedAt?: string;
 }
 
 export interface CreateUserDto {
-  username: number;
+  serviceId: string;
   name: string;
   role: string;
-  isActive: string;
+  isActive: boolean;
   pages: string[];
 }
 
 export interface UpdateUserDto {
-  username?: number;
+  serviceId?: string;
   name?: string;
   role?: string;
-  isActive?: string;
+  isActive?: boolean;
   pages?: string[];
 }
 

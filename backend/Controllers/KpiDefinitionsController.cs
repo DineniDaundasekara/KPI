@@ -3,11 +3,13 @@ using backend.DTOs;
 using backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers
 {
     [ApiController]
     [Route("api/kpi-definitions")]
+    [Authorize]
     public class KpiDefinitionsController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -64,6 +66,7 @@ namespace backend.Controllers
         // CREATE
         // =========================
         [HttpPost]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<KpiDefinitionDto>> Create([FromBody] UpsertKpiDefinitionDto dto)
         {
             if (!ModelState.IsValid)
@@ -108,6 +111,7 @@ namespace backend.Controllers
         // UPDATE
         // =========================
         [HttpPut("{id}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<KpiDefinitionDto>> Update(int id, [FromBody] UpsertKpiDefinitionDto dto)
         {
             if (!ModelState.IsValid)
@@ -150,6 +154,7 @@ namespace backend.Controllers
         // DELETE
         // =========================
         [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
         {
             var entity = await _db.KpiDefinitions.FirstOrDefaultAsync(x => x.Id == id);

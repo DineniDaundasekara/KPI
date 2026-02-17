@@ -4,23 +4,33 @@ using backend.Data;
 using backend.Models;
 using backend.DTOs;
 
+using Microsoft.AspNetCore.Authorization;
+using backend.Helpers.Authorization;
+
 namespace backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class TmActivityPlansController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IAuthorizationService _authorizationService;
+        private const int PageId = 5; // TM Activity Plan
 
-        public TmActivityPlansController(AppDbContext context)
+        public TmActivityPlansController(AppDbContext context, IAuthorizationService authorizationService)
         {
             _context = context;
+            _authorizationService = authorizationService;
         }
 
         // GET: api/TmActivityPlans
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var data = await _context.TmActivity1
                 .AsNoTracking()
                 .ToListAsync();
@@ -32,6 +42,9 @@ namespace backend.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var row = await _context.TmActivity1.FindAsync(id);
             if (row == null) return NotFound();
 
@@ -42,6 +55,14 @@ namespace backend.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTmActivityPlanDto dto)
         {
+            // Admin OR PlatformAdmin(Edit + Date + Page)
+            bool isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+            if (!isAdmin)
+            {
+                var auth = await _authorizationService.AuthorizeAsync(User, PageId, "EditPlatformKpiPolicy");
+                if (!auth.Succeeded) return Forbid();
+            }
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
@@ -72,6 +93,14 @@ namespace backend.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateTmActivityPlanDto dto)
         {
+            // Admin OR PlatformAdmin(Edit + Date + Page)
+            bool isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+            if (!isAdmin)
+            {
+                var auth = await _authorizationService.AuthorizeAsync(User, PageId, "EditPlatformKpiPolicy");
+                if (!auth.Succeeded) return Forbid();
+            }
+
             var entity = await _context.TmActivity1.FindAsync(id);
             if (entity == null) return NotFound();
 
@@ -91,6 +120,7 @@ namespace backend.Controllers
 
         // DELETE: api/TmActivityPlans/{id}
         [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
         {
             var entity = await _context.TmActivity1.FindAsync(id);

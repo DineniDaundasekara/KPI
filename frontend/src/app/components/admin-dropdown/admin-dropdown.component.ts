@@ -30,7 +30,7 @@ export class AdminDropdownComponent implements OnChanges {
     'User Registration',
     'Region Management',
     'E-mail Service',
-    'Final Table'
+    'KPI Management'
   ]);
 
   private readonly platformSet = new Set([
@@ -65,7 +65,7 @@ export class AdminDropdownComponent implements OnChanges {
     }
 
     const sections: DropdownSection[] = [
-      { title: 'Admin / User / Email / Final Table', theme: 'admin', options: admin },
+      { title: 'Admin / User / Email / KPI Management', theme: 'admin', options: admin },
       { title: 'Platform Modules', theme: 'platform', options: platform },
       { title: 'Operations & Other Modules', theme: 'other', options: others }
     ];

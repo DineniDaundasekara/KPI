@@ -6,6 +6,7 @@ import { provideToastr } from 'ngx-toastr';
 import { MsalService, MsalGuard, MsalInterceptor, MsalBroadcastService, MSAL_INSTANCE, MSAL_GUARD_CONFIG, MSAL_INTERCEPTOR_CONFIG } from '@azure/msal-angular';
 import { InteractionType } from '@azure/msal-browser';
 import { createMsalInstance, loginRequest } from './auth-config';
+import { JwtInterceptor } from './interceptors/jwt.interceptor';
 
 import { routes } from './app.routes';
 
@@ -36,6 +37,7 @@ export const appConfig: ApplicationConfig = {
         ])
       }
     },
-    { provide: HTTP_INTERCEPTORS, useClass: MsalInterceptor, multi: true }
+    { provide: HTTP_INTERCEPTORS, useClass: JwtInterceptor, multi: true },
+    // { provide: HTTP_INTERCEPTORS, useClass: MsalInterceptor, multi: true } // Disable MSAL Interceptor for now
   ]
 };

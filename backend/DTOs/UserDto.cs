@@ -2,14 +2,14 @@
 {
     public class UserDto
     {
-        public string id { get; set; } = "";
-        public short? username { get; set; } // CHANGED: short → short?
-        public string name { get; set; } = "";
-        public string role { get; set; } = "";
-        public string isActive { get; set; } = "";
-        public List<string> Pages { get; set; } = new();
-        public string createdAt { get; set; } = "";
-        public string updatedAt { get; set; } = "";
-        public bool? v { get; set; } // CHANGED: bool → bool?
+        public int UserId { get; set; }
+        public string ServiceId { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public string Role { get; set; } = string.Empty; // RoleName
+        public bool IsActive { get; set; }
+        public List<string> Pages { get; set; } = new(); // PageNames or Codes
+        public DateTime? LastLogin { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public DateTime? UpdatedAt { get; set; }
     }
 }

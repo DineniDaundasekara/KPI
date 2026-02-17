@@ -112,9 +112,9 @@ export const adminNavOptions: NavOption[] = [
     title: 'Admin — E-mail Service'
   },
   {
-    label: 'Final Table',
+    label: 'KPI Management',
     path: 'admin/final-table',
-    title: 'Admin — Final Table'
+    title: 'Admin — KPI Management'
   }
 ];
 

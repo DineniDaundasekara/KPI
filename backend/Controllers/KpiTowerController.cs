@@ -4,22 +4,32 @@ using backend.Data;
 using backend.Models;
 using backend.Dtos;
 
+using Microsoft.AspNetCore.Authorization;
+using backend.Helpers.Authorization;
+
 namespace backend.Controllers
 {
     [ApiController]
     [Route("api/kpitower")]
+    [Authorize]
     public class KpiTowerController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IAuthorizationService _authorizationService;
+        private const int PageId = 7; // Tower MTCE Achievement
 
-        public KpiTowerController(AppDbContext context)
+        public KpiTowerController(AppDbContext context, IAuthorizationService authorizationService)
         {
             _context = context;
+            _authorizationService = authorizationService;
         }
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TowerKpi>>> GetAll()
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var list = await _context.TowerKpis
                 .OrderBy(x => x.No)
                 .ToListAsync();
@@ -30,6 +40,9 @@ namespace backend.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<TowerKpi>> GetById(int id)
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var item = await _context.TowerKpis.FindAsync(id);
             if (item == null) return NotFound();
             return Ok(item);
@@ -38,6 +51,13 @@ namespace backend.Controllers
         [HttpPost]
         public async Task<ActionResult<TowerKpi>> Create([FromBody] TowerKpiCreateDto dto)
         {
+            bool isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+            if (!isAdmin)
+            {
+                var auth = await _authorizationService.AuthorizeAsync(User, PageId, "EditPlatformKpiPolicy");
+                if (!auth.Succeeded) return Forbid();
+            }
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
@@ -85,6 +105,13 @@ namespace backend.Controllers
         [HttpPut("{id}")]
         public async Task<ActionResult<TowerKpi>> Update(int id, [FromBody] TowerKpiUpdateDto dto)
         {
+            bool isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+            if (!isAdmin)
+            {
+                var auth = await _authorizationService.AuthorizeAsync(User, PageId, "EditPlatformKpiPolicy");
+                if (!auth.Succeeded) return Forbid();
+            }
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
@@ -129,6 +156,7 @@ namespace backend.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
         {
             var entity = await _context.TowerKpis.FindAsync(id);

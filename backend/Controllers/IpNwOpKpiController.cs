@@ -7,18 +7,24 @@ using backend.DTOs;
 using backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using backend.Helpers.Authorization;
 
 namespace backend.Controllers
 {
     [ApiController]
     [Route("ip-nw-op")]
+    [Authorize]
     public class IpNwOpKpiController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly IAuthorizationService _authorizationService;
+        private const int PageId = 1; // IP NW OP
 
-        public IpNwOpKpiController(AppDbContext db)
+        public IpNwOpKpiController(AppDbContext db, IAuthorizationService authorizationService)
         {
             _db = db;
+            _authorizationService = authorizationService;
         }
 
         // =========================================================
@@ -32,6 +38,9 @@ namespace backend.Controllers
             [FromQuery] short? year,
             [FromQuery] string? area)
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var normalizedArea = NormalizeAreaCode(area);
 
             // KPI query
@@ -82,6 +91,9 @@ namespace backend.Controllers
             [FromQuery] short? year,
             [FromQuery] string? area)
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var entity = await _db.IpNwOpKpis
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id);
@@ -113,6 +125,7 @@ namespace backend.Controllers
         // POST: /ip-nw-op/add
         // =========================================================
         [HttpPost("add")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Add([FromBody] IpNwOpKpiDto dto)
         {
             if (dto == null) return BadRequest("Body is empty.");
@@ -137,6 +150,7 @@ namespace backend.Controllers
         // PUT: /ip-nw-op/update/{id}
         // =========================================================
         [HttpPut("update/{id:int}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Update(int id, [FromBody] IpNwOpKpiDto dto)
         {
             if (dto == null) return BadRequest("Body is empty.");
@@ -159,6 +173,7 @@ namespace backend.Controllers
         // DELETE: /ip-nw-op/delete/{id}
         // =========================================================
         [HttpDelete("delete/{id:int}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
         {
             var entity = await _db.IpNwOpKpis.FirstOrDefaultAsync(x => x.Id == id);
@@ -182,6 +197,9 @@ namespace backend.Controllers
             [FromQuery] short year,
             [FromBody] IpNwOpMetricUpsertDto dto)
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "EditPlatformKpiPolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var exists = await _db.IpNwOpKpis.AnyAsync(x => x.Id == kpiId);
             if (!exists) return NotFound(new { message = "kpiId not found" });
 
@@ -228,6 +246,9 @@ namespace backend.Controllers
             [FromQuery] short? year,
             [FromQuery] string? areaCode)
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var normalizedArea = NormalizeAreaCode(areaCode);
 
             var metricsQuery = _db.IpNwOpKpiMetrics.AsNoTracking().AsQueryable();

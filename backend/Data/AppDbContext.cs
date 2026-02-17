@@ -11,9 +11,13 @@ namespace backend.Data
         }
 
         // =========================
-        // USERS
+        // AUTH & USERS
         // =========================
+        public DbSet<Role> Roles { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
+        public DbSet<Page> Pages { get; set; } = null!;
+        public DbSet<UserPageAccess> UserPageAccess { get; set; } = null!;
+        public DbSet<PlatformKpiAssignment> PlatformKpiAssignments { get; set; } = null!;
 
         // =========================
         // EMAILS
@@ -77,6 +81,76 @@ namespace backend.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            // =========================
+            // AUTHENTICATION & AUTHORIZATION
+            // =========================
+
+            modelBuilder.Entity<Role>(entity =>
+            {
+                entity.ToTable("Roles", "dbo");
+                entity.HasKey(e => e.RoleId);
+                entity.Property(e => e.RoleName).IsRequired().HasMaxLength(50);
+                entity.HasIndex(e => e.RoleName).IsUnique();
+            });
+
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.ToTable("Users", "dbo");
+                entity.HasKey(e => e.UserId);
+                entity.Property(e => e.ServiceId).IsRequired().HasMaxLength(20);
+                entity.HasIndex(e => e.ServiceId).IsUnique();
+                entity.Property(e => e.Email).HasMaxLength(150);
+                entity.HasIndex(e => e.Email).IsUnique();
+                
+                entity.HasOne(d => d.Role)
+                    .WithMany()
+                    .HasForeignKey(d => d.RoleId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<Page>(entity =>
+            {
+                entity.ToTable("Page", "dbo");
+                entity.HasKey(e => e.PageId);
+                entity.Property(e => e.PageCode).IsRequired().HasMaxLength(50);
+                entity.HasIndex(e => e.PageCode).IsUnique();
+                entity.Property(e => e.PageName).IsRequired().HasMaxLength(100);
+            });
+
+            modelBuilder.Entity<UserPageAccess>(entity =>
+            {
+                entity.ToTable("UserPageAccess", "dbo");
+                entity.HasKey(e => new { e.UserId, e.PageId });
+
+                entity.HasOne(d => d.User)
+                    .WithMany()
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(d => d.Page)
+                    .WithMany()
+                    .HasForeignKey(d => d.PageId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<PlatformKpiAssignment>(entity =>
+            {
+                entity.ToTable("PlatformKpiAssignment", "dbo");
+                entity.HasKey(e => e.AssignmentId);
+                
+                entity.HasIndex(e => new { e.UserId, e.PageId }).IsUnique();
+
+                entity.HasOne(d => d.User)
+                    .WithMany()
+                    .HasForeignKey(d => d.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(d => d.Page)
+                    .WithMany()
+                    .HasForeignKey(d => d.PageId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
             // EMAIL RECIPIENTS
             modelBuilder.Entity<EmailRecipient>(entity =>
             {

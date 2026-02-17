@@ -3,11 +3,13 @@ using backend.DTOs;
 using backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers
 {
     [ApiController]
     [Route("api/emails")]
+    [Authorize]
     public class EmailsController : ControllerBase
     {
         private readonly AppDbContext _db;
@@ -32,6 +34,7 @@ namespace backend.Controllers
 
         // POST: /api/emails/add-recipient
         [HttpPost("add-recipient")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult> AddRecipient([FromBody] EmailRecipientDto dto)
         {
             if (!ModelState.IsValid)
@@ -60,6 +63,7 @@ namespace backend.Controllers
 
         // PUT: /api/emails/update-recipient/{id}
         [HttpPut("update-recipient/{id}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult> UpdateRecipient(int id, [FromBody] EmailRecipientDto dto)
         {
             if (!ModelState.IsValid)
@@ -92,6 +96,7 @@ namespace backend.Controllers
 
         // DELETE: /api/emails/delete-recipient/{id}
         [HttpDelete("delete-recipient/{id}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> DeleteRecipient(int id)
         {
             if (id <= 0)

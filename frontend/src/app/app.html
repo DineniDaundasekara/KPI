@@ -20,8 +20,8 @@
           (toggleMenu)="toggleMenu('platform')" (closeMenu)="closeMenus()"
           (selection)="handleSelection($event)"></app-platform-kpi-dropdown>
 
-        <app-admin-dropdown [options]="adminOptions" [isOpen]="openMenu() === 'admin'"
-          (toggleMenu)="toggleMenu('admin')" (closeMenu)="closeMenus()"
+        <app-admin-dropdown *appHasRole="['Admin', 'SuperAdmin']" [options]="adminOptions"
+          [isOpen]="openMenu() === 'admin'" (toggleMenu)="toggleMenu('admin')" (closeMenu)="closeMenus()"
           (selection)="handleSelection($event)"></app-admin-dropdown>
 
         <span class="welcome-text">Welcome, {{ userName() }}</span>

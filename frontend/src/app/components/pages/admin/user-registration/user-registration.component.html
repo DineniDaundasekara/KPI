@@ -9,10 +9,7 @@
       <span class="badge bg-primary user-count-pill">
         {{ users.length }} user{{ users.length !== 1 ? 's' : '' }}
       </span>
-      <button 
-        *ngIf="!isLoading"
-        type="button" 
-        class="btn btn-outline-info btn-sm ms-2"
+      <button *ngIf="!isLoading" type="button" class="btn btn-outline-info btn-sm ms-2"
         (click)="testBackendConnection()">
         <i class="bi bi-plug me-1"></i>Test Connection
       </button>
@@ -31,39 +28,21 @@
 
             <div *ngIf="editingUser" class="editing-banner mb-4">
               <i class="bi bi-pencil-square me-2"></i>
-              Editing {{ editingUser.name }} (Service No: {{ editingUser.username }})
+              Editing {{ editingUser.name }} (Service No: {{ editingUser.serviceId }})
             </div>
 
             <!-- Name Input -->
             <div class="mb-3">
               <label for="name" class="form-label fw-semibold">Name</label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                class="form-control"
-                [(ngModel)]="formData.name"
-                #nameField
-                placeholder="Enter full name"
-                required
-                [disabled]="isLoading"
-              />
+              <input type="text" id="name" name="name" class="form-control" [(ngModel)]="formData.name" #nameField
+                placeholder="Enter full name" required [disabled]="isLoading" />
             </div>
 
             <!-- Service Number Input -->
             <div class="mb-3">
-              <label for="username" class="form-label fw-semibold">Service Number</label>
-              <input
-                type="number"
-                id="username"
-                name="username"
-                class="form-control"
-                [(ngModel)]="formData.username"
-                placeholder="Enter service number (e.g., 18231)"
-                required
-                [disabled]="isLoading"
-              />
-              <small class="text-muted">Must be a number (e.g., 18231, 18232)</small>
+              <label for="serviceId" class="form-label fw-semibold">Service ID (e.g. 12345)</label>
+              <input type="text" id="serviceId" name="serviceId" class="form-control" [(ngModel)]="formData.serviceId"
+                placeholder="Enter service ID" required [disabled]="isLoading" />
             </div>
 
             <!-- Assign Pages Section -->
@@ -72,14 +51,9 @@
               <div class="row g-2">
                 <div *ngFor="let page of availablePages" class="col-md-6">
                   <div class="form-check">
-                    <input
-                      class="form-check-input"
-                      type="checkbox"
-                      [id]="'page-' + page"
-                      [checked]="formData.pages.includes(page)"
-                      (change)="handlePageChange(page)"
-                      [disabled]="isLoading"
-                    />
+                    <input class="form-check-input" type="checkbox" [id]="'page-' + page"
+                      [checked]="formData.pages.includes(page)" (change)="handlePageChange(page)"
+                      [disabled]="isLoading" />
                     <label class="form-check-label" [for]="'page-' + page">
                       {{ page }}
                     </label>
@@ -93,31 +67,24 @@
               <label class="form-label fw-semibold mb-3">User Role</label>
               <div class="d-flex gap-4">
                 <div class="form-check">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    name="role"
-                    id="role-user"
-                    value="user"
-                    [(ngModel)]="formData.role"
-                    [disabled]="isLoading"
-                  />
+                  <input class="form-check-input" type="radio" name="role" id="role-user" value="User"
+                    [(ngModel)]="formData.role" [disabled]="isLoading" />
                   <label class="form-check-label" for="role-user">
                     User (Region)
                   </label>
                 </div>
                 <div class="form-check">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    name="role"
-                    id="role-padmin"
-                    value="padmin"
-                    [(ngModel)]="formData.role"
-                    [disabled]="isLoading"
-                  />
+                  <input class="form-check-input" type="radio" name="role" id="role-padmin" value="PlatformAdmin"
+                    [(ngModel)]="formData.role" [disabled]="isLoading" />
                   <label class="form-check-label" for="role-padmin">
                     Platform Admin
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="role" id="role-admin" value="Admin"
+                    [(ngModel)]="formData.role" [disabled]="isLoading" />
+                  <label class="form-check-label" for="role-admin">
+                    Admin
                   </label>
                 </div>
               </div>
@@ -128,29 +95,15 @@
               <label class="form-label fw-semibold mb-3">Account Status</label>
               <div class="d-flex gap-4">
                 <div class="form-check">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    name="isActive"
-                    id="active-true"
-                    value="true"
-                    [(ngModel)]="formData.isActive"
-                    [disabled]="isLoading"
-                  />
+                  <input class="form-check-input" type="radio" name="isActive" id="active-true" [value]="true"
+                    [(ngModel)]="formData.isActive" [disabled]="isLoading" />
                   <label class="form-check-label" for="active-true">
                     Active
                   </label>
                 </div>
                 <div class="form-check">
-                  <input
-                    class="form-check-input"
-                    type="radio"
-                    name="isActive"
-                    id="active-false"
-                    value="false"
-                    [(ngModel)]="formData.isActive"
-                    [disabled]="isLoading"
-                  />
+                  <input class="form-check-input" type="radio" name="isActive" id="active-false" [value]="false"
+                    [(ngModel)]="formData.isActive" [disabled]="isLoading" />
                   <label class="form-check-label" for="active-false">
                     Inactive
                   </label>
@@ -173,47 +126,32 @@
 
             <!-- Submit Button -->
             <div class="d-grid gap-2">
-              <button 
-                type="submit" 
-                class="btn btn-primary btn-lg"
-                [disabled]="isLoading">
+              <button type="submit" class="btn btn-primary btn-lg" [disabled]="isLoading">
                 <span *ngIf="isLoading" class="spinner-border spinner-border-sm me-2" role="status"></span>
                 <i class="bi" [ngClass]="editingUser ? 'bi-check-lg' : 'bi-person-plus'" *ngIf="!isLoading"></i>
-                {{ editingUser ? (isLoading ? 'Updating...' : 'Update User') : (isLoading ? 'Creating...' : 'Create User') }}
+                {{ editingUser ? (isLoading ? 'Updating...' : 'Update User') : (isLoading ? 'Creating...' : 'Create
+                User') }}
               </button>
-              
-              <button *ngIf="editingUser"
-                type="button"
-                (click)="cancelEdit()"
-                class="btn btn-outline-secondary btn-lg"
+
+              <button *ngIf="editingUser" type="button" (click)="cancelEdit()" class="btn btn-outline-secondary btn-lg"
                 [disabled]="isLoading">
                 <i class="bi bi-x-circle me-1"></i>Cancel
               </button>
             </div>
-            
+
             <!-- Quick Form Fill for Testing -->
             <div class="mt-4 pt-3 border-top">
               <small class="text-muted d-block mb-2">Quick Test Data:</small>
               <div class="d-flex flex-wrap gap-2">
-                <button 
-                  type="button" 
-                  class="btn btn-outline-info btn-sm"
-                  (click)="fillBasicTestData()"
+                <button type="button" class="btn btn-outline-info btn-sm" (click)="fillBasicTestData()"
                   [disabled]="isLoading">
                   Fill Basic
                 </button>
-                <button 
-                  type="button" 
-                  class="btn btn-outline-info btn-sm"
-                  (click)="selectAllPages()"
+                <button type="button" class="btn btn-outline-info btn-sm" (click)="selectAllPages()"
                   [disabled]="isLoading">
                   Select All Pages
                 </button>
-                <button 
-                  type="button" 
-                  class="btn btn-outline-info btn-sm"
-                  (click)="clearPages()"
-                  [disabled]="isLoading">
+                <button type="button" class="btn btn-outline-info btn-sm" (click)="clearPages()" [disabled]="isLoading">
                   Clear Pages
                 </button>
               </div>
@@ -229,16 +167,12 @@
         <div class="card-body p-4">
           <div class="d-flex justify-content-between align-items-center mb-4">
             <h3 class="card-title text-primary mb-0">User List</h3>
-            <button 
-              type="button" 
-              class="btn btn-outline-primary btn-sm"
-              (click)="fetchUsers()"
-              [disabled]="isLoading">
+            <button type="button" class="btn btn-outline-primary btn-sm" (click)="fetchUsers()" [disabled]="isLoading">
               <i class="bi bi-arrow-clockwise me-1"></i>
               {{ isLoading ? 'Refreshing...' : 'Refresh' }}
             </button>
           </div>
-          
+
           <!-- Loading Indicator -->
           <div *ngIf="isLoading && users.length === 0" class="text-center py-5">
             <div class="spinner-border text-primary" role="status">
@@ -252,43 +186,40 @@
               <i class="bi bi-people fs-1 opacity-50"></i>
             </div>
             <p class="text-muted">No users found in the database.</p>
-            <button 
-              type="button" 
-              class="btn btn-outline-primary"
-              (click)="fillBasicTestData()">
+            <button type="button" class="btn btn-outline-primary" (click)="fillBasicTestData()">
               <i class="bi bi-plus-circle me-1"></i>Create Test User
             </button>
           </div>
 
           <div class="user-list" *ngIf="users.length > 0 && !isLoading">
-            <div *ngFor="let user of users" class="user-item card border mb-3" [class.editing]="editingUser?.id === user.id">
+            <div *ngFor="let user of users" class="user-item card border mb-3"
+              [class.editing]="editingUser?.userId === user.userId">
               <div class="card-body">
                 <div class="row align-items-center">
                   <div class="col-md-8">
                     <div class="user-heading mb-2">
                       <i class="bi bi-person"></i>
                       <span class="user-name">{{ user.name }}</span>
-                      <span *ngIf="editingUser?.id === user.id" class="badge bg-warning text-dark ms-2">
+                      <span *ngIf="editingUser?.userId === user.userId" class="badge bg-warning text-dark ms-2">
                         Editing
                       </span>
-                      <span class="badge ms-2" 
-                            [ngClass]="user.isActive === 'true' ? 'bg-success' : 'bg-danger'">
-                        {{ user.isActive === 'true' ? 'Active' : 'Inactive' }}
+                      <span class="badge ms-2" [ngClass]="user.isActive ? 'bg-success' : 'bg-danger'">
+                        {{ user.isActive ? 'Active' : 'Inactive' }}
                       </span>
                     </div>
                     <p class="card-text mb-1">
                       <small class="text-muted">
                         <i class="bi bi-card-text me-1"></i>
-                        Service No: {{ user.username }}
+                        Service No: {{ user.serviceId }}
                       </small>
                     </p>
                     <p class="card-text mb-1">
                       <small class="text-muted">
                         <i class="bi bi-shield me-1"></i>
-                        Role: 
-                        <span class="badge" 
-                              [ngClass]="user.role === 'padmin' ? 'bg-info text-dark' : 'bg-light text-dark border'">
-                          {{ user.role === 'user' ? 'User (Region)' : 'Platform Admin' }}
+                        Role:
+                        <span class="badge"
+                          [ngClass]="user.role === 'PlatformAdmin' ? 'bg-info text-dark' : 'bg-light text-dark border'">
+                          {{ user.role }}
                         </span>
                       </small>
                     </p>
@@ -304,8 +235,7 @@
                         Assigned Pages ({{ user.pages.length }}):
                       </small>
                       <div class="d-flex flex-wrap gap-1">
-                        <span *ngFor="let page of user.pages" 
-                              class="badge bg-light text-dark border">
+                        <span *ngFor="let page of user.pages" class="badge bg-light text-dark border">
                           {{ page }}
                         </span>
                       </div>
@@ -313,16 +243,12 @@
                   </div>
                   <div class="col-md-4 text-end mt-3 mt-md-0">
                     <div class="d-flex flex-column gap-2">
-                      <button
-                        (click)="handleEdit(user)"
-                        class="btn btn-warning btn-sm"
-                        [disabled]="editingUser?.id === user.id || isLoading">
+                      <button (click)="handleEdit(user)" class="btn btn-warning btn-sm"
+                        [disabled]="editingUser?.userId === user.userId || isLoading">
                         <i class="bi bi-pencil me-1"></i>
-                        {{ editingUser?.id === user.id ? 'Editing...' : 'Edit' }}
+                        {{ editingUser?.userId === user.userId ? 'Editing...' : 'Edit' }}
                       </button>
-                      <button
-                        (click)="handleDelete(user.id)"
-                        class="btn btn-outline-danger btn-sm"
+                      <button (click)="handleDelete(user.userId)" class="btn btn-outline-danger btn-sm"
                         [disabled]="isLoading">
                         <i class="bi bi-trash me-1"></i>Delete
                       </button>
@@ -332,7 +258,7 @@
               </div>
             </div>
           </div>
-          
+
           <!-- Backend Info -->
           <div class="mt-4 pt-3 border-top text-center">
             <small class="text-muted">

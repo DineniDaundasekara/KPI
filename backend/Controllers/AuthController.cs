@@ -1,0 +1,84 @@
+using backend.Data;
+using backend.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+
+namespace backend.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class AuthController : ControllerBase
+    {
+        private readonly AppDbContext _context;
+        private readonly IConfiguration _configuration;
+
+        public AuthController(AppDbContext context, IConfiguration configuration)
+        {
+            _context = context;
+            _configuration = configuration;
+        }
+
+        [HttpPost("login")]
+        [AllowAnonymous] // Public endpoint
+        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.ServiceId))
+                return BadRequest("Service ID is required.");
+
+            // 1. Find User
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.ServiceId == dto.ServiceId);
+
+            if (user == null || !user.IsActive)
+                return Unauthorized("Invalid Service ID or inactive account.");
+
+            // 2. No Password Verification required (Service ID Only)
+
+            // 3. Generate JWT
+            var token = GenerateJwtToken(user);
+
+            // 4. Update LastLogin
+            user.LastLogin = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { token, user.Name, Role = user.Role?.RoleName });
+        }
+
+        private string GenerateJwtToken(User user)
+        {
+            var jwtSettings = _configuration.GetSection("JwtSettings");
+            var secretKey = jwtSettings["Secret"] ?? "SuperSecretKeyForDevelopmentOnly12345!@#$%"; // Fallback if config missing
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.ServiceId),
+                new Claim("ServiceId", user.ServiceId), // Custom claim
+                new Claim(ClaimTypes.Role, user.Role?.RoleName ?? "User"),
+                new Claim("UserId", user.UserId.ToString())
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: jwtSettings["Issuer"] ?? "KPI_Backend",
+                audience: jwtSettings["Audience"] ?? "KPI_Frontend",
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(8),
+                signingCredentials: creds
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+    }
+
+    public class LoginDto
+    {
+        public string ServiceId { get; set; }
+    }
+}

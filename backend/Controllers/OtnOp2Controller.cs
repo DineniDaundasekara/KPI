@@ -4,23 +4,33 @@ using backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using Microsoft.AspNetCore.Authorization;
+using backend.Helpers.Authorization;
+
 namespace backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class OtnOp2Controller : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly IAuthorizationService _authorizationService;
+        private const int PageId = 4; // OTN OP
 
-        public OtnOp2Controller(AppDbContext db)
+        public OtnOp2Controller(AppDbContext db, IAuthorizationService authorizationService)
         {
             _db = db;
+            _authorizationService = authorizationService;
         }
 
         // GET: api/OtnOp2
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OtnOp2Dto>>> GetAll()
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var items = await _db.OtnOp2
                 .AsNoTracking()
                 .OrderBy(x => x.Id)
@@ -41,6 +51,9 @@ namespace backend.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<OtnOp2Dto>> GetById(int id)
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var item = await _db.OtnOp2
                 .AsNoTracking()
                 .Where(x => x.Id == id)
@@ -60,6 +73,7 @@ namespace backend.Controllers
 
         // POST: api/OtnOp2
         [HttpPost]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<OtnOp2Dto>> Create([FromBody] CreateOtnOp2Dto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.NetworkEngineerKpi))
@@ -90,6 +104,7 @@ namespace backend.Controllers
 
         // PUT: api/OtnOp2/5
         [HttpPut("{id:int}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Update(int id, [FromBody] CreateOtnOp2Dto dto)
         {
             var entity = await _db.OtnOp2.FirstOrDefaultAsync(x => x.Id == id);
@@ -109,6 +124,7 @@ namespace backend.Controllers
 
         // DELETE: api/OtnOp2/5
         [HttpDelete("{id:int}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
         {
             var entity = await _db.OtnOp2.FirstOrDefaultAsync(x => x.Id == id);
@@ -126,6 +142,9 @@ namespace backend.Controllers
             [FromQuery] short year,
             [FromQuery] byte month)
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var exists = await _db.OtnOp2.AsNoTracking().AnyAsync(x => x.Id == id);
             if (!exists) return NotFound("OtnOp2 KPI not found. Use the KPI id from /api/OtnOp2, not a metric id.");
 
@@ -152,6 +171,9 @@ namespace backend.Controllers
         [HttpPost("{id:int}/metrics")]
         public async Task<IActionResult> UpsertMetrics(int id, [FromBody] List<OtnOp2MetricDto> metrics)
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "EditPlatformKpiPolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var exists = await _db.OtnOp2.AnyAsync(x => x.Id == id);
             if (!exists) return NotFound("OtnOp2 KPI not found. Use the KPI id from /api/OtnOp2, not a metric id.");
 
@@ -203,6 +225,9 @@ namespace backend.Controllers
         [HttpDelete("metrics/{metricId:int}")]
         public async Task<IActionResult> DeleteMetric(int metricId)
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "EditPlatformKpiPolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var row = await _db.OtnOp2Metrics.FirstOrDefaultAsync(x => x.Id == metricId);
             if (row == null) return NotFound();
 

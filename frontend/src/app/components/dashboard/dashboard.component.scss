@@ -393,11 +393,16 @@ $border-radius-meter: 999px;
   align-items: center;
   gap: 0.5rem;
   color: $gray-700;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   background: $pastel-mint;
-  padding: 0.4rem 1rem;
+  padding: 0.6rem 1.2rem;
   border-radius: 40px;
   width: fit-content;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
 
   svg {
     stroke: $slt-teal;
@@ -455,6 +460,7 @@ $border-radius-meter: 999px;
     line-height: 1.2;
   }
 }
+
 
 // ---------- KPI TABLE (MODAL) ----------
 .kpi-table {

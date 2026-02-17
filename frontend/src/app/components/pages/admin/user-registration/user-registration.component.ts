@@ -16,21 +16,21 @@ export class UserRegistrationComponent implements OnInit {
   pageTitle = 'Admin — User Registration';
   @ViewChild('formCard') formCard?: ElementRef<HTMLElement>;
   @ViewChild('nameField') nameField?: ElementRef<HTMLInputElement>;
-  
+
   formData: CreateUserDto = {
-    username: 0,
+    serviceId: '',
     name: '',
     pages: [],
-    role: 'user',
-    isActive: 'true'
+    role: 'User', // Default to User
+    isActive: true
   };
-  
+
   users: User[] = [];
   error = '';
   success = '';
   editingUser: User | null = null;
   isLoading = false;
-  
+
   availablePages = [
     'SERVICE FULFILMENT',
     'IP NW OP',
@@ -41,7 +41,7 @@ export class UserRegistrationComponent implements OnInit {
     'TOWER MTCE ACHIEVEMENT'
   ];
 
-  constructor(private userService: UserService) {}
+  constructor(private userService: UserService) { }
 
   ngOnInit() {
     this.fetchUsers();
@@ -58,19 +58,8 @@ export class UserRegistrationComponent implements OnInit {
         this.error = 'Failed to fetch users. Please check if backend is running.';
         console.error('Error fetching users:', error);
         this.isLoading = false;
-        this.useDummyData();
       }
     });
-  }
-
-  handleChange(event: Event, field: keyof CreateUserDto) {
-    const input = event.target as HTMLInputElement;
-    
-    if (field === 'username') {
-      this.formData[field] = parseInt(input.value) || 0;
-    } else {
-      (this.formData as any)[field] = input.value;
-    }
   }
 
   handlePageChange(page: string) {
@@ -92,8 +81,8 @@ export class UserRegistrationComponent implements OnInit {
       return;
     }
 
-    if (!this.formData.username || this.formData.username <= 0) {
-      this.error = 'Valid service number is required';
+    if (!this.formData.serviceId.trim()) {
+      this.error = 'Service ID is required';
       return;
     }
 
@@ -101,14 +90,15 @@ export class UserRegistrationComponent implements OnInit {
 
     if (this.editingUser) {
       const updateData: UpdateUserDto = {
-        username: this.formData.username,
+        serviceId: this.formData.serviceId,
         name: this.formData.name,
         role: this.formData.role,
         isActive: this.formData.isActive,
         pages: this.formData.pages
       };
 
-      this.userService.updateUser(this.editingUser.id, updateData).subscribe({
+      // Ensure we use userId (number) for update
+      this.userService.updateUser(this.editingUser.userId.toString(), updateData).subscribe({
         next: () => {
           this.success = 'User updated successfully';
           this.fetchUsers();
@@ -141,7 +131,7 @@ export class UserRegistrationComponent implements OnInit {
   handleEdit(user: User) {
     this.editingUser = user;
     this.formData = {
-      username: user.username,
+      serviceId: user.serviceId,
       name: user.name,
       pages: [...user.pages],
       role: user.role,
@@ -154,15 +144,15 @@ export class UserRegistrationComponent implements OnInit {
     }, 50);
   }
 
-  handleDelete(id: string) {
+  handleDelete(id: number) {
     if (!confirm('Are you sure you want to delete this user?')) return;
 
     this.isLoading = true;
-    this.userService.deleteUser(id).subscribe({
+    this.userService.deleteUser(id.toString()).subscribe({
       next: () => {
         this.success = 'User deleted successfully';
-        this.users = this.users.filter(u => u.id !== id);
-        if (this.editingUser && this.editingUser.id === id) {
+        this.users = this.users.filter(u => u.userId !== id);
+        if (this.editingUser && this.editingUser.userId === id) {
           this.cancelEdit();
         }
         this.isLoading = false;
@@ -182,18 +172,18 @@ export class UserRegistrationComponent implements OnInit {
 
   private resetForm() {
     this.formData = {
-      username: 0,
+      serviceId: '',
       name: '',
       pages: [],
-      role: 'user',
-      isActive: 'true'
+      role: 'User',
+      isActive: true
     };
     this.editingUser = null;
   }
 
   fillBasicTestData() {
     this.formData.name = 'Test User';
-    this.formData.username = 10000 + this.users.length;
+    this.formData.serviceId = (10000 + this.users.length).toString();
     this.formData.pages = this.availablePages.length ? [this.availablePages[0]] : [];
   }
 
@@ -203,23 +193,6 @@ export class UserRegistrationComponent implements OnInit {
 
   clearPages() {
     this.formData.pages = [];
-  }
-
-  private useDummyData() {
-    console.log('Using dummy data as fallback');
-    this.users = [
-      {
-        id: '1',
-        username: 18231,
-        name: 'Pavithra',
-        role: 'padmin',
-        isActive: 'true',
-        pages: ['SERVICE FULFILMENT', 'IP NW OP'],
-        createdAt: '2025-08-13T09:42:30.083Z',
-        updatedAt: '2025-08-13T09:42:30.083Z',
-        v: true
-      }
-    ];
   }
 
   testBackendConnection() {

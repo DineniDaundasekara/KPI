@@ -4,23 +4,33 @@ using backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using Microsoft.AspNetCore.Authorization;
+using backend.Helpers.Authorization;
+
 namespace backend.Controllers
 {
     [ApiController]
     [Route("api/mtnc-routine")]
+    [Authorize]
     public class MtncRoutineController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly IAuthorizationService _authorizationService;
+        private const int PageId = 6; // Routine Maintenance
 
-        public MtncRoutineController(AppDbContext db)
+        public MtncRoutineController(AppDbContext db, IAuthorizationService authorizationService)
         {
             _db = db;
+            _authorizationService = authorizationService;
         }
 
         // GET: /api/mtnc-routine
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var list = await _db.MtncRoutines
                 .AsNoTracking()
                 .OrderBy(x => x.No)
@@ -45,6 +55,13 @@ namespace backend.Controllers
         [HttpPost("add")]
         public async Task<IActionResult> Add([FromBody] MtncRoutineDto dto)
         {
+            bool isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+            if (!isAdmin)
+            {
+                var auth = await _authorizationService.AuthorizeAsync(User, PageId, "EditPlatformKpiPolicy");
+                if (!auth.Succeeded) return Forbid();
+            }
+
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var entity = new MtncRoutine
@@ -73,6 +90,13 @@ namespace backend.Controllers
         [HttpPut("update/{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] MtncRoutineDto dto)
         {
+            bool isAdmin = User.IsInRole("Admin") || User.IsInRole("SuperAdmin");
+            if (!isAdmin)
+            {
+                var auth = await _authorizationService.AuthorizeAsync(User, PageId, "EditPlatformKpiPolicy");
+                if (!auth.Succeeded) return Forbid();
+            }
+
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
             var entity = await _db.MtncRoutines.FirstOrDefaultAsync(x => x.Id == id);
@@ -95,6 +119,7 @@ namespace backend.Controllers
 
         // DELETE: /api/mtnc-routine/delete/{id}
         [HttpDelete("delete/{id}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
         {
             var entity = await _db.MtncRoutines.FirstOrDefaultAsync(x => x.Id == id);

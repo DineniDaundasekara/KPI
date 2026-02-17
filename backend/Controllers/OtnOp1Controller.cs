@@ -4,23 +4,33 @@ using backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using Microsoft.AspNetCore.Authorization;
+using backend.Helpers.Authorization;
+
 namespace backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class OtnOp1Controller : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly IAuthorizationService _authorizationService;
+        private const int PageId = 4; // OTN OP
 
-        public OtnOp1Controller(AppDbContext db)
+        public OtnOp1Controller(AppDbContext db, IAuthorizationService authorizationService)
         {
             _db = db;
+            _authorizationService = authorizationService;
         }
 
         // GET: api/OtnOp1
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OtnOp1Dto>>> GetAll()
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var items = await _db.OtnOp1
                 .AsNoTracking()
                 .OrderBy(x => x.Id)
@@ -41,6 +51,9 @@ namespace backend.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<OtnOp1Dto>> GetById(int id)
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var item = await _db.OtnOp1
                 .AsNoTracking()
                 .Where(x => x.Id == id)
@@ -60,6 +73,7 @@ namespace backend.Controllers
 
         // POST: api/OtnOp1
         [HttpPost]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<OtnOp1Dto>> Create([FromBody] CreateOtnOp1Dto dto)
         {
             if (string.IsNullOrWhiteSpace(dto.NetworkEngineerKpi))
@@ -90,6 +104,7 @@ namespace backend.Controllers
 
         // PUT: api/OtnOp1/5
         [HttpPut("{id:int}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Update(int id, [FromBody] CreateOtnOp1Dto dto)
         {
             var entity = await _db.OtnOp1.FirstOrDefaultAsync(x => x.Id == id);
@@ -110,6 +125,7 @@ namespace backend.Controllers
         // DELETE: api/OtnOp1/5
         // Cascade deletes metrics due to FK
         [HttpDelete("{id:int}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
         {
             var entity = await _db.OtnOp1.FirstOrDefaultAsync(x => x.Id == id);
@@ -127,6 +143,9 @@ namespace backend.Controllers
             [FromQuery] short year,
             [FromQuery] byte month)
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var exists = await _db.OtnOp1.AsNoTracking().AnyAsync(x => x.Id == id);
             if (!exists) return NotFound("OtnOp1 KPI not found. Use the KPI id from /api/OtnOp1, not a metric id.");
 
@@ -155,6 +174,9 @@ namespace backend.Controllers
         [HttpPost("{id:int}/metrics")]
         public async Task<IActionResult> UpsertMetrics(int id, [FromBody] List<OtnOp1MetricDto> metrics)
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "EditPlatformKpiPolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var exists = await _db.OtnOp1.AnyAsync(x => x.Id == id);
             if (!exists) return NotFound("OtnOp1 KPI not found. Use the KPI id from /api/OtnOp1, not a metric id.");
 
@@ -210,6 +232,16 @@ namespace backend.Controllers
         [HttpDelete("metrics/{metricId:int}")]
         public async Task<IActionResult> DeleteMetric(int metricId)
         {
+            // Allow Admin or PlatformAdmin(Time/Page restricted)
+            // But Delete implies removing data. 
+            // Usually Admin deletes. PlatformAdmin might clear it?
+            // "Admin section /OTN OP KPI (edit/delete)" -> Admin
+            // "Platform section /OTN OP KPI (edit/add)" -> PlatformAdmin
+            // I'll stick to EditPlatformKpiPolicy for now, or AdminOrEdit logic if needed.
+            // Given Upsert is EditPlatform, DeleteMetric might be too.
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "EditPlatformKpiPolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var row = await _db.OtnOp1Metrics.FirstOrDefaultAsync(x => x.Id == metricId);
             if (row == null) return NotFound();
 

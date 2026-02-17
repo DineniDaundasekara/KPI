@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { MsalGuard } from '@azure/msal-angular';
+import { AuthGuard } from './guards/auth.guard';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 // Overall KPI Components
 import { CurrentMonthComponent } from './components/pages/overall/current-month/current-month.component';
@@ -30,31 +30,31 @@ import { FinalTableComponent } from './components/pages/admin/final-table/final-
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', loadComponent: () => import('./components/login/login.component').then(m => m.LoginComponent) },
-  { path: 'dashboard', component: DashboardComponent, canActivate: [MsalGuard] },
+  { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
   // Overall KPI Routes
-  { path: 'overall/current-month', component: CurrentMonthComponent, canActivate: [MsalGuard] },
-  //{ path: 'overall/previous-month', component: PreviousMonthComponent, canActivate: [MsalGuard] },
+  { path: 'overall/current-month', component: CurrentMonthComponent, canActivate: [AuthGuard] },
+  //{ path: 'overall/previous-month', component: PreviousMonthComponent, canActivate: [AuthGuard] },
   // Platform KPI Routes
-  { path: 'platform/service-fulfilment', component: ServiceFulfilmentComponent, canActivate: [MsalGuard] },
-  { path: 'platform/ip-nw-op', component: IpNwOpComponent, canActivate: [MsalGuard] },
-  { path: 'platform/bb-anw', component: BbAnwComponent, canActivate: [MsalGuard] },
-  { path: 'platform/otn-op', component: OtnOpComponent, canActivate: [MsalGuard] },
-  { path: 'platform/tm-activity-plan', component: TmActivityPlanComponent, canActivate: [MsalGuard] },
-  { path: 'platform/routine-mtnc', component: RoutineMtncComponent, canActivate: [MsalGuard] },
-  { path: 'platform/tower-mtce-achievement', component: TowerMtceAchievementComponent, canActivate: [MsalGuard] },
+  { path: 'platform/service-fulfilment', component: ServiceFulfilmentComponent, canActivate: [AuthGuard] },
+  { path: 'platform/ip-nw-op', component: IpNwOpComponent, canActivate: [AuthGuard] },
+  { path: 'platform/bb-anw', component: BbAnwComponent, canActivate: [AuthGuard] },
+  { path: 'platform/otn-op', component: OtnOpComponent, canActivate: [AuthGuard] },
+  { path: 'platform/tm-activity-plan', component: TmActivityPlanComponent, canActivate: [AuthGuard] },
+  { path: 'platform/routine-mtnc', component: RoutineMtncComponent, canActivate: [AuthGuard] },
+  { path: 'platform/tower-mtce-achievement', component: TowerMtceAchievementComponent, canActivate: [AuthGuard] },
   // Admin Routes
-  { path: 'admin/admin-registration', component: AdminRegistrationComponent, canActivate: [MsalGuard] },
-  { path: 'admin/user-registration', component: UserRegistrationComponent, canActivate: [MsalGuard] },
-  { path: 'admin/service-fulfilment', component: AdminServiceFulfilmentComponent, canActivate: [MsalGuard] },
-  { path: 'admin/region-management', component: RegionManagementComponent, canActivate: [MsalGuard] },
-  { path: 'admin/ip-nw-op', component: AdminIpNwOpComponent, canActivate: [MsalGuard] },
-  { path: 'admin/bb-anw', component: AdminBbAnwComponent, canActivate: [MsalGuard] },
-  { path: 'admin/otn-op-1', component: OtnOp1Component, canActivate: [MsalGuard] },
-  { path: 'admin/otn-op-2', component: OtnOp2Component, canActivate: [MsalGuard] },
-  { path: 'admin/tower-mtce-achievement', component: AdminTowerMtceAchievementComponent, canActivate: [MsalGuard] },
-  { path: 'admin/tm-activity-plan', component: AdminTmActivityPlanComponent, canActivate: [MsalGuard] },
-  { path: 'admin/routine-mtnc', component: AdminRoutineMtncComponent, canActivate: [MsalGuard] },
-  { path: 'admin/email-service', component: EmailServiceComponent, canActivate: [MsalGuard] },
-  { path: 'admin/final-table', component: FinalTableComponent, canActivate: [MsalGuard] },
+  { path: 'admin/admin-registration', component: AdminRegistrationComponent, canActivate: [AuthGuard], data: { roles: ['Admin', 'SuperAdmin'] } },
+  { path: 'admin/user-registration', component: UserRegistrationComponent, canActivate: [AuthGuard], data: { roles: ['Admin', 'SuperAdmin'] } },
+  { path: 'admin/service-fulfilment', component: AdminServiceFulfilmentComponent, canActivate: [AuthGuard], data: { roles: ['Admin', 'SuperAdmin'] } },
+  { path: 'admin/region-management', component: RegionManagementComponent, canActivate: [AuthGuard], data: { roles: ['Admin', 'SuperAdmin'] } },
+  { path: 'admin/ip-nw-op', component: AdminIpNwOpComponent, canActivate: [AuthGuard], data: { roles: ['Admin', 'SuperAdmin'] } },
+  { path: 'admin/bb-anw', component: AdminBbAnwComponent, canActivate: [AuthGuard], data: { roles: ['Admin', 'SuperAdmin'] } },
+  { path: 'admin/otn-op-1', component: OtnOp1Component, canActivate: [AuthGuard], data: { roles: ['Admin', 'SuperAdmin'] } },
+  { path: 'admin/otn-op-2', component: OtnOp2Component, canActivate: [AuthGuard], data: { roles: ['Admin', 'SuperAdmin'] } },
+  { path: 'admin/tower-mtce-achievement', component: AdminTowerMtceAchievementComponent, canActivate: [AuthGuard], data: { roles: ['Admin', 'SuperAdmin'] } },
+  { path: 'admin/tm-activity-plan', component: AdminTmActivityPlanComponent, canActivate: [AuthGuard], data: { roles: ['Admin', 'SuperAdmin'] } },
+  { path: 'admin/routine-mtnc', component: AdminRoutineMtncComponent, canActivate: [AuthGuard], data: { roles: ['Admin', 'SuperAdmin'] } },
+  { path: 'admin/email-service', component: EmailServiceComponent, canActivate: [AuthGuard], data: { roles: ['Admin', 'SuperAdmin'] } },
+  { path: 'admin/final-table', component: FinalTableComponent, canActivate: [AuthGuard], data: { roles: ['Admin', 'SuperAdmin'] } },
   { path: '**', redirectTo: 'dashboard' }
 ];

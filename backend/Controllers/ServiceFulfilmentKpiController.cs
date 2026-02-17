@@ -7,17 +7,24 @@ using backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using Microsoft.AspNetCore.Authorization;
+using backend.Helpers.Authorization;
+
 namespace backend.Controllers
 {
     [ApiController]
     [Route("service-fulfilment-kpi")]
+    [Authorize]
     public class ServiceFulfilmentKpiController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IAuthorizationService _authorizationService;
+        private const int PageId = 2; // Service Fulfilment
 
-        public ServiceFulfilmentKpiController(AppDbContext context)
+        public ServiceFulfilmentKpiController(AppDbContext context, IAuthorizationService authorizationService)
         {
             _context = context;
+            _authorizationService = authorizationService;
         }
 
         // =========================
@@ -27,6 +34,9 @@ namespace backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] byte? month, [FromQuery] short? year)
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var query = _context.ServiceFulfilmentKpis.AsNoTracking();
 
             if (month.HasValue && month.Value > 0)
@@ -61,6 +71,9 @@ namespace backend.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var entity = await _context.ServiceFulfilmentKpis
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id);
@@ -72,6 +85,7 @@ namespace backend.Controllers
 
         // POST /service-fulfilment-kpi/add
         [HttpPost("add")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Add([FromBody] ServiceFulfilmentKpiDto dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -96,6 +110,7 @@ namespace backend.Controllers
 
         // PUT /service-fulfilment-kpi/update/5
         [HttpPut("update/{id:int}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Update(int id, [FromBody] ServiceFulfilmentKpiDto dto)
         {
             var entity = await _context.ServiceFulfilmentKpis.FirstOrDefaultAsync(x => x.Id == id);
@@ -110,6 +125,7 @@ namespace backend.Controllers
 
         // DELETE /service-fulfilment-kpi/delete/5
         [HttpDelete("delete/{id:int}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
         {
             var entity = await _context.ServiceFulfilmentKpis.FirstOrDefaultAsync(x => x.Id == id);
@@ -126,11 +142,11 @@ namespace backend.Controllers
         // GET /service-fulfilment-kpi/metrics?month=11&year=2025&area=CENHKMD
         // =========================
         [HttpGet("metrics")]
-        public async Task<IActionResult> GetMetrics(
-            [FromQuery] byte month,
-            [FromQuery] short year,
-            [FromQuery] string? area)
+        public async Task<IActionResult> GetMetrics([FromQuery] byte month, [FromQuery] short year, [FromQuery] string? area)
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             if (month == 0 || year == 0)
                 return BadRequest("Month and Year must be greater than zero.");
 
@@ -170,9 +186,19 @@ namespace backend.Controllers
         }
 
         // POST /service-fulfilment-kpi/metrics
+        // POST /service-fulfilment-kpi/metrics
         [HttpPost("metrics")]
         public async Task<IActionResult> UpsertMetric([FromBody] UpsertServiceFulfilmentMetricDto dto)
         {
+            // EditPlatformKpiPolicy applies to PlatformAdmin logic
+            // Admin can also edit? The matrix says Admin can edit in Admin section.
+            // If Admin, bypass date check?
+            // "SuperAdmin: Cannot edit". "Admin: Cannot edit".
+            // So ONLY PlatformAdmin (with date check) can edit.
+            
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "EditPlatformKpiPolicy");
+            if (!authResult.Succeeded) return Forbid();
+            
             if (dto == null) return BadRequest("Request body is required.");
             if (dto.ServiceFulfilmentKpiId <= 0) return BadRequest("ServiceFulfilmentKpiId must be > 0.");
             if (dto.Month == 0 || dto.Year == 0) return BadRequest("Month and Year must be greater than zero.");

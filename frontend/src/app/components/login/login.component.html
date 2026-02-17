@@ -7,6 +7,18 @@
                 <span class="title-sub">Monitoring</span>
             </div>
         </div>
-        <button class="login-btn" (click)="login()">Login</button>
+        <div class="form-group mb-4">
+            <label for="serviceId" class="form-label">Service ID</label>
+            <input type="text" id="serviceId" [(ngModel)]="serviceId" name="serviceId" class="form-control"
+                placeholder="Enter Service ID" required>
+        </div>
+
+        <div *ngIf="error" class="error-message">
+            {{ error }}
+        </div>
+
+        <button class="login-btn" (click)="login()" [disabled]="loading || !serviceId">
+            {{ loading ? 'Logging in...' : 'Login' }}
+        </button>
     </div>
 </div>

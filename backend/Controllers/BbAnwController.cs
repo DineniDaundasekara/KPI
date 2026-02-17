@@ -6,17 +6,24 @@ using backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
+using Microsoft.AspNetCore.Authorization;
+using backend.Helpers.Authorization;
+
 namespace backend.Controllers
 {
     [ApiController]
     [Route("api/bb-anw")]
+    [Authorize]
     public class BbAnwController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IAuthorizationService _authorizationService;
+        private const int PageId = 3; // BB ANW
 
-        public BbAnwController(AppDbContext context)
+        public BbAnwController(AppDbContext context, IAuthorizationService authorizationService)
         {
             _context = context;
+            _authorizationService = authorizationService;
         }
 
         // =========================================================
@@ -27,6 +34,9 @@ namespace backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var data = await _context.BbAnwKpis
                 .AsNoTracking()
                 .Include(x => x.Nodes)
@@ -57,6 +67,9 @@ namespace backend.Controllers
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var item = await _context.BbAnwKpis
                 .AsNoTracking()
                 .Include(x => x.Nodes)
@@ -86,6 +99,7 @@ namespace backend.Controllers
 
         // POST: /api/bb-anw/add  (FULL INSERT header + nodes)
         [HttpPost("add")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Add([FromBody] BbAnwDto dto)
         {
             if (dto == null) return BadRequest("Body is empty.");
@@ -136,6 +150,10 @@ namespace backend.Controllers
         [HttpPut("update/{id:int}")]
         public async Task<IActionResult> Update(int id, [FromBody] BbAnwDto dto)
         {
+            // Update whole form -> PlatformAdmin
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "EditPlatformKpiPolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             if (dto == null) return BadRequest("Body is empty.");
 
             var header = await _context.BbAnwKpis
@@ -185,6 +203,7 @@ namespace backend.Controllers
 
         // DELETE: /api/bb-anw/delete/{id}
         [HttpDelete("delete/{id:int}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
         {
             var header = await _context.BbAnwKpis
@@ -208,6 +227,9 @@ namespace backend.Controllers
         [HttpGet("headers")]
         public async Task<IActionResult> GetHeaders()
         {
+            var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
+            if (!authResult.Succeeded) return Forbid();
+
             var headers = await _context.BbAnwKpis
                 .AsNoTracking()
                 .OrderBy(x => x.Id)
@@ -226,6 +248,7 @@ namespace backend.Controllers
 
         // POST: /api/bb-anw/add-header
         [HttpPost("add-header")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> AddHeader([FromBody] BbAnwHeaderDto dto)
         {
             if (dto == null) return BadRequest("Body is empty.");
@@ -246,6 +269,7 @@ namespace backend.Controllers
 
         // PUT: /api/bb-anw/update-header/{id}
         [HttpPut("update-header/{id:int}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> UpdateHeader(int id, [FromBody] BbAnwHeaderDto dto)
         {
             if (dto == null) return BadRequest("Body is empty.");

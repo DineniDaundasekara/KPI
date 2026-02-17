@@ -2,11 +2,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using backend.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers
 {
     [Route("api/regiondata")]
     [ApiController]
+    [Authorize]
     public class RegionController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -34,6 +36,7 @@ namespace backend.Controllers
 
         // CREATE
         [HttpPost]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Create(RegionData model)
         {
             _context.RegionData.Add(model);
@@ -43,6 +46,7 @@ namespace backend.Controllers
 
         // UPDATE
         [HttpPut("{id}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Update(int id, RegionData model)
         {
             if (id != model.Id) return BadRequest();
@@ -54,6 +58,7 @@ namespace backend.Controllers
 
         // DELETE
         [HttpDelete("{id}")]
+        [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
         {
             var data = await _context.RegionData.FindAsync(id);
