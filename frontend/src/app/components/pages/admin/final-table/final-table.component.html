@@ -1,143 +1,100 @@
 <div class="kpi-page">
-  <div class="kpi-overlay"></div>
-
   <section class="kpi-hero">
+    <p class="eyebrow">Admin / Perspective Control</p>
     <h1>{{ pageTitle }}</h1>
-    <p>Maintain the final consolidated KPI table across all balanced-scorecard perspectives.</p>
+    <p>Maintain final consolidated KPI tables across all scorecard perspectives.</p>
   </section>
 
   <section class="form-section">
     <form class="kpi-form" [formGroup]="form" (ngSubmit)="onSubmit()">
       <h2>{{ editingId ? 'Update KPI Row' : 'Add KPI Row' }}</h2>
 
-      <div *ngIf="editingId" class="edit-info">
-        <span class="edit-message">
-          You are editing Number #{{ editingId }}. Update Points Applicable and other fields, then click Update.
-          Weightage will be recalculated automatically.
-        </span>
-      </div>
-
       <div class="field-grid">
         <div class="field-group">
           <input type="text" formControlName="perspectives" placeholder="Perspectives" />
-          <span class="error" *ngIf="form.controls.perspectives.touched && form.controls.perspectives.invalid">Required</span>
         </div>
-
         <div class="field-group">
           <input type="text" formControlName="strategicObjectives" placeholder="Strategic Objectives" />
-          <span class="error" *ngIf="form.controls.strategicObjectives.touched && form.controls.strategicObjectives.invalid">Required</span>
         </div>
-
         <div class="field-group">
           <input type="text" formControlName="keyPerformanceIndicators" placeholder="Key Performance Indicators" />
-          <span class="error" *ngIf="form.controls.keyPerformanceIndicators.touched && form.controls.keyPerformanceIndicators.invalid">Required</span>
         </div>
 
         <div class="field-group">
           <input type="text" formControlName="unit" placeholder="Unit" />
-          <span class="error" *ngIf="form.controls.unit.touched && form.controls.unit.invalid">Required</span>
+        </div>
+        <div class="field-group span-2">
+          <textarea formControlName="descriptionOfKPI" placeholder="Description of KPI"></textarea>
         </div>
 
-        <div class="field-group field-span">
-          <textarea rows="3" formControlName="descriptionOfKPI" placeholder="Description of KPI"></textarea>
-          <span class="error" *ngIf="form.controls.descriptionOfKPI.touched && form.controls.descriptionOfKPI.invalid">Required</span>
-        </div>
-
-        <!-- ✅ CALCULATION SUMMARY BOX -->
-        <div class="field-group field-span calculation-summary">
-          <div class="summary-box">
-            <div class="summary-row">
-              <span class="label">Your Points:</span>
-              <span class="value">{{ form.value.pointsApplicable || 0 }}</span>
-            </div>
-            <div class="summary-row">
-              <span class="label">Total Points:</span>
-              <span class="value">{{ getTotalPointsDisplay() }}</span>
-            </div>
-            <div class="summary-row highlight">
-              <span class="label">Your Weightage:</span>
-              <span class="value">{{ calculateLiveWeightage() }}</span>
-            </div>
-            <p class="formula">Formula: (Your Points ÷ Total Points) × 100%</p>
+        <div class="calculation-summary-container">
+          <div class="summary-row">
+            <span>Your Points:</span>
+            <span>{{ form.value.pointsApplicable || 0 }}</span>
           </div>
+          <div class="summary-row">
+            <span>Total Points:</span>
+            <span>36000</span>
+          </div>
+          <div class="summary-highlight">
+            <span>Your Weightage:</span>
+            <span>{{ calculateLiveWeightage() }}</span>
+          </div>
+          <p class="formula-text">Formula: (Your Points ÷ Total Points) × 100%</p>
         </div>
 
-        <!-- ✅ User input: Points Applicable -->
         <div class="field-group">
           <label>Points Applicable *</label>
-          <input 
-            type="number" 
-            formControlName="pointsApplicable" 
-            placeholder="Enter points (e.g., 50)" 
-            min="0"
-          />
-          <span class="error" *ngIf="form.controls.pointsApplicable.touched && form.controls.pointsApplicable.invalid">Required - Enter a number ≥ 0</span>
-          <small class="hint">Enter your points. Weightage updates automatically.</small>
+          <input type="number" formControlName="pointsApplicable" placeholder="0" />
         </div>
 
-        <!-- ✅ Display: Weightage (readonly, calculated) -->
-        <div class="field-group">
+        <div class="field-group span-full">
           <label>Weightage (%) *</label>
-          <div class="readonly-display">
+          <div class="weightage-display-box">
             {{ calculateLiveWeightage() }}
           </div>
-          <small class="hint">Auto-calculated based on total points</small>
         </div>
       </div>
 
       <div class="actions">
-        <button type="submit" [disabled]="form.invalid || saving">
-          {{ editingId ? 'Update' : 'Add' }} Record
+        <button type="submit" class="primary-btn" [disabled]="form.invalid || saving">
+          {{ editingId ? 'Update Record' : 'Add Record' }}
         </button>
-        <button type="button" class="secondary" *ngIf="editingId" (click)="onCancelEdit()" [disabled]="saving">
-          Cancel
+        <button type="button" class="secondary-btn" *ngIf="editingId" (click)="onCancelEdit()">
+          Cancel Edit
         </button>
       </div>
     </form>
   </section>
 
   <section class="table-section">
-    <div class="state" *ngIf="loading">Loading strategic KPIs...</div>
-    <div class="state error" *ngIf="!loading && errorMessage">{{ errorMessage }}</div>
-    <div class="state" *ngIf="!loading && !errorMessage && !records.length">No KPIs captured yet.</div>
+    <div class="state" *ngIf="loading">Loading records...</div>
 
     <table class="kpi-table" *ngIf="!loading && records.length">
       <thead>
         <tr>
-          <th>Number</th>
+          <th>#</th>
           <th>Perspectives</th>
-          <th>Strategic Objectives</th>
-          <th>Key Performance Indicators</th>
+          <th>Objectives</th>
+          <th>KPI</th>
           <th>Unit</th>
-          <th>Description of KPI</th>
-
-          <!-- ✅ Auto -->
           <th>Weightage (%)</th>
-
-          <!-- ✅ User -->
-          <th>Points Applicable</th>
-
+          <th>Points</th>
           <th>Actions</th>
         </tr>
       </thead>
-
       <tbody>
-        <tr *ngFor="let record of records; let idx = index" [class.editing-row]="editingId === record.id">
-          <td>{{ idx + 1 }}</td>
+        <tr *ngFor="let record of records; let i = index">
+          <td>{{ i + 1 }}</td>
           <td>{{ record.perspectives }}</td>
           <td>{{ record.strategicObjectives }}</td>
           <td>{{ record.keyPerformanceIndicators }}</td>
           <td>{{ record.unit }}</td>
-          <td>{{ record.descriptionOfKPI }}</td>
-
-          <!-- ✅ normalized % from points -->
           <td>{{ getComputedWeightageForRecord(record) }}</td>
-
           <td>{{ record.pointsApplicable }}</td>
-
           <td>
-            <button type="button" class="edit" (click)="onEdit(record)" [disabled]="saving">Edit</button>
-            <button type="button" class="delete" (click)="onDelete(record.id)" [disabled]="saving">Delete</button>
+            <button type="button" class="edit" (click)="onEdit(record)">Edit</button>
+            <button type="button" class="delete" (click)="onDelete(record.id)">Delete</button>
           </td>
         </tr>
       </tbody>

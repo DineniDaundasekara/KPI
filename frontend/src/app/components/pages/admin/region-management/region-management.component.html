@@ -1,7 +1,7 @@
 <div class="region-page">
   <!-- HEADER -->
   <header class="region-header">
-    <div class="header-left">
+    <div class="header-center">
       <p class="eyebrow">Admin / Region Data</p>
       <h1>{{ pageTitle }}</h1>
       <p class="subtitle">
@@ -19,97 +19,60 @@
 
   <!-- ADD REGION FORM (ALWAYS SHOWN) -->
   <section class="card form-card">
-    <div class="form-card-header">
-      <h2>Add New Region</h2>
+  <div class="form-card-header">
+    <h2>Add new region</h2>
+  </div>
 
-      <button class="ghost-icon-btn" type="button" (click)="closeForm()">
-        ✕
-      </button>
+  <form #regionForm="ngForm" (ngSubmit)="onSubmit(regionForm)" class="region-form">
+    
+    <div class="form-group">
+      <input
+        type="text"
+        name="region"
+        [(ngModel)]="formData.region"
+        required
+        placeholder="Region"
+      />
     </div>
 
-    <p class="form-subtitle">
-      Fill in the fields below to create a new region entry.
-    </p>
-
-    <form
-      #regionForm="ngForm"
-      (ngSubmit)="onSubmit(regionForm)"
-      class="region-form"
-    >
-      <div class="form-row">
-        <div class="form-group">
-          <label for="region">Region *</label>
-          <input
-            id="region"
-            type="text"
-            name="region"
-            [(ngModel)]="formData.region"
-            required
-            placeholder="e.g. Region 5"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="province">Province *</label>
-          <input
-            id="province"
-            type="text"
-            name="province"
-            [(ngModel)]="formData.province"
-            required
-            placeholder="e.g. WP North"
-          />
-        </div>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="networkEngineer">Network Engineer *</label>
-          <input
-            id="networkEngineer"
-            type="text"
-            name="networkEngineer"
-            [(ngModel)]="formData.networkengineer"
-            required
-            placeholder="Enter lead engineer"
-          />
-        </div>
-
-        <div class="form-group">
-          <label for="lea">LEA *</label>
-          <input
-            id="lea"
-            type="text"
-            name="lea"
-            [(ngModel)]="formData.leacode"
-            required
-            placeholder="Enter LEA code"
-          />
-        </div>
-      </div>
-
-      <div class="form-buttons">
-        <button class="primary-btn" type="submit" [disabled]="isSubmitting">
-          {{ isSubmitting ? "Processing..." : "Add region" }}
-        </button>
-
-        <button
-          class="secondary-btn"
-          type="button"
-          (click)="closeForm(regionForm)"
-        >
-          Clear
-        </button>
-      </div>
-    </form>
-
-    <div *ngIf="error" class="message error-message">
-      {{ error }}
+    <div class="form-group">
+      <input
+        type="text"
+        name="province"
+        [(ngModel)]="formData.province"
+        required
+        placeholder="Province"
+      />
     </div>
-    <div *ngIf="success" class="message success-message">
-      {{ success }}
+
+    <div class="form-group">
+      <input
+        type="text"
+        name="networkEngineer"
+        [(ngModel)]="formData.networkengineer"
+        required
+        placeholder="Network Engineer"
+      />
     </div>
-  </section>
+
+    <div class="form-group">
+      <input
+        type="text"
+        name="lea"
+        [(ngModel)]="formData.leacode"
+        required
+        placeholder="LEA"
+      />
+    </div>
+
+    <button class="primary-btn" type="submit" [disabled]="isSubmitting">
+      {{ isSubmitting ? "Processing..." : "Add" }}
+    </button>
+  </form>
+
+  <div *ngIf="error" class="message error-message">{{ error }}</div>
+  <div *ngIf="success" class="message success-message">{{ success }}</div>
+</section>
 
   <!-- TABLE SECTION -->
   <section class="card table-card">
