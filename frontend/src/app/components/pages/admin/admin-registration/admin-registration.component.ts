@@ -10,9 +10,9 @@ import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule, HttpErrorResponse } from '@angular/common/http';
 
 interface AdminUser {
-  id: string;
+  userId: number;       // Matches Backend UserDto.UserId
   name: string;
-  serviceNumber: string;
+  serviceId: string;    // Matches Backend UserDto.ServiceId
   role?: string;
   isActive: boolean;
   createdAt: string;
@@ -22,9 +22,10 @@ interface AdminUser {
 
 interface CreateAdminRequest {
   name: string;
-  serviceNumber: string;
+  serviceId: string;
   role?: string;
   pages?: string[];
+  isActive: boolean;
 }
 
 @Component({
@@ -53,22 +54,33 @@ export class AdminRegistrationComponent implements OnInit {
   // ✅ Change this if your backend port changes
   private readonly apiBase = 'http://localhost:5043/api/users';
 
-  constructor(private fb: FormBuilder, private http: HttpClient) {}
+  eligibleUsers: AdminUser[] = [];
+  selectedUserId: number | null = null;
+
+  constructor(private fb: FormBuilder, private http: HttpClient) { }
 
   ngOnInit(): void {
     this.buildForm();
     this.loadAdminsFromApi();
+    this.loadEligibleUsers();
   }
 
   private buildForm(): void {
     this.adminForm = this.fb.group({
-      name: ['', [Validators.required, Validators.minLength(2)]],
-      serviceNumber: ['', [
-        Validators.required,
-        Validators.pattern(/^[0-9]{6}$/)
-      ]],
-      // Optional: if you later want role selection from UI
-      role: ['admin'],
+      userId: ['', Validators.required] // Select user ID instead of typing name/serviceId
+    });
+  }
+
+  // Load ALL users to find eligible ones (User/PlatformAdmin)
+  loadEligibleUsers(): void {
+    this.http.get<AdminUser[]>(`${this.apiBase}`).subscribe({ // GET /api/users
+      next: (data) => {
+        // Filter out SuperAdmins and Admins (already in the list)
+        this.eligibleUsers = (data ?? []).filter(u => u.role !== 'SuperAdmin' && u.role !== 'Admin');
+      },
+      error: (err) => {
+        console.error('Failed to load eligible users', err);
+      }
     });
   }
 
@@ -88,14 +100,13 @@ export class AdminRegistrationComponent implements OnInit {
 
   toggleFormVisibility(): void {
     this.isFormVisible = !this.isFormVisible;
+    if (this.isFormVisible) {
+      this.loadEligibleUsers(); // Refresh list when opening form
+    }
   }
 
-  get nameCtrl() {
-    return this.adminForm.get('name');
-  }
-
-  get serviceNumberCtrl() {
-    return this.adminForm.get('serviceNumber');
+  get userIdCtrl() {
+    return this.adminForm.get('userId');
   }
 
   getActiveCount(): number {
@@ -106,7 +117,7 @@ export class AdminRegistrationComponent implements OnInit {
     return this.admins.filter((a) => !a.isActive).length;
   }
 
-  // ✅ CREATE ADMIN (POST)
+  // ✅ PROMOTE USER TO ADMIN (PATCH)
   onSubmit(): void {
     if (this.adminForm.invalid || this.isSubmitting) return;
 
@@ -114,52 +125,56 @@ export class AdminRegistrationComponent implements OnInit {
     this.successMessage = '';
     this.isSubmitting = true;
 
-    const payload: CreateAdminRequest = {
-      name: (this.adminForm.get('name')?.value ?? '').trim(),
-      serviceNumber: (this.adminForm.get('serviceNumber')?.value ?? '').trim(),
-      role: (this.adminForm.get('role')?.value ?? 'admin')?.trim() || 'admin',
-      pages: [], // your UI currently doesn’t collect pages, so keep empty
-    };
+    const userId = Number(this.adminForm.get('userId')?.value);
+    const userToPromote = this.eligibleUsers.find(u => u.userId === userId);
 
-    this.http.post<AdminUser>(`${this.apiBase}/admins`, payload).subscribe({
-      next: (created) => {
-        // add to top
-        this.admins = [created, ...this.admins];
+    if (!userToPromote) {
+      this.errorMessage = 'Selected user not found.';
+      this.isSubmitting = false;
+      return;
+    }
+
+    this.http.patch(`${this.apiBase}/${userId}/promote`, {}).subscribe({
+      next: () => {
+        // Update local arrays
+        userToPromote.role = 'Admin';
+        this.admins = [userToPromote, ...this.admins];
+        this.eligibleUsers = this.eligibleUsers.filter(u => u.userId !== userId);
         this.applyFilters();
 
-        this.successMessage = `Admin "${created.name}" created successfully.`;
-        this.adminForm.reset({ role: 'admin' });
+        this.successMessage = `User "${userToPromote.name}" promoted to Admin successfully.`;
+        this.adminForm.reset();
         this.isSubmitting = false;
 
         setTimeout(() => (this.successMessage = ''), 3000);
       },
       error: (err) => {
-        this.errorMessage = this.getApiError(err, 'Failed to create admin.');
+        this.errorMessage = this.getApiError(err, 'Failed to promote user.');
         this.isSubmitting = false;
       },
     });
   }
 
-  // ✅ DELETE (DELETE)
-  deleteAdmin(id: string): void {
-    const admin = this.admins.find((a) => a.id === id);
+  // ✅ DEMOTE ADMIN (PATCH)
+  deleteAdmin(id: number): void {
+    const admin = this.admins.find((a) => a.userId === id);
     if (!admin) return;
 
-    if (!window.confirm(`Delete admin "${admin.name}" (${admin.serviceNumber})?`)) return;
+    if (!window.confirm(`Remove admin privileges from "${admin.name}" (${admin.serviceId})? They will become a regular User.`)) return;
 
     this.errorMessage = '';
     this.successMessage = '';
 
-    this.http.delete(`${this.apiBase}/${id}`).subscribe({
+    this.http.patch(`${this.apiBase}/${id}/demote`, {}).subscribe({
       next: () => {
-        this.admins = this.admins.filter((a) => a.id !== id);
+        this.admins = this.admins.filter((a) => a.userId !== id);
         this.applyFilters();
 
-        this.successMessage = `Admin "${admin.name}" deleted successfully.`;
+        this.successMessage = `Admin "${admin.name}" removed from admin list (demoted to User).`;
         setTimeout(() => (this.successMessage = ''), 3000);
       },
       error: (err) => {
-        this.errorMessage = this.getApiError(err, 'Failed to delete admin.');
+        this.errorMessage = this.getApiError(err, 'Failed to remove admin.');
       },
     });
   }
@@ -174,7 +189,7 @@ export class AdminRegistrationComponent implements OnInit {
     admin.isActive = !admin.isActive;
     this.applyFilters();
 
-    this.http.patch(`${this.apiBase}/${admin.id}/status`, {}).subscribe({
+    this.http.patch(`${this.apiBase}/${admin.userId}/status`, {}).subscribe({
       next: () => {
         this.successMessage = `Admin "${admin.name}" ${admin.isActive ? 'activated' : 'deactivated'}.`;
         setTimeout(() => (this.successMessage = ''), 2000);
@@ -213,7 +228,7 @@ export class AdminRegistrationComponent implements OnInit {
       data = data.filter(
         (admin) =>
           admin.name?.toLowerCase().includes(normalizedSearch) ||
-          admin.serviceNumber?.includes(normalizedSearch)
+          admin.serviceId?.includes(normalizedSearch)
       );
     }
 
@@ -249,8 +264,8 @@ export class AdminRegistrationComponent implements OnInit {
       : date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
   }
 
-  trackByAdmin(_: number, admin: AdminUser): string {
-    return admin.id;
+  trackByAdmin(_: number, admin: AdminUser): number {
+    return admin.userId;
   }
 
   private getApiError(err: any, fallback: string): string {

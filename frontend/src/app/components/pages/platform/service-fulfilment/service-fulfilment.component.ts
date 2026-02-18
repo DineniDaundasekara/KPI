@@ -5,6 +5,7 @@ import { ToastrService } from 'ngx-toastr';
 import * as XLSX from 'xlsx';
 import { ServiceFulfilmentKpiDto, ServiceFulfilmentKpiService, ServiceFulfilmentMetricDto, UpsertServiceFulfilmentMetricRequest } from '../../../../services/service-fulfilment-kpi.service';
 import { RegionService, Region } from '../../../../services/region.service';
+import { AuthService } from '../../../../services/auth.service';
 
 interface KpiData {
   _id: { $oid: string } | number;
@@ -72,7 +73,7 @@ export class ServiceFulfilmentComponent implements OnInit {
   loading = true;
   error: string | null = null;
   isEditingAllowed = true;
-  userRole: string = 'user';
+  userRole: string = 'User';
   private editingMessageShown = false;
   
   // Constants
@@ -179,16 +180,17 @@ export class ServiceFulfilmentComponent implements OnInit {
   constructor(
     private toastr: ToastrService,
     private serviceFulfilmentKpiService: ServiceFulfilmentKpiService,
-    private regionService: RegionService
+    private regionService: RegionService,
+    private authService: AuthService
   ) {
     this.yearOptions = this.generateYearOptions();
   }
 
   toggleRoleSimulation() {
-    this.userRole = this.userRole === 'padmin' ? 'user' : 'padmin';
+    this.userRole = this.userRole === 'PlatformAdmin' ? 'User' : 'PlatformAdmin';
     this.recomputeEditPermission();
     this.toastr.info(
-      `Simulated as ${this.userRole === 'padmin' ? 'Platform Admin' : 'User'}.`,
+      `Simulated as ${this.userRole === 'PlatformAdmin' ? 'Platform Admin' : 'User'}.`,
       'Role Simulation'
     );
   }
@@ -293,14 +295,7 @@ export class ServiceFulfilmentComponent implements OnInit {
   }
 
   checkUserRole() {
-    // In real app, get from auth service or localStorage
-    const token = localStorage.getItem('token');
-    if (token) {
-      // Decode token or make API call to get role
-      this.userRole = 'padmin'; // Default for testing
-    } else {
-      this.userRole = 'user';
-    }
+    this.userRole = this.authService.getRole() ?? 'User';
     this.recomputeEditPermission();
   }
 
@@ -319,9 +314,8 @@ export class ServiceFulfilmentComponent implements OnInit {
   }
 
   private recomputeEditPermission() {
-    const roleAllowsEdit = this.userRole === 'padmin';
-    const hasAreaFilter = !!this.formValues.dropdown4;
-    this.isEditingAllowed = roleAllowsEdit && hasAreaFilter;
+    const roleAllowsEdit = this.authService.canEditPage('SERVICE FULFILMENT');
+    this.isEditingAllowed = roleAllowsEdit;
   }
 
   private generateYearOptions(span: number = 10): number[] {
@@ -918,10 +912,10 @@ export class ServiceFulfilmentComponent implements OnInit {
 
     if (!this.isEditingAllowed) {
       if (!this.editingMessageShown) {
-        if (this.userRole !== 'padmin') {
+        if (this.userRole !== 'PlatformAdmin') {
           this.toastr.error('Only Platform Admins can edit KPI values.', 'Access Denied');
         } else {
-          this.toastr.info('Select an RTOM area to enable inline editing.', 'Filter Required');
+          this.toastr.info('You do not currently have edit permission on this page.', 'Edit Disabled');
         }
         this.editingMessageShown = true;
         setTimeout(() => (this.editingMessageShown = false), 3000);

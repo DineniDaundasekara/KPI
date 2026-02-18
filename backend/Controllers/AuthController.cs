@@ -47,7 +47,18 @@ namespace backend.Controllers
             user.LastLogin = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            return Ok(new { token, user.Name, Role = user.Role?.RoleName });
+            // 5. Get Allowed Pages
+            var pages = await _context.UserPageAccess
+                .Where(upa => upa.UserId == user.UserId)
+                .Select(upa => upa.Page.PageName) // Or PageCode/PageId depending on what frontend needs
+                .ToListAsync();
+
+            var assignedPages = await _context.PlatformKpiAssignments
+                .Where(pka => pka.UserId == user.UserId)
+                .Select(pka => pka.Page.PageName)
+                .ToListAsync();
+
+            return Ok(new { token, user.Name, Role = user.Role?.RoleName, Pages = pages, AssignedPages = assignedPages });
         }
 
         private string GenerateJwtToken(User user)
@@ -61,7 +72,9 @@ namespace backend.Controllers
             {
                 new Claim(ClaimTypes.NameIdentifier, user.ServiceId),
                 new Claim("ServiceId", user.ServiceId), // Custom claim
+                new Claim("serviceId", user.ServiceId),
                 new Claim(ClaimTypes.Role, user.Role?.RoleName ?? "User"),
+                new Claim("role", user.Role?.RoleName ?? "User"),
                 new Claim("UserId", user.UserId.ToString())
             };
 

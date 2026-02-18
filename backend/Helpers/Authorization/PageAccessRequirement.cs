@@ -30,6 +30,13 @@ namespace backend.Helpers.Authorization
                 return Task.CompletedTask;
             }
 
+            // PlatformAdmin can view all pages (edit is restricted by EditPlatformKpiPolicy)
+            if (context.User.HasClaim(c => c.Type == "role" && c.Value == "PlatformAdmin"))
+            {
+                context.Succeed(requirement);
+                return Task.CompletedTask;
+            }
+
             // Extract PageId from Route or Query
             var httpContext = _httpContextAccessor.HttpContext;
             if (httpContext == null) return Task.CompletedTask;

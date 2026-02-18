@@ -60,42 +60,37 @@
 /* =========================
    HEADER
    ========================= */
+/* =========================
+   CENTERED HEADER
+   ========================= */
 .region-header {
   display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
+  flex-direction: column; /* Stack elements vertically */
+  align-items: center;    /* Center horizontally */
+  justify-content: center;
+  text-align: center;     /* Center the text inside the divs */
+  gap: 1.5rem;            /* Space between text and the pill */
+  margin-bottom: 3rem;    /* Space before the form card */
+  width: 100%;
 }
 
-.header-left h1 {
-  margin: 0;
-  font-size: clamp(1.8rem, 3vw, 2.4rem);
-  font-weight: 600;
-  letter-spacing: 0.3px;
+.header-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header-center h1 {
+  margin: 0.5rem 0;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 700;
   color: #0f1b2c;
 }
 
-.eyebrow {
-  text-transform: uppercase;
-  font-size: 0.75rem;
-  letter-spacing: 0.16em;
-  color: #1f7ae0;
-  margin-bottom: 0.2rem;
-}
-
 .subtitle {
-  margin-top: 0.3rem;
-  color: #1d3557;
-  opacity: 0.85;
-  font-size: 0.95rem;
-}
-
-.header-right {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  max-width: 600px; /* Prevents text from stretching too wide */
+  margin: 0 auto;
+  line-height: 1.5;
 }
 
 .count-pill {
@@ -119,32 +114,86 @@
 }
 
 /* form card */
+/* Container for the form to ensure it centers on the page */
 .form-card {
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-
-  width: min(820px, 100%);   /* ✅ reduce card width (try 700px too) */
-  margin-left: auto;         /* ✅ center */
-  margin-right: auto;
-}
-
-.form-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  background: #ffffff;
+  border-radius: 24px;
+  padding: 2.5rem;
+  width: 100%;
+  max-width: 440px; /* Specific narrow width from image */
+  margin: 0 auto 3rem auto; /* Centers the card */
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.03);
 }
 
 .form-card-header h2 {
-  margin: 0;
-  font-size: 1.3rem;
-  color: #0f1b2c;
-  font-weight: 600;
+  margin: 0 0 2rem 0;
+  font-size: 1.5rem;
+  color: #102136;
+  font-weight: 700;
+  text-align: left;
 }
 
-.form-subtitle {
-  margin: 0.5rem 0 1rem 0;
-  font-size: 0.9rem;
-  color: rgba(29, 53, 87, 0.85);
+.region-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.form-group {
+  width: 100%;
+}
+
+/* Hide labels as per image design */
+.form-group label {
+  display: none;
+}
+
+.form-group input {
+  width: 100%;
+  box-sizing: border-box; /* Ensures padding doesn't break width */
+  padding: 1.1rem 1.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  font-size: 1rem;
+  background: #f8fafc;
+  color: #102136;
+  transition: all 0.2s ease;
+}
+
+.form-group input::placeholder {
+  color: #94a3b8;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #1d4ed8;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px #1d4ed8;
+}
+
+/* Primary "Add" Button */
+.primary-btn {
+  width: 100%;
+  padding: 1.1rem;
+  margin-top: 0.5rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #ffffff;
+  cursor: pointer;
+  background: linear-gradient(to right, #2563eb, #0f46b9);
+  transition: opacity 0.2s ease;
+}
+
+.primary-btn:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.primary-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* table card */
@@ -515,7 +564,7 @@
   .row-actions {
     gap: 10px;
   }
-
+f
   .mini-btn {
     padding: 8px 14px;
     font-size: 13px;

@@ -59,6 +59,7 @@ namespace backend.Helpers.Authorization
 
             if (pageIdObj != null && int.TryParse(pageIdObj.ToString(), out int pageId))
             {
+                // Only assigned KPI pages are editable
                 var assignedPages = user.FindAll("assignedKpiPages").Select(c => c.Value).ToList();
                 if (assignedPages.Contains(pageId.ToString()))
                 {

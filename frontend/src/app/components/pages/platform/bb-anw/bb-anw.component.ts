@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { AuthService } from '../../../../services/auth.service';
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RegionService, Region } from '../../../../services/region.service';
@@ -84,7 +84,6 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 	error: string | null = null;
 	cellSaving = false;
 
-	role: string | null = null;
 	isEditingAllowed = false;
 	devRoleOverride: 'padmin' | 'user' | null = null;
 
@@ -161,15 +160,15 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 	private filtersInitialized = false;
 
 	constructor(
-		private http: HttpClient,
 		private regionService: RegionService,
-		private bbAnwService: BbAnwService
+		private bbAnwService: BbAnwService,
+		private authService: AuthService
 	) {}
 
 	ngOnInit(): void {
 		this.buildFriendlyMap();
 		this.initializePeriodDefaults();
-		this.loadRole();
+		this.refreshEditPermission();
 		this.loadRegionTable();
 		this.initializeFilters();
 		this.loadData();
@@ -282,7 +281,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 			return;
 		}
 
-		this.isEditingAllowed = this.role === 'padmin';
+		this.isEditingAllowed = this.authService.canEditPage('BB ANW');
 	}
 
 	toggleRoleOverride(): void {
@@ -299,27 +298,6 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 		this.showToast('success', `Role override: ${label}`);
 	}
 
-	loadRole(): void {
-		const token = localStorage.getItem('token');
-		if (!token) {
-			this.role = null;
-			this.isEditingAllowed = false;
-			return;
-		}
-
-		const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
-		this.http.get<any>('/auth/current-role', { headers }).subscribe({
-			next: (res) => {
-				this.role = res?.role ?? null;
-				this.refreshEditPermission();
-			},
-			error: () => {
-				this.role = null;
-				this.isEditingAllowed = false;
-				this.error = 'Failed to fetch role. Please log in again.';
-			},
-		});
-	}
 
 	loadRegionTable(): void {
 		this.regionService.getAll().subscribe({

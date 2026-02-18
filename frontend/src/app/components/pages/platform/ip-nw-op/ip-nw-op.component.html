@@ -9,32 +9,16 @@
         {{ data.length }} KPIs loaded •
         <span [class.text-success]="isEditingAllowed" [class.text-warning]="!isEditingAllowed">
           <i class="bi" [ngClass]="isEditingAllowed ? 'bi-check-circle' : 'bi-exclamation-circle'"></i>
-          {{ isEditingAllowed ? 'Edit mode enabled (Platform Admin)' : 'View only mode (User)' }}
+          {{ isEditingAllowed ? 'Edit mode enabled' : 'View only mode' }}
         </span>
       </small>
-
-      <button
-        type="button"
-        class="btn btn-outline-secondary btn-sm ms-3"
-        (click)="toggleRoleOverride()"
-      >
-        Simulate Role ·
-        <strong>{{ devRoleOverride ? devRoleOverride.toUpperCase() : 'LIVE' }}</strong>
-      </button>
     </div>
   </div>
 
   <!-- Toasts (simple, built-in) -->
   <div class="toast-host">
-    <div
-      class="toast-msg"
-      *ngFor="let t of toasts"
-      [class.toast-success]="t.type === 'success'"
-      [class.toast-danger]="t.type === 'danger'"
-      (click)="dismissToast(t.id)"
-      role="alert"
-      aria-live="polite"
-    >
+    <div class="toast-msg" *ngFor="let t of toasts" [class.toast-success]="t.type === 'success'"
+      [class.toast-danger]="t.type === 'danger'" (click)="dismissToast(t.id)" role="alert" aria-live="polite">
       <span class="me-2">
         <i class="bi" [ngClass]="t.type === 'success' ? 'bi-check-circle' : 'bi-x-circle'"></i>
       </span>
@@ -66,42 +50,27 @@
       <div class="row g-3">
         <div class="col-md-3">
           <label for="monthSelect" class="form-label">Month:</label>
-          <select
-            id="monthSelect"
-            class="form-select"
-            [(ngModel)]="selectedMonth"
-            (change)="onMonthYearChange()"
-            name="month"
-          >
+          <select id="monthSelect" class="form-select" [(ngModel)]="selectedMonth" (change)="onMonthYearChange()"
+            name="month">
             <option *ngFor="let m of [1,2,3,4,5,6,7,8,9,10,11,12]" [value]="m">
-              {{ ['January', 'February', 'March', 'April', 'May', 'June', 
-                  'July', 'August', 'September', 'October', 'November', 'December'][m-1] }}
+              {{ ['January', 'February', 'March', 'April', 'May', 'June',
+              'July', 'August', 'September', 'October', 'November', 'December'][m-1] }}
             </option>
           </select>
         </div>
-        
+
         <div class="col-md-3">
           <label for="yearSelect" class="form-label">Year:</label>
-          <select
-            id="yearSelect"
-            class="form-select"
-            [(ngModel)]="selectedYear"
-            (change)="onMonthYearChange()"
-            name="year"
-          >
+          <select id="yearSelect" class="form-select" [(ngModel)]="selectedYear" (change)="onMonthYearChange()"
+            name="year">
             <option *ngFor="let y of [2023,2024,2025,2026,2027,2028]" [value]="y">{{ y }}</option>
           </select>
         </div>
 
         <div class="col-md-3">
           <label for="dropdown1" class="form-label">R-GM:</label>
-          <select
-            id="dropdown1"
-            class="form-select"
-            [(ngModel)]="formValues.dropdown1"
-            name="dropdown1"
-            (change)="onDropdownChange('dropdown1', $any($event.target)?.value || '')"
-          >
+          <select id="dropdown1" class="form-select" [(ngModel)]="formValues.dropdown1" name="dropdown1"
+            (change)="onDropdownChange('dropdown1', $any($event.target)?.value || '')">
             <option value="">Select an option</option>
             <option *ngFor="let r of regions" [value]="r">{{ r }}</option>
           </select>
@@ -109,14 +78,9 @@
 
         <div class="col-md-3">
           <label for="dropdown2" class="form-label">P-DGM:</label>
-          <select
-            id="dropdown2"
-            class="form-select"
-            [(ngModel)]="formValues.dropdown2"
-            name="dropdown2"
+          <select id="dropdown2" class="form-select" [(ngModel)]="formValues.dropdown2" name="dropdown2"
             [disabled]="!formValues.dropdown1"
-            (change)="onDropdownChange('dropdown2', $any($event.target)?.value || '')"
-          >
+            (change)="onDropdownChange('dropdown2', $any($event.target)?.value || '')">
             <option value="">Select an option</option>
             <option *ngFor="let p of dropdown2Options" [value]="p">{{ p }}</option>
           </select>
@@ -124,14 +88,9 @@
 
         <div class="col-md-3">
           <label for="dropdown3" class="form-label">NW EE:</label>
-          <select
-            id="dropdown3"
-            class="form-select"
-            [(ngModel)]="formValues.dropdown3"
-            name="dropdown3"
+          <select id="dropdown3" class="form-select" [(ngModel)]="formValues.dropdown3" name="dropdown3"
             [disabled]="!formValues.dropdown2"
-            (change)="onDropdownChange('dropdown3', $any($event.target)?.value || '')"
-          >
+            (change)="onDropdownChange('dropdown3', $any($event.target)?.value || '')">
             <option value="">Select an option</option>
             <option *ngFor="let e of dropdown3Options" [value]="e">{{ e }}</option>
           </select>
@@ -139,14 +98,9 @@
 
         <div class="col-md-3">
           <label for="dropdown4" class="form-label">RTOM AREA:</label>
-          <select
-            id="dropdown4"
-            class="form-select"
-            [(ngModel)]="formValues.dropdown4"
-            name="dropdown4"
+          <select id="dropdown4" class="form-select" [(ngModel)]="formValues.dropdown4" name="dropdown4"
             [disabled]="!formValues.dropdown3"
-            (change)="onDropdownChange('dropdown4', $any($event.target)?.value || '')"
-          >
+            (change)="onDropdownChange('dropdown4', $any($event.target)?.value || '')">
             <option value="">Select an option</option>
             <option *ngFor="let a of dropdown4Options" [value]="a">
               {{ optionMapping[a] || a }}
@@ -174,9 +128,9 @@
         <span class="filter-label">RTOM AREA:</span>
         <span class="filter-value">
           {{
-            formValues.dropdown4
-              ? (optionMapping[formValues.dropdown4] || formValues.dropdown4)
-              : 'Select an option'
+          formValues.dropdown4
+          ? (optionMapping[formValues.dropdown4] || formValues.dropdown4)
+          : 'Select an option'
           }}
         </span>
       </div>
@@ -275,23 +229,14 @@
                       <td class="metric-cell" [class.can-edit]="canEditMetrics">
                         <ng-container *ngIf="isCellEditing(row.id, 'unavailable_minutes'); else unavailableView">
                           <div class="edit-box">
-                            <input
-                              type="number"
-                              class="form-control form-control-sm"
-                              [ngModel]="editCell.value"
-                              (ngModelChange)="onEditInput($event)"
-                              (keydown)="handleEditKey($event)"
-                              placeholder="Enter minutes"
-                            />
+                            <input type="number" class="form-control form-control-sm" [ngModel]="editCell.value"
+                              (ngModelChange)="onEditInput($event)" (keydown)="handleEditKey($event)"
+                              placeholder="Enter minutes" />
                             <div class="edit-actions">
                               <button type="button" class="table-button" (click)="doneEdit()">
                                 Save
                               </button>
-                              <button
-                                type="button"
-                                class="table-button btn-outline-warning"
-                                (click)="cancelEdit()"
-                              >
+                              <button type="button" class="table-button btn-outline-warning" (click)="cancelEdit()">
                                 Cancel
                               </button>
                             </div>
@@ -300,12 +245,8 @@
                         <ng-template #unavailableView>
                           <div class="cell-view">
                             <span>{{ getAreaMetric(row, 'unavailable_minutes') }}</span>
-                            <button
-                              *ngIf="canEditMetrics"
-                              type="button"
-                              class="table-button btn-outline-warning"
-                              (click)="startEdit(row, 'unavailable_minutes')"
-                            >
+                            <button *ngIf="canEditMetrics" type="button" class="table-button btn-outline-warning"
+                              (click)="startEdit(row, 'unavailable_minutes')">
                               Edit
                             </button>
                           </div>
@@ -318,23 +259,14 @@
                       <td class="metric-cell" [class.can-edit]="canEditMetrics">
                         <ng-container *ngIf="isCellEditing(row.id, 'total_minutes'); else totalMinutesView">
                           <div class="edit-box">
-                            <input
-                              type="number"
-                              class="form-control form-control-sm"
-                              [ngModel]="editCell.value"
-                              (ngModelChange)="onEditInput($event)"
-                              (keydown)="handleEditKey($event)"
-                              placeholder="Enter minutes"
-                            />
+                            <input type="number" class="form-control form-control-sm" [ngModel]="editCell.value"
+                              (ngModelChange)="onEditInput($event)" (keydown)="handleEditKey($event)"
+                              placeholder="Enter minutes" />
                             <div class="edit-actions">
                               <button type="button" class="table-button" (click)="doneEdit()">
                                 Save
                               </button>
-                              <button
-                                type="button"
-                                class="table-button btn-outline-warning"
-                                (click)="cancelEdit()"
-                              >
+                              <button type="button" class="table-button btn-outline-warning" (click)="cancelEdit()">
                                 Cancel
                               </button>
                             </div>
@@ -343,12 +275,8 @@
                         <ng-template #totalMinutesView>
                           <div class="cell-view">
                             <span>{{ getAreaMetric(row, 'total_minutes') }}</span>
-                            <button
-                              *ngIf="canEditMetrics"
-                              type="button"
-                              class="table-button btn-outline-warning"
-                              (click)="startEdit(row, 'total_minutes')"
-                            >
+                            <button *ngIf="canEditMetrics" type="button" class="table-button btn-outline-warning"
+                              (click)="startEdit(row, 'total_minutes')">
                               Edit
                             </button>
                           </div>
@@ -361,23 +289,14 @@
                       <td class="metric-cell" [class.can-edit]="canEditMetrics">
                         <ng-container *ngIf="isCellEditing(row.id, 'total_nodes'); else totalNodesView">
                           <div class="edit-box">
-                            <input
-                              type="number"
-                              class="form-control form-control-sm"
-                              [ngModel]="editCell.value"
-                              (ngModelChange)="onEditInput($event)"
-                              (keydown)="handleEditKey($event)"
-                              placeholder="Enter nodes"
-                            />
+                            <input type="number" class="form-control form-control-sm" [ngModel]="editCell.value"
+                              (ngModelChange)="onEditInput($event)" (keydown)="handleEditKey($event)"
+                              placeholder="Enter nodes" />
                             <div class="edit-actions">
                               <button type="button" class="table-button" (click)="doneEdit()">
                                 Save
                               </button>
-                              <button
-                                type="button"
-                                class="table-button btn-outline-warning"
-                                (click)="cancelEdit()"
-                              >
+                              <button type="button" class="table-button btn-outline-warning" (click)="cancelEdit()">
                                 Cancel
                               </button>
                             </div>
@@ -386,12 +305,8 @@
                         <ng-template #totalNodesView>
                           <div class="cell-view">
                             <span>{{ getAreaMetric(row, 'total_nodes') }}</span>
-                            <button
-                              *ngIf="canEditMetrics"
-                              type="button"
-                              class="table-button btn-outline-warning"
-                              (click)="startEdit(row, 'total_nodes')"
-                            >
+                            <button *ngIf="canEditMetrics" type="button" class="table-button btn-outline-warning"
+                              (click)="startEdit(row, 'total_nodes')">
                               Edit
                             </button>
                           </div>

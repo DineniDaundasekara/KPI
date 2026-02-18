@@ -84,6 +84,37 @@ using (var scope = app.Services.CreateScope())
     try
     {
         var context = services.GetRequiredService<AppDbContext>();
+
+        var roleNames = new[] { "SuperAdmin", "Admin", "PlatformAdmin", "User" };
+        var existingRoles = context.Roles.Select(r => r.RoleName).ToList();
+        var missingRoles = roleNames.Except(existingRoles).ToList();
+        if (missingRoles.Any())
+        {
+            foreach (var roleName in missingRoles)
+            {
+                context.Roles.Add(new backend.Models.Role { RoleName = roleName });
+            }
+            context.SaveChanges();
+        }
+
+        var pageSeeds = new[]
+        {
+            new backend.Models.Page { PageId = 1, PageCode = "IP_NW_OP", PageName = "IP NW OP" },
+            new backend.Models.Page { PageId = 2, PageCode = "SERVICE_FULFILMENT", PageName = "SERVICE FULFILMENT" },
+            new backend.Models.Page { PageId = 3, PageCode = "BB_ANW", PageName = "BB ANW" },
+            new backend.Models.Page { PageId = 4, PageCode = "OTN_OP", PageName = "OTN OP" },
+            new backend.Models.Page { PageId = 5, PageCode = "TM_ACTIVITY", PageName = "TM Activity Plan" },
+            new backend.Models.Page { PageId = 6, PageCode = "ROUTINE_MTNC", PageName = "ROUTINE MTNC" },
+            new backend.Models.Page { PageId = 7, PageCode = "TOWER_MTCE", PageName = "TOWER MTCE ACHIEVEMENT" }
+        };
+
+        var existingPageIds = context.Pages.Select(p => p.PageId).ToList();
+        var missingPages = pageSeeds.Where(p => !existingPageIds.Contains(p.PageId)).ToList();
+        if (missingPages.Any())
+        {
+            context.Pages.AddRange(missingPages);
+            context.SaveChanges();
+        }
         
         // Fix: Ensure Admin has correct Role (SuperAdmin = 1) and Password hash if missing
         var adminUser = context.Users.FirstOrDefault(u => u.ServiceId == "admin");
@@ -94,6 +125,68 @@ using (var scope = app.Services.CreateScope())
                 adminUser.RoleId = 1;
                 context.SaveChanges();
                 Console.WriteLine("Admin user role updated to SuperAdmin.");
+            }
+        }
+
+        var platformAdminRole = context.Roles.FirstOrDefault(r => r.RoleName == "PlatformAdmin");
+        if (platformAdminRole != null)
+        {
+            const string defaultPlatformAdminServiceId = "30001";
+            var platformAdmin = context.Users.FirstOrDefault(u => u.ServiceId == defaultPlatformAdminServiceId);
+            if (platformAdmin == null)
+            {
+                context.Users.Add(new backend.Models.User
+                {
+                    ServiceId = defaultPlatformAdminServiceId,
+                    Name = "Platform Admin",
+                    RoleId = platformAdminRole.RoleId,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    Email = $"{defaultPlatformAdminServiceId}@internal.slt"
+                });
+                context.SaveChanges();
+                Console.WriteLine("Default PlatformAdmin user created.");
+            }
+            else
+            {
+                if (!platformAdmin.IsActive || platformAdmin.RoleId != platformAdminRole.RoleId)
+                {
+                    platformAdmin.IsActive = true;
+                    platformAdmin.RoleId = platformAdminRole.RoleId;
+                    platformAdmin.UpdatedAt = DateTime.UtcNow;
+                    context.SaveChanges();
+                    Console.WriteLine("PlatformAdmin user updated.");
+                }
+            }
+
+            var platformAdmins = context.Users
+                .Where(u => u.RoleId == platformAdminRole.RoleId)
+                .Select(u => u.UserId)
+                .ToList();
+            if (platformAdmins.Any())
+            {
+                const byte serviceFulfilmentPageId = 2;
+                var existingAssignments = context.PlatformKpiAssignments
+                    .Where(a => a.PageId == serviceFulfilmentPageId)
+                    .Select(a => a.UserId)
+                    .ToList();
+
+                var missingAssignments = platformAdmins
+                    .Where(userId => !existingAssignments.Contains(userId))
+                    .Select(userId => new backend.Models.PlatformKpiAssignment
+                    {
+                        UserId = userId,
+                        PageId = serviceFulfilmentPageId,
+                        AssignedAt = DateTime.UtcNow
+                    })
+                    .ToList();
+
+                if (missingAssignments.Any())
+                {
+                    context.PlatformKpiAssignments.AddRange(missingAssignments);
+                    context.SaveChanges();
+                    Console.WriteLine("PlatformAdmin assignments updated for Service Fulfilment.");
+                }
             }
         }
     }

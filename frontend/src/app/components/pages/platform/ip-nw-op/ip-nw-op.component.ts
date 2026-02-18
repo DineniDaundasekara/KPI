@@ -6,6 +6,7 @@ import { firstValueFrom } from 'rxjs';
 import * as ExcelJS from 'exceljs';
 import { IpNwOpService, IpNwOpKpiDto, IpNwOpMetricPayload, IpNwOpMetric } from '../../../../services/ip-nw-op.service';
 import { RegionService, Region } from '../../../../services/region.service';
+import { AuthService } from '../../../../services/auth.service';
 
 interface RegionRow {
   region?: string;
@@ -55,12 +56,6 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   loading = true;
   saving = false;
   error: string | null = null;
-
-  role: string | null = null;
-  isEditingAllowed = false;
-  devRoleOverride: 'padmin' | 'user' | null = null;
-
-  private permissionTimer: any = null;
 
   // Month/Year selection (current month default)
   selectedMonth: number = new Date().getMonth() + 1; // 1-12
@@ -123,22 +118,23 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   constructor(
     private http: HttpClient,
     private ipNwOpService: IpNwOpService,
-    private regionService: RegionService
-  ) {}
+    private regionService: RegionService,
+    private authService: AuthService
+  ) { }
 
   ngOnInit(): void {
     this.buildFriendlyMap();
-    this.loadRole();
     this.loadRegionTable();
     this.initializeFilters();
     this.loadData();
-
-    // keep permission check alive (like your React interval)
-    this.permissionTimer = setInterval(() => this.refreshEditPermission(), 60000);
   }
 
   ngOnDestroy(): void {
-    if (this.permissionTimer) clearInterval(this.permissionTimer);
+    // Cleanup if needed
+  }
+
+  get isEditingAllowed(): boolean {
+    return this.authService.canEditPage('IP NW OP');
   }
 
   // -------------------------
@@ -197,12 +193,12 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
 
   getAreaPercentage(entry: IpNwOpKpiDto): string {
     if (!this.selectedKey) return '-';
-    
+
     // Find metric for this KPI and area
     const metric = this.metrics.find(
       m => m.ip_nw_op_kpi_id === entry.id && m.area_code === this.selectedKey
     );
-    
+
     if (!metric || metric.total_minutes === undefined || metric.unavailable_minutes === undefined || metric.total_nodes === undefined) {
       return '-';
     }
@@ -216,14 +212,14 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
     bucket: 'total_minutes' | 'unavailable_minutes' | 'total_nodes'
   ): string {
     if (!this.selectedKey) return '-';
-    
+
     // Find metric for this KPI and area
     const metric = this.metrics.find(
       m => m.ip_nw_op_kpi_id === entry.id && m.area_code === this.selectedKey
     );
-    
+
     if (!metric) return '-';
-    
+
     const value = metric[bucket];
     return value === undefined || value === null ? '-' : String(value);
   }
@@ -249,52 +245,7 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
   // -------------------------
   // API Calls
   // -------------------------
-  loadRole(): void {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      this.role = null;
-      this.isEditingAllowed = false;
-      return;
-    }
-
-    const headers = new HttpHeaders({ Authorization: `Bearer ${token}` });
-
-    this.http.get<any>('/auth/current-role', { headers }).subscribe({
-      next: (res) => {
-        this.role = res?.role ?? null;
-        this.refreshEditPermission();
-      },
-      error: () => {
-        this.error = 'Failed to fetch role. Please log in again.';
-        this.role = null;
-        this.isEditingAllowed = false;
-      },
-    });
-  }
-
-  private refreshEditPermission(): void {
-    if (this.devRoleOverride) {
-      this.isEditingAllowed = this.devRoleOverride === 'padmin';
-      return;
-    }
-
-    // keep same behavior: platform admin can edit
-    this.isEditingAllowed = this.role === 'padmin';
-  }
-
-  toggleRoleOverride(): void {
-    if (!this.devRoleOverride) {
-      this.devRoleOverride = 'padmin';
-    } else if (this.devRoleOverride === 'padmin') {
-      this.devRoleOverride = 'user';
-    } else {
-      this.devRoleOverride = null;
-    }
-
-    this.refreshEditPermission();
-    const label = this.devRoleOverride ? this.devRoleOverride.toUpperCase() : 'LIVE ROLE';
-    this.showToast('success', `Role override: ${label}`);
-  }
+  // Legacy auth methods removed
 
   loadRegionTable(): void {
     this.regionService.getAll().subscribe({
@@ -430,13 +381,13 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
 
   private initializeFilters(): void {
     if (this.filtersInitialized) return;
-    
+
     // Don't auto-select, leave all as empty strings
     this.formValues.dropdown1 = '';
     this.formValues.dropdown2 = '';
     this.formValues.dropdown3 = '';
     this.formValues.dropdown4 = '';
-    
+
     this.filtersInitialized = true;
   }
 
@@ -505,12 +456,12 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
 
     const k = this.selectedKey;
     const nestedKey = `${key}.${k}`;
-    
+
     // Find the current metric value
     const metric = this.metrics.find(
       m => m.ip_nw_op_kpi_id === entry.id && m.area_code === k
     );
-    
+
     const currentVal = metric ? metric[key] : null;
 
     this.editCell = {

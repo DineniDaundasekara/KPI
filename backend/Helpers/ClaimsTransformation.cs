@@ -27,7 +27,9 @@ namespace backend.Helpers
             
             // Extract ServiceId from Azure AD token
             // Assuming the claim type for ServiceId is "serviceId" as requested or fallback
-            var serviceIdClaim = principal.FindFirst("serviceId") 
+            var serviceIdClaim = principal.FindFirst("serviceId")
+                                 ?? principal.FindFirst("ServiceId")
+                                 ?? principal.FindFirst(ClaimTypes.NameIdentifier)
                                  ?? principal.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name")
                                  ?? principal.FindFirst("preferred_username"); 
             

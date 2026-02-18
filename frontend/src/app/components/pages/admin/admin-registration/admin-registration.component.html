@@ -7,12 +7,7 @@
       <p class="page-subtitle">Register Admin & Delete Admin</p>
     </div>
 
-    <button
-      type="button"
-      class="toggle-form-btn"
-      (click)="toggleFormVisibility()"
-      [attr.aria-expanded]="isFormVisible"
-    >
+    <button type="button" class="toggle-form-btn" (click)="toggleFormVisibility()" [attr.aria-expanded]="isFormVisible">
       <span class="material-symbols-outlined">{{ isFormVisible ? 'close' : 'person_add' }}</span>
       {{ isFormVisible ? 'Hide Form' : 'Add New Administrator' }}
     </button>
@@ -58,58 +53,35 @@
         <div class="col-lg-4 col-xl-3" *ngIf="isFormVisible">
           <div class="sidebar-card">
             <div class="sidebar-header">
-              <h2 class="sidebar-title">Create new Admin</h2>
-              <p class="sidebar-subtitle">Add new administrators</p>
+              <h2 class="sidebar-title">Promote User</h2>
+              <p class="sidebar-subtitle">Grant admin privileges to existing users</p>
             </div>
 
             <form [formGroup]="adminForm" (ngSubmit)="onSubmit()" class="admin-form">
-              <!-- Name Field -->
+              <!-- Select User Field -->
               <div class="form-group">
                 <div class="input-group-wrapper">
                   <div class="input-icon">
-                    <i class="bi bi-person-fill"></i>
+                    <i class="bi bi-person-badge"></i>
                   </div>
                   <div class="form-floating flex-grow-1">
-                    <input
-                      id="name"
-                      type="text"
-                      class="form-control"
-                      formControlName="name"
-                      placeholder="Full Name"
-                      [class.is-invalid]="nameCtrl?.touched && nameCtrl?.invalid"
-                    />
-                    <label for="name">Full Name</label>
+                    <select id="userId" class="form-select" formControlName="userId"
+                      [class.is-invalid]="userIdCtrl?.touched && userIdCtrl?.invalid">
+                      <option value="" disabled selected>Select a user to promote</option>
+                      <option *ngFor="let user of eligibleUsers" [value]="user.userId">
+                        {{ user.name }} ({{ user.serviceId }}) - {{ user.role }}
+                      </option>
+                    </select>
+                    <label for="userId">Select User</label>
                   </div>
                 </div>
-                <div class="invalid-feedback d-block" *ngIf="nameCtrl?.touched && nameCtrl?.invalid">
+                <div class="invalid-feedback d-block" *ngIf="userIdCtrl?.touched && userIdCtrl?.invalid">
                   <i class="bi bi-exclamation-circle me-1"></i>
-                  Please enter a valid name (minimum 2 characters)
+                  Please select a user
                 </div>
-              </div>
-
-              <!-- Service Number Field -->
-              <div class="form-group">
-                <div class="input-group-wrapper">
-                  <div class="input-icon">
-                    <i class="bi bi-hash"></i>
-                  </div>
-                  <div class="form-floating flex-grow-1">
-                    <input
-                      id="serviceNumber"
-                      type="text"
-                      class="form-control"
-                      formControlName="serviceNumber"
-                      placeholder="Service Number"
-                      [class.is-invalid]="serviceNumberCtrl?.touched && serviceNumberCtrl?.invalid"
-                    />
-                    <label for="serviceNumber">Service Number</label>
-                  </div>
-                </div>
-                <div class="invalid-feedback d-block" *ngIf="serviceNumberCtrl?.touched && serviceNumberCtrl?.invalid">
-                  <i class="bi bi-exclamation-circle me-1"></i>
-                  Please enter a valid 6-digit service number
-                </div>
-                <small class="form-text text-muted"><i class="bi bi-info-circle me-1"></i>Example: 010399, 123456, 000123</small>
+                <small class="form-text text-muted" *ngIf="eligibleUsers.length === 0">
+                  <i class="bi bi-info-circle me-1"></i>No eligible users found. Create regular users first.
+                </small>
               </div>
 
               <!-- Messages -->
@@ -117,7 +89,7 @@
                 <i class="bi bi-exclamation-circle me-2"></i>
                 {{ errorMessage }}
               </div>
-              
+
               <div *ngIf="successMessage" class="alert alert-success">
                 <i class="bi bi-check-circle me-2"></i>
                 {{ successMessage }}
@@ -125,21 +97,18 @@
 
               <!-- Submit Button -->
               <div class="form-actions">
-                <button 
-                  type="submit" 
-                  class="btn btn-primary btn-block"
-                  [disabled]="adminForm.invalid || isSubmitting"
-                >
-                  <i class="bi bi-plus-circle me-2"></i>
-                  {{ isSubmitting ? 'Creating...' : 'Create Admin' }}
+                <button type="submit" class="btn btn-primary btn-block"
+                  [disabled]="adminForm.invalid || isSubmitting || eligibleUsers.length === 0">
+                  <i class="bi bi-arrow-up-circle me-2"></i>
+                  {{ isSubmitting ? 'Promoting...' : 'Promote to Admin' }}
                 </button>
               </div>
             </form>
           </div>
         </div>
 
-  <!-- MAIN CONTENT: ADMIN LIST -->
-  <div [ngClass]="isFormVisible ? 'col-12 col-lg-8 col-xl-9' : 'col-12'">
+        <!-- MAIN CONTENT: ADMIN LIST -->
+        <div [ngClass]="isFormVisible ? 'col-12 col-lg-8 col-xl-9' : 'col-12'">
           <div class="main-card">
             <div class="card-header">
               <div class="card-header-top">
@@ -152,46 +121,27 @@
                 <div class="card-header-actions">
                   <div class="search-box">
                     <i class="bi bi-search"></i>
-                    <input 
-                      type="text" 
-                      placeholder="Search by name or number" 
-                      [(ngModel)]="searchTerm"
-                      (ngModelChange)="filterAdmins()"
-                    />
+                    <input type="text" placeholder="Search by name or number" [(ngModel)]="searchTerm"
+                      (ngModelChange)="filterAdmins()" />
                   </div>
                 </div>
               </div>
               <div class="card-toolbar">
                 <div class="status-filters">
-                  <button
-                    type="button"
-                    class="filter-chip"
-                    [class.active]="statusFilter === 'all'"
-                    [attr.aria-pressed]="statusFilter === 'all'"
-                    (click)="setStatusFilter('all')"
-                  >
+                  <button type="button" class="filter-chip" [class.active]="statusFilter === 'all'"
+                    [attr.aria-pressed]="statusFilter === 'all'" (click)="setStatusFilter('all')">
                     <span class="filter-dot all"></span>
                     All
                     <span class="count-chip">{{ admins.length }}</span>
                   </button>
-                  <button
-                    type="button"
-                    class="filter-chip"
-                    [class.active]="statusFilter === 'active'"
-                    [attr.aria-pressed]="statusFilter === 'active'"
-                    (click)="setStatusFilter('active')"
-                  >
+                  <button type="button" class="filter-chip" [class.active]="statusFilter === 'active'"
+                    [attr.aria-pressed]="statusFilter === 'active'" (click)="setStatusFilter('active')">
                     <span class="filter-dot active"></span>
                     Active
                     <span class="count-chip">{{ getActiveCount() }}</span>
                   </button>
-                  <button
-                    type="button"
-                    class="filter-chip"
-                    [class.active]="statusFilter === 'inactive'"
-                    [attr.aria-pressed]="statusFilter === 'inactive'"
-                    (click)="setStatusFilter('inactive')"
-                  >
+                  <button type="button" class="filter-chip" [class.active]="statusFilter === 'inactive'"
+                    [attr.aria-pressed]="statusFilter === 'inactive'" (click)="setStatusFilter('inactive')">
                     <span class="filter-dot inactive"></span>
                     Inactive
                     <span class="count-chip">{{ getInactiveCount() }}</span>
@@ -216,10 +166,10 @@
                   <thead>
                     <tr>
                       <th>Admin</th>
-                      <th>Service Number</th>
+                      <th>Service ID</th>
                       <th>Status</th>
+                      <th>Role</th>
                       <th>Created</th>
-                      <th>Last Login</th>
                       <th class="text-end">Actions</th>
                     </tr>
                   </thead>
@@ -237,7 +187,7 @@
                       </td>
                       <td>
                         <div class="service-number">
-                          {{ admin.serviceNumber }}
+                          {{ admin.serviceId }}
                         </div>
                       </td>
                       <td>
@@ -247,32 +197,24 @@
                         </span>
                       </td>
                       <td>
+                        <span class="badge bg-light text-dark border">
+                          {{ admin.role }}
+                        </span>
+                      </td>
+                      <td>
                         <div class="date-info">
                           {{ formatDate(admin.createdAt) }}
                         </div>
                       </td>
-                      <td>
-                        <div class="date-info">
-                          {{ formatTime(admin.lastLogin) }}
-                        </div>
-                      </td>
                       <td class="text-end">
                         <div class="action-buttons">
-                          <button
-                            type="button"
-                            class="btn btn-sm action-btn status-toggle"
-                            (click)="toggleStatus(admin)"
-                            [title]="admin.isActive ? 'Deactivate' : 'Activate'"
-                            [class.is-active]="admin.isActive"
-                          >
+                          <button *ngIf="admin.role !== 'SuperAdmin'" type="button"
+                            class="btn btn-sm action-btn status-toggle" (click)="toggleStatus(admin)"
+                            [title]="admin.isActive ? 'Deactivate' : 'Activate'" [class.is-active]="admin.isActive">
                             <span class="material-symbols-outlined">power_settings_new</span>
                           </button>
-                          <button
-                            type="button"
-                            class="btn btn-sm action-btn danger-btn"
-                            (click)="deleteAdmin(admin.id)"
-                            title="Delete"
-                          >
+                          <button *ngIf="admin.role !== 'SuperAdmin'" type="button"
+                            class="btn btn-sm action-btn danger-btn" (click)="deleteAdmin(admin.userId)" title="Delete">
                             <span class="material-symbols-outlined">delete</span>
                           </button>
                         </div>

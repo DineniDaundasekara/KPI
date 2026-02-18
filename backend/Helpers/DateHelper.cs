@@ -9,7 +9,7 @@ namespace backend.Helpers
     {
         public bool IsEditWindowOpen()
         {
-            return DateTime.Now.Day <= 15;
+            return DateTime.Now.Day <= 20;
         }
     }
 }

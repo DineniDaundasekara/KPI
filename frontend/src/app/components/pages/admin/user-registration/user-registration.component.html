@@ -90,26 +90,7 @@
               </div>
             </div>
 
-            <!-- Active Status -->
-            <div class="mb-4">
-              <label class="form-label fw-semibold mb-3">Account Status</label>
-              <div class="d-flex gap-4">
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="isActive" id="active-true" [value]="true"
-                    [(ngModel)]="formData.isActive" [disabled]="isLoading" />
-                  <label class="form-check-label" for="active-true">
-                    Active
-                  </label>
-                </div>
-                <div class="form-check">
-                  <input class="form-check-input" type="radio" name="isActive" id="active-false" [value]="false"
-                    [(ngModel)]="formData.isActive" [disabled]="isLoading" />
-                  <label class="form-check-label" for="active-false">
-                    Inactive
-                  </label>
-                </div>
-              </div>
-            </div>
+
 
             <!-- Messages -->
             <div *ngIf="error" class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -248,8 +229,8 @@
                         <i class="bi bi-pencil me-1"></i>
                         {{ editingUser?.userId === user.userId ? 'Editing...' : 'Edit' }}
                       </button>
-                      <button (click)="handleDelete(user.userId)" class="btn btn-outline-danger btn-sm"
-                        [disabled]="isLoading">
+                      <button *ngIf="user.role !== 'SuperAdmin'" (click)="handleDelete(user.userId)"
+                        class="btn btn-outline-danger btn-sm" [disabled]="isLoading">
                         <i class="bi bi-trash me-1"></i>Delete
                       </button>
                     </div>
