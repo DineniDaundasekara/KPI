@@ -1,29 +1,34 @@
 // ============================================
-// SLT DASHBOARD – PROFESSIONAL PASTEL THEME
+// SLT DASHBOARD – MODERN GLASS UI (ATTRACTIVE)
 // Brand: #0057a6 (SLT Blue), #02b28c (SLT Teal)
-// Pastel palette: soft, accessible, airy
-// Icons: clean line style, consistent weight
+// Style: modern glassmorphism + premium shadows + smooth motion
 // ============================================
 
 // ---------- DESIGN TOKENS ----------
 $slt-blue: #0057a6;
 $slt-teal: #02b28c;
 $slt-slate: #1e293b;
-$pastel-blue: #e2edff;
-$pastel-mint: #d6f0ec;
-$pastel-lavender: #ede7ff;
-$pastel-peach: #ffefe5;
-$pastel-rose: #ffe5e5;
+
 $white-soft: #fbfdff;
 $gray-50: #f8fafc;
 $gray-200: #e2e8f0;
 $gray-500: #64748b;
 $gray-700: #334155;
-$shadow-sm: 0 8px 20px -6px rgba(0, 87, 166, 0.12);
-$shadow-md: 0 16px 30px -10px rgba(0, 87, 166, 0.18);
-$border-radius-card: 24px;
+
+$pastel-blue: #e2edff;
+$pastel-mint: #d6f0ec;
+$pastel-lavender: #ede7ff;
+$pastel-peach: #ffefe5;
+$pastel-rose: #ffe5e5;
+
+$border-radius-card: 26px;
 $border-radius-icon: 18px;
 $border-radius-meter: 999px;
+
+/* Modern shadows */
+$shadow-sm: 0 10px 28px -16px rgba(0, 87, 166, 0.22);
+$shadow-md: 0 18px 46px -20px rgba(0, 87, 166, 0.28);
+$shadow-glow: 0 22px 60px -30px rgba(2, 178, 140, 0.55);
 
 // ---------- GLOBAL ----------
 :host {
@@ -38,16 +43,17 @@ $border-radius-meter: 999px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   padding-bottom: 0;
+  overflow-x: hidden;
 
-  // Overlay to lighten the background image
+  // Modern layered overlay
   &::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(145deg, rgba($white-soft, 0.85), rgba($gray-50, 0.9));
+    inset: 0;
+    background:
+      radial-gradient(900px 520px at 20% 15%, rgba($slt-teal, 0.12), transparent 55%),
+      radial-gradient(850px 560px at 85% 10%, rgba($slt-blue, 0.13), transparent 55%),
+      linear-gradient(145deg, rgba($white-soft, 0.90), rgba($gray-50, 0.94));
     z-index: 1;
     pointer-events: none;
   }
@@ -56,35 +62,47 @@ $border-radius-meter: 999px;
 .dashboard {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 2rem 2rem 3rem;
+  padding: clamp(1rem, 1.3vw, 2rem);
   position: relative;
   z-index: 2;
+
+  /* Smooth entrance */
+  animation: dashIn 0.25s ease-out;
+}
+
+@keyframes dashIn {
+  from { transform: translateY(8px); opacity: 0.92; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 // ---------- STATS CARDS ----------
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.1rem;
+  margin-bottom: 1.6rem;
 }
 
 .stat-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.78);
   border-radius: $border-radius-card;
-  padding: 1.5rem 1.2rem;
+  padding: 1.15rem 1.1rem;
   display: flex;
   align-items: center;
-  gap: 1.2rem;
+  gap: 1rem;
+
+  /* glass */
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+
   box-shadow: $shadow-sm;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  transition: all 0.2s ease;
-  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 
   &:hover {
     transform: translateY(-3px);
     box-shadow: $shadow-md;
-    border-color: rgba($slt-teal, 0.2);
+    border-color: rgba($slt-teal, 0.25);
   }
 }
 
@@ -95,30 +113,37 @@ $border-radius-meter: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
+
+  /* modern icon plate */
+  background: linear-gradient(145deg, rgba($pastel-blue, 0.95), rgba($pastel-mint, 0.65));
   color: $slt-blue;
-  background: $pastel-blue;
-  transition: all 0.2s;
+  box-shadow: 0 14px 30px -22px rgba(0, 87, 166, 0.5);
+  transition: transform 0.18s ease;
 
   svg {
     width: 26px;
     height: 26px;
-    stroke-width: 1.6;
+    stroke-width: 1.7;
+  }
+
+  .stat-card:hover & {
+    transform: translateY(-1px) scale(1.02);
   }
 
   &--blue {
-    background: $pastel-blue;
+    background: linear-gradient(145deg, rgba($pastel-blue, 0.98), rgba(white, 0.70));
     color: $slt-blue;
   }
   &--teal {
-    background: $pastel-mint;
+    background: linear-gradient(145deg, rgba($pastel-mint, 0.98), rgba(white, 0.70));
     color: $slt-teal;
   }
   &--lavender {
-    background: $pastel-lavender;
-    color: #5e4b8b; // deeper lavender accent
+    background: linear-gradient(145deg, rgba($pastel-lavender, 0.98), rgba(white, 0.70));
+    color: #5e4b8b;
   }
   &--mint {
-    background: $pastel-mint;
+    background: linear-gradient(145deg, rgba($pastel-mint, 0.98), rgba(white, 0.70));
     color: #1f7a6b;
   }
 }
@@ -129,17 +154,17 @@ $border-radius-meter: 999px;
 }
 
 .stat-label {
-  font-size: 0.78rem;
-  font-weight: 600;
+  font-size: 0.74rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   color: $gray-500;
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.15rem;
 }
 
 .stat-value {
-  font-size: 2rem;
-  font-weight: 700;
+  font-size: 1.85rem;
+  font-weight: 900;
   line-height: 1;
   color: $slt-blue;
   letter-spacing: -0.02em;
@@ -149,37 +174,57 @@ $border-radius-meter: 999px;
 .regions-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.1rem;
 }
 
 .region-card {
-  background: rgba(white, 0.8);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.74);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
   border-radius: $border-radius-card;
-  padding: 1.8rem 2rem;
+  padding: 1.25rem 1.4rem;
   display: flex;
   align-items: center;
-  gap: 2.5rem;
+  gap: 1.4rem;
+
   box-shadow: $shadow-sm;
-  border: 1px solid rgba(white, 0.7);
-  transition: all 0.25s;
+  border: 1px solid rgba(255, 255, 255, 0.55);
+
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+
+  flex-wrap: wrap;
+  overflow: hidden;
 
   &:hover {
-    background: white;
+    transform: translateY(-2px);
     box-shadow: $shadow-md;
-    border-color: rgba($slt-teal, 0.2);
+    border-color: rgba($slt-teal, 0.22);
   }
 }
 
 .region-title {
   min-width: 160px;
   padding-left: 1rem;
-  border-left: 4px solid $slt-teal;
+  position: relative;
+
+  /* premium gradient bar */
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 8px;
+    bottom: 8px;
+    width: 4px;
+    border-radius: $border-radius-meter;
+    background: linear-gradient(180deg, $slt-teal, rgba($slt-blue, 0.6));
+    box-shadow: 0 14px 30px -22px rgba($slt-teal, 0.85);
+  }
 
   h3 {
     margin: 0;
-    font-size: 1.25rem;
-    font-weight: 600;
+    font-size: 1.15rem;
+    font-weight: 900;
     color: $slt-blue;
     letter-spacing: -0.01em;
   }
@@ -187,11 +232,15 @@ $border-radius-meter: 999px;
 
 // ---------- METERS ----------
 .meters-row {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 2rem 2.5rem;
   flex: 1;
+  width: 100%;
+  max-width: 100%;
+
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 1rem 1.4rem;
+  align-items: center;
+  overflow: hidden;
 }
 
 .meter {
@@ -199,19 +248,21 @@ $border-radius-meter: 999px;
   flex-direction: column;
   align-items: center;
   width: 110px;
-  transition: transform 0.2s;
-  cursor: pointer; // Indicate clickable
+  justify-self: center;
+
+  transition: transform 0.18s ease;
+  cursor: pointer;
 
   &:hover {
     transform: translateY(-6px);
 
     .meter-circle {
-      box-shadow: 0 12px 24px -8px rgba($slt-teal, 0.25);
+      box-shadow: $shadow-glow, inset 0 0 0 6px rgba($slt-slate, 0.035);
     }
 
     .meter-label {
       color: $slt-blue;
-      border-bottom-color: $slt-teal;
+      border-bottom-color: rgba($slt-teal, 0.75);
     }
   }
 }
@@ -219,8 +270,8 @@ $border-radius-meter: 999px;
 .meter-progress {
   width: 110px;
   height: 110px;
-  margin-bottom: 0.75rem;
-  pointer-events: none; // Allow clicks to pass through
+  margin-bottom: 0.65rem;
+  pointer-events: none;
 }
 
 .meter-circle {
@@ -230,49 +281,55 @@ $border-radius-meter: 999px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: $gray-50; // fallback, overridden by dynamic style
-  box-shadow: inset 0 0 0 6px rgba($slt-slate, 0.04), 0 10px 20px -8px rgba($slt-slate, 0.1);
-  transition: box-shadow 0.2s, transform 0.2s;
-  position: relative;
-  pointer-events: none; // Allow clicks to pass through
 
-  // inner white circle
+  /* modern base */
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.55)),
+    linear-gradient(145deg, rgba($pastel-blue, 0.40), rgba($pastel-mint, 0.22));
+  box-shadow: inset 0 0 0 6px rgba($slt-slate, 0.04), 0 14px 28px -20px rgba($slt-slate, 0.18);
+
+  transition: box-shadow 0.18s ease, transform 0.18s ease;
+  position: relative;
+  pointer-events: none;
+
   &::after {
     content: '';
     position: absolute;
     width: 78px;
     height: 78px;
-    background: white;
+    background: rgba(255, 255, 255, 0.92);
     border-radius: 50%;
-    box-shadow: inset 0 2px 6px rgba(0,0,0,0.02);
+    box-shadow: inset 0 2px 10px rgba(0,0,0,0.035);
   }
 }
 
 .meter-percent {
   position: relative;
   z-index: 2;
-  font-weight: 700;
-  font-size: 1.3rem;
-  color: $slt-teal;
+  font-weight: 900;
+  font-size: 1.25rem;
+
   background: linear-gradient(145deg, $slt-teal, #007a63);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  letter-spacing: -0.5px;
-  pointer-events: none; // Allow clicks to pass through
+
+  letter-spacing: -0.4px;
+  pointer-events: none;
 }
 
 .meter-label {
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: 0.78rem;
+  font-weight: 900;
   color: $gray-700;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
   text-align: center;
+
   border-bottom: 2px solid transparent;
-  padding-bottom: 4px;
-  transition: all 0.2s;
-  pointer-events: none; // Allow clicks to pass through
+  padding-bottom: 3px;
+  transition: all 0.18s ease;
+  pointer-events: none;
 }
 
 // ---------- LOADING / ERROR ----------
@@ -285,24 +342,28 @@ $border-radius-meter: 999px;
 }
 
 .message-card {
-  background: white;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+
   border-radius: 36px;
-  padding: 2.5rem 3.5rem;
+  padding: 2.4rem 3.2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1.2rem;
+
   box-shadow: $shadow-md;
-  border: 1px solid rgba($slt-blue, 0.1);
+  border: 1px solid rgba($slt-blue, 0.12);
   color: $slt-slate;
   font-size: 1.1rem;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .spinner {
   width: 44px;
   height: 44px;
-  border: 4px solid rgba($slt-blue, 0.1);
+  border: 4px solid rgba($slt-blue, 0.10);
   border-top: 4px solid $slt-teal;
   border-radius: 50%;
   animation: spin 0.9s linear infinite;
@@ -316,11 +377,8 @@ $border-radius-meter: 999px;
 // ---------- MODAL (DETAILS) ----------
 .modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba($slt-slate, 0.6);
+  inset: 0;
+  background: rgba($slt-slate, 0.62);
   display: flex !important;
   align-items: center;
   justify-content: center;
@@ -337,21 +395,17 @@ $border-radius-meter: 999px;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 2rem 2rem 2.2rem;
+
   box-shadow: 0 30px 60px -20px rgba($slt-blue, 0.5);
   border: 2px solid $gray-200;
-  animation: slideUp 0.25s;
+
   position: relative;
   z-index: 10000;
   display: block !important;
   opacity: 1 !important;
 
-  &::-webkit-scrollbar {
-    width: 8px;
-  }
-  &::-webkit-scrollbar-track {
-    background: transparent;
-    margin: 32px 0;
-  }
+  &::-webkit-scrollbar { width: 8px; }
+  &::-webkit-scrollbar-track { background: transparent; margin: 32px 0; }
   &::-webkit-scrollbar-thumb {
     background: $slt-teal;
     border-radius: 10px;
@@ -367,11 +421,6 @@ $border-radius-meter: 999px;
   to { opacity: 1; }
 }
 
-@keyframes slideUp {
-  from { transform: translateY(0); opacity: 1; }
-  to { transform: translateY(0); opacity: 1; }
-}
-
 .modal-header {
   display: flex;
   justify-content: space-between;
@@ -381,7 +430,7 @@ $border-radius-meter: 999px;
   h2 {
     margin: 0 0 0.5rem;
     font-size: 1.8rem;
-    font-weight: 700;
+    font-weight: 900;
     color: $slt-blue;
     letter-spacing: -0.01em;
     line-height: 1.2;
@@ -399,9 +448,7 @@ $border-radius-meter: 999px;
   border-radius: 40px;
   width: fit-content;
 
-  svg {
-    stroke: $slt-teal;
-  }
+  svg { stroke: $slt-teal; }
 }
 
 .close-btn {
@@ -411,11 +458,13 @@ $border-radius-meter: 999px;
   height: 42px;
   border-radius: 50%;
   font-size: 1.1rem;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
   color: $slt-slate;
-  transition: all 0.2s;
+  transition: all 0.18s ease;
   cursor: pointer;
 
   &:hover {
@@ -445,12 +494,12 @@ $border-radius-meter: 999px;
     letter-spacing: 0.06em;
     color: $gray-500;
     margin-bottom: 0.4rem;
-    font-weight: 600;
+    font-weight: 800;
   }
 
   .summary-value {
     font-size: 1.2rem;
-    font-weight: 700;
+    font-weight: 900;
     color: $slt-blue;
     line-height: 1.2;
   }
@@ -469,10 +518,10 @@ $border-radius-meter: 999px;
   grid-template-columns: 1.5fr 0.7fr 0.9fr 0.9fr;
   background: $pastel-blue;
   padding: 1rem 1.5rem;
-  font-weight: 700;
+  font-weight: 900;
   font-size: 0.8rem;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.06em;
   color: $slt-blue;
   border-bottom: 1px solid rgba($slt-blue, 0.1);
 }
@@ -486,17 +535,12 @@ $border-radius-meter: 999px;
   font-size: 0.95rem;
   align-items: center;
 
-  &:last-child {
-    border-bottom: none;
-  }
-
-  &:nth-child(even) {
-    background: rgba($pastel-blue, 0.3);
-  }
+  &:last-child { border-bottom: none; }
+  &:nth-child(even) { background: rgba($pastel-blue, 0.28); }
 }
 
 .kpi-name {
-  font-weight: 600;
+  font-weight: 800;
   color: $slt-slate;
   word-break: break-word;
   padding-right: 0.5rem;
@@ -511,22 +555,26 @@ $border-radius-meter: 999px;
 
 // ---------- RESPONSIVE ----------
 @media (max-width: 900px) {
-  .dashboard {
-    padding: 1.5rem;
-  }
+  .dashboard { padding: 1.2rem; }
 
   .region-card {
     flex-direction: column;
     align-items: flex-start;
-    gap: 1.2rem;
+    gap: 1.1rem;
   }
 
   .region-title {
-    border-left: none;
-    border-bottom: 3px solid $slt-teal;
     padding-left: 0;
-    padding-bottom: 0.5rem;
     width: 100%;
+
+    &::before {
+      left: 0;
+      top: auto;
+      bottom: -8px;
+      width: 100%;
+      height: 3px;
+      border-radius: $border-radius-meter;
+    }
   }
 
   .meters-row {
@@ -542,12 +590,42 @@ $border-radius-meter: 999px;
 }
 
 @media (max-width: 600px) {
-  .stats-grid {
+  .stats-grid { grid-template-columns: 1fr; }
+
+  .meter { width: 100px; }
+  .meter-progress { width: 100px; height: 100px; }
+  .meter-circle::after { width: 72px; height: 72px; }
+
+  .modal { padding: 1.5rem; }
+  .summary-grid { grid-template-columns: 1fr; }
+
+  .kpi-table-header { display: none; }
+  .kpi-table-row {
     grid-template-columns: 1fr;
+    gap: 0.25rem;
+    padding: 1rem;
+    border-bottom: 2px solid $gray-200;
+
+    &::before {
+      content: attr(data-label);
+      font-weight: 800;
+      color: $slt-blue;
+    }
+  }
+}
+
+/* ============================================================
+   ✅ EXTRA: Keep meters fitting on smaller widths
+   ============================================================ */
+@media (max-width: 1200px) {
+  .meters-row {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.9rem 1.2rem;
   }
 
   .meter {
-    width: 100px;
+    width: 100%;
+    max-width: 100px;
   }
 
   .meter-progress {
@@ -555,31 +633,7 @@ $border-radius-meter: 999px;
     height: 100px;
   }
 
-  .modal {
-    padding: 1.5rem;
-  }
-
-  .summary-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .kpi-table-header,
-  .kpi-table-row {
-    grid-template-columns: 1fr;
-    gap: 0.25rem;
-    padding: 1rem;
-  }
-
-  .kpi-table-header {
-    display: none; // Hide header on mobile, rely on row labels
-  }
-
-  .kpi-table-row {
-    border-bottom: 2px solid $gray-200;
-    &::before {
-      content: attr(data-label);
-      font-weight: 600;
-      color: $slt-blue;
-    }
+  .meter-percent {
+    font-size: 1.15rem;
   }
 }

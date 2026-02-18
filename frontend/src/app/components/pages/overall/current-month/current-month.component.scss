@@ -80,6 +80,8 @@
   gap: 12px;
 }
 
+
+
 .count-pill {
   background: #dbeafe;
   color: #1e40af;
@@ -167,7 +169,7 @@
   flex-grow: 1;
   overflow-x: auto; 
   min-width: 0;
-  background-color: #4cd629;
+  background-color: #d4f036;
 }
 
 .final-distribution-table {
@@ -175,6 +177,16 @@
   width: max-content;
   border-collapse: collapse;
   table-layout: fixed; 
+}
+
+
+/* Hover effect */
+.final-distribution-table td:hover,
+.final-distribution-table th:hover {
+  cursor: pointer;
+  background-color: #08496c !important;
+  color: white !important;
+  transition: all 0.3s ease;
 }
 
 /* NEW: Vertical Group Divider */
@@ -185,7 +197,7 @@
 
 /* NEW MARGIN STYLE */
 .group-margin {
-  border-right: 6px solid rgba(255, 255, 255, 0.06) !important; /* subtle SLT green accent */
+  border-right: 6px solid #3e77a2!important; /* subtle SLT green accent */
 }  
 
 .kpi-table {
@@ -211,15 +223,16 @@
 /* KPI table headers — SLT blue */
 .kpi-table th {
   height: 64px;
-  background: linear-gradient(180deg, #063f6d 0%, #0a75c2 100%);
+  background: linear-gradient(180deg, #4d98d5 0%, #4d98d5 100%);
   color: #ffffff;
   text-align: center;
   font-size: 15px;
-  border: 1px solid rgba(11,99,214,0.12);
+  border: 2px solid #ffffff;
   font-weight: 700;
   box-sizing: border-box;
   vertical-align: middle;
 }
+
 
 /* Final distribution table headers — SLT green by default */
 .final-distribution-table thead th {
@@ -228,7 +241,7 @@
   color: #ffffff;
   text-align: center;
   font-size: 15px;
-  border: 1px solid rgba(16,163,74,0.12);
+  border: 1px solid #ffffff;
   font-weight: 700;
   box-sizing: border-box;
   vertical-align: middle;
@@ -236,19 +249,19 @@
 
 /* Header-row overrides for clearer hierarchy */
 .final-distribution-table thead .region-header {
-  background: linear-gradient(180deg, #14e393 0%, #098260 100%); /* SLT blue */
+  background: linear-gradient(180deg, #3e77a2 0%, #3e77a2 100%); /* SLT blue */
   color: #ffffff;
 }
 .final-distribution-table thead .province-header {
-  background: linear-gradient(180deg, #16A34A 0%, #10B981 100%); /* SLT green (lighter) */
+  background: linear-gradient(180deg, #3390b2 0%, #3390b2 100%); /* SLT green (lighter) */
   color: #fff;
 }
 .final-distribution-table thead .ee-area-header {
-  background: linear-gradient(180deg, #129549 0%, #187743 100%); /* darker blue for engineer */
+  background: linear-gradient(180deg, #43afd0 0%, #43afd0 100%); /* darker blue for engineer */
   color: #fff;
 }
 .final-distribution-table thead .metrics-labels-row th {
-  background: linear-gradient(180deg, #16A34A 0%, #0F7A3B 100%);
+  background: linear-gradient(180deg, #52b1e0 0%, #52b1e0 100%);
   color: #fff;
 } 
 
@@ -277,12 +290,12 @@
 }
 
 /* Metric Cells Colors — SLT blue & green */
-.achieved-cell { background-color: #ECFDF5; color: #166534; }         /* green-50 / green-700 */
+.achieved-cell { background-color: #ECFDF5; color: #ffffff; }         /* green-50 / green-700 */
 .maximum-points-cell { background-color: #EAF4FF; color: #0B63D6; }    /* light-blue bg / SLT blue text */
 .points-achieved-cell {
   background-color: #F7FFFB;
   font-weight: 700;
-  color: #14532D;
+  color: #ffffff;
   box-shadow: inset 0 -2px 0 rgba(20, 83, 45, 0.04);
 }   
 
