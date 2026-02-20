@@ -158,36 +158,6 @@ using (var scope = app.Services.CreateScope())
                     Console.WriteLine("PlatformAdmin user updated.");
                 }
             }
-
-            var platformAdmins = context.Users
-                .Where(u => u.RoleId == platformAdminRole.RoleId)
-                .Select(u => u.UserId)
-                .ToList();
-            if (platformAdmins.Any())
-            {
-                const byte serviceFulfilmentPageId = 2;
-                var existingAssignments = context.PlatformKpiAssignments
-                    .Where(a => a.PageId == serviceFulfilmentPageId)
-                    .Select(a => a.UserId)
-                    .ToList();
-
-                var missingAssignments = platformAdmins
-                    .Where(userId => !existingAssignments.Contains(userId))
-                    .Select(userId => new backend.Models.PlatformKpiAssignment
-                    {
-                        UserId = userId,
-                        PageId = serviceFulfilmentPageId,
-                        AssignedAt = DateTime.UtcNow
-                    })
-                    .ToList();
-
-                if (missingAssignments.Any())
-                {
-                    context.PlatformKpiAssignments.AddRange(missingAssignments);
-                    context.SaveChanges();
-                    Console.WriteLine("PlatformAdmin assignments updated for Service Fulfilment.");
-                }
-            }
         }
     }
     catch (Exception ex)

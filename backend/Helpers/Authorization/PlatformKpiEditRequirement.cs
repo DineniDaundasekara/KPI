@@ -23,8 +23,12 @@ namespace backend.Helpers.Authorization
             var user = context.User;
             if (!user.Identity?.IsAuthenticated ?? true) return Task.CompletedTask;
 
-            // 1. Check Role = PlatformAdmin
-            if (!user.HasClaim(c => c.Type == "role" && c.Value == "PlatformAdmin"))
+            // 1. Check Role = PlatformAdmin (case-insensitive, trim spaces)
+            bool IsRole(string roleName) => user
+                .FindAll(c => c.Type == "role" || c.Type == ClaimTypes.Role)
+                .Any(c => string.Equals(NormalizeRole(c.Value), NormalizeRole(roleName), StringComparison.OrdinalIgnoreCase));
+
+            if (!IsRole("PlatformAdmin"))
             {
                 return Task.CompletedTask;
             }
@@ -35,7 +39,7 @@ namespace backend.Helpers.Authorization
                  return Task.CompletedTask;
             }
 
-            // 3. Check Page Assignment
+            // 3. Check Page Assignment (assigned KPI pages or allowed pages)
             var httpContext = _httpContextAccessor.HttpContext;
             
             object? pageIdObj = null;
@@ -59,8 +63,9 @@ namespace backend.Helpers.Authorization
 
             if (pageIdObj != null && int.TryParse(pageIdObj.ToString(), out int pageId))
             {
-                // Only assigned KPI pages are editable
                 var assignedPages = user.FindAll("assignedKpiPages").Select(c => c.Value).ToList();
+
+                // Only assigned KPI pages grant edit. allowedPages no longer grants edit.
                 if (assignedPages.Contains(pageId.ToString()))
                 {
                     context.Succeed(requirement);
@@ -68,6 +73,14 @@ namespace backend.Helpers.Authorization
             }
 
             return Task.CompletedTask;
+        }
+
+        private static string NormalizeRole(string? value)
+        {
+            return (value ?? string.Empty)
+                .Replace(" ", string.Empty)
+                .Trim()
+                .ToLowerInvariant();
         }
     }
 }

@@ -90,11 +90,21 @@ export class AuthService {
       return false;
     }
 
-    // Platform admins can edit all platform KPI pages, regardless of page list data
-    if (role === 'platformadmin') {
-      return true;
+    // Only PlatformAdmin can edit, and only for explicitly assigned pages
+    if (role !== 'platformadmin') {
+      return false;
     }
 
-    return false; // Others (including SuperAdmin) are view-only on platform KPI pages
+    const needle = normalize(pageName);
+    if (!needle) {
+      return false;
+    }
+
+    const assigned = this.getAssignedPages().map(normalize).filter(Boolean);
+    if (!assigned.length) {
+      return false;
+    }
+
+    return assigned.includes(needle);
   }
 }

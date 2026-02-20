@@ -61,89 +61,100 @@ $border-radius-meter: 999px;
   z-index: 2;
 }
 
-// ---------- STATS CARDS ----------
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  margin-bottom: 2.8rem;
-}
-
-.stat-card {
-  background: white;
-  border-radius: $border-radius-card;
-  padding: 1.5rem 1.2rem;
-  display: flex;
-  align-items: center;
-  gap: 1.2rem;
-  box-shadow: $shadow-sm;
-  border: 1px solid rgba(255, 255, 255, 0.6);
-  transition: all 0.2s ease;
-  backdrop-filter: blur(4px);
-
-  &:hover {
-    transform: translateY(-3px);
-    box-shadow: $shadow-md;
-    border-color: rgba($slt-teal, 0.2);
-  }
-}
-
-.stat-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: $border-radius-icon;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: $slt-blue;
-  background: $pastel-blue;
-  transition: all 0.2s;
-
-  svg {
-    width: 26px;
-    height: 26px;
-    stroke-width: 1.6;
-  }
-
-  &--blue {
-    background: $pastel-blue;
-    color: $slt-blue;
-  }
-  &--teal {
-    background: $pastel-mint;
-    color: $slt-teal;
-  }
-  &--lavender {
-    background: $pastel-lavender;
-    color: #5e4b8b; // deeper lavender accent
-  }
-  &--mint {
-    background: $pastel-mint;
-    color: #1f7a6b;
-  }
-}
-
-.stat-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-label {
-  font-size: 0.78rem;
+.percentage-note {
+  margin: 0 0 1rem 0.5rem;
+  color: $gray-700;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  color: $gray-500;
-  margin-bottom: 0.2rem;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
-.stat-value {
-  font-size: 2rem;
-  font-weight: 700;
-  line-height: 1;
-  color: $slt-blue;
-  letter-spacing: -0.02em;
-}
+// ---------- STATS CARDS ----------
+// .stats-grid, .stat-card, .stat-icon, .stat-content, .stat-label, .stat-value retained for potential reuse
+// .stats-grid {
+//   display: grid;
+//   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+//   gap: 1.5rem;
+//   margin-bottom: 2.8rem;
+// }
+//
+// .stat-card {
+//   background: white;
+//   border-radius: $border-radius-card;
+//   padding: 1.5rem 1.2rem;
+//   display: flex;
+//   align-items: center;
+//   gap: 1.2rem;
+//   box-shadow: $shadow-sm;
+//   border: 1px solid rgba(255, 255, 255, 0.6);
+//   transition: all 0.2s ease;
+//   backdrop-filter: blur(4px);
+//
+//   &:hover {
+//     transform: translateY(-3px);
+//     box-shadow: $shadow-md;
+//     border-color: rgba($slt-teal, 0.2);
+//   }
+// }
+//
+// .stat-icon {
+//   width: 56px;
+//   height: 56px;
+//   border-radius: $border-radius-icon;
+//   display: flex;
+//   align-items: center;
+//   justify-content: center;
+//   color: $slt-blue;
+//   background: $pastel-blue;
+//   transition: all 0.2s;
+//
+//   svg {
+//     width: 26px;
+//     height: 26px;
+//     stroke-width: 1.6;
+//   }
+//
+//   &--blue {
+//     background: $pastel-blue;
+//     color: $slt-blue;
+//   }
+//   &--teal {
+//     background: $pastel-mint;
+//     color: $slt-teal;
+//   }
+//   &--lavender {
+//     background: $pastel-lavender;
+//     color: #5e4b8b; // deeper lavender accent
+//   }
+//   &--mint {
+//     background: $pastel-mint;
+//     color: #1f7a6b;
+//   }
+// }
+//
+// .stat-content {
+//   display: flex;
+//   flex-direction: column;
+// }
+//
+// .stat-label {
+//   font-size: 0.78rem;
+//   font-weight: 600;
+//   text-transform: uppercase;
+//   letter-spacing: 0.04em;
+//   color: $gray-500;
+//   margin-bottom: 0.2rem;
+// }
+//
+// .stat-value {
+//   font-size: 2rem;
+//   font-weight: 700;
+//   line-height: 1;
+//   color: $slt-blue;
+//   letter-spacing: -0.02em;
+// }
 
 // ---------- REGION CARDS ----------
 .regions-wrapper {
@@ -178,7 +189,7 @@ $border-radius-meter: 999px;
 
   h3 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 1.5rem;
     font-weight: 600;
     color: $slt-blue;
     letter-spacing: -0.01em;
@@ -251,8 +262,8 @@ $border-radius-meter: 999px;
 .meter-percent {
   position: relative;
   z-index: 2;
-  font-weight: 700;
-  font-size: 1.3rem;
+  font-weight: 800;
+  font-size: 1.55rem;
   color: $slt-teal;
   background: linear-gradient(145deg, $slt-teal, #007a63);
   background-clip: text;
@@ -263,16 +274,29 @@ $border-radius-meter: 999px;
 }
 
 .meter-label {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: $gray-700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
   text-align: center;
   border-bottom: 2px solid transparent;
   padding-bottom: 4px;
   transition: all 0.2s;
   pointer-events: none; // Allow clicks to pass through
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.meter-engineer {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: $slt-blue;
+}
+
+.meter-area {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: $gray-700;
 }
 
 // ---------- LOADING / ERROR ----------

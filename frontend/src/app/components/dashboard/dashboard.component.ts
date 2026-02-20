@@ -7,6 +7,7 @@ import { forkJoin } from 'rxjs';
 interface MeterData {
   code: string;
   label: string;
+  engineer?: string;
 }
 
 interface RegionData {
@@ -120,6 +121,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   private regionRows: RegionApi[] = [];
   private overallRows: OverallKpiResultApi[] = [];
+  private engineerLookup = new Map<string, string>();
 
   constructor(
     private http: HttpClient,
@@ -172,6 +174,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
           if (code) rtomLookup.set(code, name || (area as any).areaCode || (area as any).AreaCode || '');
         });
 
+        const engineerLookup = new Map<string, string>();
+        (regions ?? []).forEach((row) => {
+          const code = this.normalizeArea((row as any).leaCode ?? (row as any).LeaCode ?? '');
+          const engineer = this.normalizeName((row as any).networkEngineer ?? (row as any).NetworkEngineer ?? '');
+          if (code && engineer && !engineerLookup.has(code)) {
+            engineerLookup.set(code, engineer);
+          }
+        });
+        this.engineerLookup = engineerLookup;
+
         const percentLookup = new Map<string, number>();
         (overall ?? []).forEach((row) => {
           const code = this.normalizeArea((row as any).areaCode ?? (row as any).AreaCode ?? '');
@@ -216,8 +228,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
           .map(([regionName, areaCodes]) => {
             const meters = Array.from(areaCodes)
               .map((code) => {
-                const label = rtomLookup.get(this.normalizeArea(code)) || code;
-                return { code, label } as MeterData;
+                const normalizedCode = this.normalizeArea(code);
+                const label = rtomLookup.get(normalizedCode) || code;
+                const engineer = engineerLookup.get(normalizedCode);
+                return { code, label, engineer } as MeterData;
               })
               .sort((a, b) => a.label.localeCompare(b.label));
             return { title: regionName, meters } as RegionData;
@@ -291,6 +305,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   getMeterFontWeight(meter: MeterData, meters: MeterData[]): string {
     return this.isMaxValue(meter, meters) ? 'bold' : 'normal';
+  }
+
+  getEngineerForMeter(meter: MeterData): string {
+    const key = this.normalizeArea(meter.code);
+    return meter.engineer || this.engineerLookup.get(key) || '—';
   }
 
   getCircularProgressBackground(meter: MeterData, meters: MeterData[]): string {
@@ -367,12 +386,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
     }));
 
     this.selectedRegionTitle = regionName;
+    const engineerDisplay = this.getEngineerForMeter(meter);
+    const areaDisplay = meter.label || meter.code;
+    const compositeDisplay = engineerDisplay && engineerDisplay !== '—' ? `${engineerDisplay} (${areaDisplay})` : areaDisplay;
+    const networkEngineerValue = engineerDisplay !== '—' ? engineerDisplay : networkEngineer;
     this.selectedDetails = {
       region: regionName,
       province,
-      networkEngineer,
+      networkEngineer: networkEngineerValue,
       leaCode,
-      displayName: meter.label,
+      displayName: compositeDisplay,
       overallPercent: Number(overallPercent.toFixed(2)),
       totalMaximumPoints: Number(totalMaximumPoints.toFixed(4)),
       totalPointsAchieved: Number(totalPointsAchieved.toFixed(4)),

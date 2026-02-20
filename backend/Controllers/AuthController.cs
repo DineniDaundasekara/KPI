@@ -58,6 +58,40 @@ namespace backend.Controllers
                 .Select(pka => pka.Page.PageName)
                 .ToListAsync();
 
+            // Reconcile platform assignments for PlatformAdmin: ensure only one mapped page based on selected pages
+            if (string.Equals(user.Role?.RoleName, "PlatformAdmin", StringComparison.OrdinalIgnoreCase))
+            {
+                var targetPageId = MapKnownPageId(pages.FirstOrDefault());
+
+                if (targetPageId.HasValue)
+                {
+                    // If assignments differ, reset to the single target page
+                    var existingIds = await _context.PlatformKpiAssignments
+                        .Where(pka => pka.UserId == user.UserId)
+                        .Select(pka => pka.PageId)
+                        .ToListAsync();
+
+                    if (existingIds.Count != 1 || existingIds[0] != targetPageId.Value)
+                    {
+                        var toRemove = _context.PlatformKpiAssignments.Where(pka => pka.UserId == user.UserId);
+                        _context.PlatformKpiAssignments.RemoveRange(toRemove);
+
+                        _context.PlatformKpiAssignments.Add(new PlatformKpiAssignment
+                        {
+                            UserId = user.UserId,
+                            PageId = targetPageId.Value
+                        });
+
+                        await _context.SaveChangesAsync();
+
+                        assignedPages = await _context.PlatformKpiAssignments
+                            .Where(pka => pka.UserId == user.UserId)
+                            .Select(pka => pka.Page.PageName)
+                            .ToListAsync();
+                    }
+                }
+            }
+
             return Ok(new { token, user.Name, Role = user.Role?.RoleName, Pages = pages, AssignedPages = assignedPages });
         }
 
@@ -87,6 +121,32 @@ namespace backend.Controllers
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        private static byte? MapKnownPageId(string? input)
+        {
+            var key = NormalizeKey(input);
+            if (string.IsNullOrEmpty(key)) return null;
+
+            return key switch
+            {
+                "ipnwop" => (byte)1,
+                "servicefulfilment" => (byte)2,
+                "bbanw" => (byte)3,
+                "otonop" => (byte)4,
+                "tmactivityplan" => (byte)5,
+                "routinemtnc" => (byte)6,
+                "towermtceachievement" => (byte)7,
+                _ => null
+            };
+        }
+
+        private static string NormalizeKey(string? value)
+        {
+            return new string((value ?? string.Empty)
+                .ToLowerInvariant()
+                .Where(char.IsLetterOrDigit)
+                .ToArray());
         }
     }
 

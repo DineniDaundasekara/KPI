@@ -8,9 +8,9 @@
   class="dashboard"
   *ngIf="!loading; else loadingState"
 >
-  <!-- HEADER / STATS SECTION -->
+  <!-- HEADER / STATS SECTION (commented out per request) -->
+  <!--
   <section class="stats-grid">
-    <!-- Regions -->
     <div class="stat-card">
       <div class="stat-icon stat-icon--blue">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -23,7 +23,6 @@
         <span class="stat-value">{{ regionCount }}</span>
       </div>
     </div>
-    <!-- Network Engineers -->
     <div class="stat-card">
       <div class="stat-icon stat-icon--teal">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -37,7 +36,6 @@
         <span class="stat-value">{{ engineerCount }}</span>
       </div>
     </div>
-    <!-- Provinces -->
     <div class="stat-card">
       <div class="stat-icon stat-icon--lavender">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -51,7 +49,6 @@
         <span class="stat-value">{{ provinceCount }}</span>
       </div>
     </div>
-    <!-- LEA -->
     <div class="stat-card">
       <div class="stat-icon stat-icon--mint">
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -66,8 +63,10 @@
       </div>
     </div>
   </section>
+  -->
 
   <!-- REGIONS & METERS SECTION -->
+  <div class="percentage-note">All values shown are percentages (%)</div>
   <div class="regions-wrapper">
     <div 
       class="region-card"
@@ -95,10 +94,13 @@
               class="meter-circle"
               [style.background]="getCircularProgressBackground(meter, region.meters)"
             >
-              <span class="meter-percent">{{ valueForMeter(meter).toFixed(1) }}%</span>
+              <span class="meter-percent">{{ valueForMeter(meter).toFixed(1) }}</span>
             </div>
           </div>
-          <span class="meter-label">{{ meter.label }}</span>
+          <div class="meter-label">
+            <span class="meter-engineer">{{ getEngineerForMeter(meter) }}</span>
+            <span class="meter-area">({{ meter.label }})</span>
+          </div>
         </div>
       </div>
     </div>

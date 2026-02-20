@@ -63,11 +63,16 @@ export class UserRegistrationComponent implements OnInit {
   }
 
   handlePageChange(page: string) {
-    const index = this.formData.pages.indexOf(page);
-    if (index > -1) {
-      this.formData.pages.splice(index, 1);
+    // For PlatformAdmin enforce single selection; for others allow multi
+    if (this.formData.role === 'PlatformAdmin') {
+      this.formData.pages = [page];
     } else {
-      this.formData.pages.push(page);
+      const index = this.formData.pages.indexOf(page);
+      if (index > -1) {
+        this.formData.pages.splice(index, 1);
+      } else {
+        this.formData.pages.push(page);
+      }
     }
   }
 
@@ -137,6 +142,11 @@ export class UserRegistrationComponent implements OnInit {
       role: user.role,
       isActive: user.isActive
     };
+
+    // Enforce single selection UI for PlatformAdmin
+    if (this.formData.role === 'PlatformAdmin' && this.formData.pages.length > 1) {
+      this.formData.pages = [this.formData.pages[0]];
+    }
 
     setTimeout(() => {
       this.formCard?.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });

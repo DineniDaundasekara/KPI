@@ -4,6 +4,7 @@ using backend.Data;
 using backend.Models;
 using backend.DTOs;
 using Microsoft.AspNetCore.Authorization;
+using System.Linq;
 
 namespace backend.Controllers
 {
@@ -125,20 +126,22 @@ namespace backend.Controllers
                 
                 Console.WriteLine($"[CreateUser] User created with ID: {user.UserId}");
 
-                // Add Pages
+                // Add Pages (allowed) and sync platform KPI assignments for PlatformAdmin
                 if (dto.Pages != null && dto.Pages.Any())
                 {
                     Console.WriteLine($"[CreateUser] Adding {dto.Pages.Count} pages.");
                     foreach (var pageName in dto.Pages)
                     {
-                        var page = await _db.Pages.FirstOrDefaultAsync(p => p.PageName == pageName || p.PageCode == pageName);
+                        var page = await FindPageByLooseMatch(pageName);
                         if (page != null)
                         {
                             _db.UserPageAccess.Add(new UserPageAccess { UserId = user.UserId, PageId = page.PageId });
                         }
                     }
-                    await _db.SaveChangesAsync();
                 }
+
+                await SyncPlatformAssignments(user.UserId, role.RoleName, dto.Pages);
+                await _db.SaveChangesAsync();
 
                 return CreatedAtAction(nameof(GetUser), new { id = user.UserId }, new UserDto
                 {
@@ -202,13 +205,31 @@ namespace backend.Controllers
                     // Add new
                     foreach (var pageName in dto.Pages)
                     {
-                        var page = await _db.Pages.FirstOrDefaultAsync(p => p.PageName == pageName || p.PageCode == pageName);
+                        var page = await FindPageByLooseMatch(pageName);
                         if (page != null)
                         {
                             _db.UserPageAccess.Add(new UserPageAccess { UserId = user.UserId, PageId = page.PageId });
                         }
                     }
                 }
+
+                // Sync PlatformKpiAssignments for PlatformAdmin with the provided pages (or current pages if not provided but role changed)
+                var finalRoleName = (await _db.Roles.Where(r => r.RoleId == user.RoleId).Select(r => r.RoleName).FirstOrDefaultAsync()) ?? string.Empty;
+
+                List<string>? pagesForAssignments = null;
+                if (dto.Pages != null)
+                {
+                    pagesForAssignments = dto.Pages;
+                }
+                else if (string.Equals(finalRoleName, "PlatformAdmin", StringComparison.OrdinalIgnoreCase))
+                {
+                    pagesForAssignments = await _db.UserPageAccess
+                        .Where(x => x.UserId == id)
+                        .Join(_db.Pages, upa => upa.PageId, p => p.PageId, (upa, p) => p.PageName)
+                        .ToListAsync();
+                }
+
+                await SyncPlatformAssignments(user.UserId, finalRoleName, pagesForAssignments);
 
                 await _db.SaveChangesAsync();
                 Console.WriteLine("[UpdateUser] Changes saved.");
@@ -355,6 +376,90 @@ namespace backend.Controllers
             {
                 return StatusCode(500, $"Error promoting user: {ex.Message}");
             }
+        }
+
+        private async Task SyncPlatformAssignments(int userId, string roleName, List<string>? pageNames)
+        {
+            // Always clear existing assignments for the user
+            var existingAssignments = _db.PlatformKpiAssignments.Where(x => x.UserId == userId);
+            _db.PlatformKpiAssignments.RemoveRange(existingAssignments);
+
+            // Only PlatformAdmin gets platform KPI assignments
+            if (string.IsNullOrWhiteSpace(roleName) || !string.Equals(roleName, "PlatformAdmin", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (pageNames == null || !pageNames.Any())
+            {
+                return;
+            }
+
+            // Enforce single page assignment for PlatformAdmin: use the first resolvable page
+            foreach (var pageName in pageNames)
+            {
+                // Prefer known map to avoid accidental mismatches
+                var mappedPageId = MapKnownPageId(pageName);
+                if (mappedPageId.HasValue)
+                {
+                    _db.PlatformKpiAssignments.Add(new PlatformKpiAssignment
+                    {
+                        UserId = userId,
+                        PageId = (byte)mappedPageId.Value
+                    });
+                    break;
+                }
+
+                var page = await FindPageByLooseMatch(pageName);
+                if (page != null)
+                {
+                    _db.PlatformKpiAssignments.Add(new PlatformKpiAssignment
+                    {
+                        UserId = userId,
+                        PageId = page.PageId
+                    });
+                    break; // only one assignment allowed
+                }
+            }
+        }
+
+        private static string NormalizeKey(string? value)
+        {
+            return new string((value ?? string.Empty)
+                .ToLowerInvariant()
+                .Where(char.IsLetterOrDigit)
+                .ToArray());
+        }
+
+        private static int? MapKnownPageId(string? input)
+        {
+            var key = NormalizeKey(input);
+            if (string.IsNullOrEmpty(key)) return null;
+
+            return key switch
+            {
+                "ipnwop" => 1,
+                "servicefulfilment" => 2,
+                "bbanw" => 3,
+                "otonop" => 4,
+                "tmactivityplan" => 5,
+                "routinemtnc" => 6,
+                "towermtceachievement" => 7,
+                _ => null
+            };
+        }
+
+        private async Task<Page?> FindPageByLooseMatch(string? input)
+        {
+            if (string.IsNullOrWhiteSpace(input)) return null;
+
+            var normalized = NormalizeKey(input);
+            if (string.IsNullOrEmpty(normalized)) return null;
+
+            var pages = await _db.Pages.ToListAsync();
+            return pages.FirstOrDefault(p =>
+                NormalizeKey(p.PageName) == normalized ||
+                NormalizeKey(p.PageCode) == normalized);
         }
     }
 }

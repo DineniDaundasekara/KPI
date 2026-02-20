@@ -23,15 +23,27 @@ namespace backend.Helpers.Authorization
                 return Task.CompletedTask;
             }
 
+            // Normalize role for case/spacing safety
+            bool IsRole(string roleName) => context.User
+                .FindAll(c => c.Type == "role" || c.Type == ClaimTypes.Role)
+                .Any(c => string.Equals(NormalizeRole(c.Value), NormalizeRole(roleName), StringComparison.OrdinalIgnoreCase));
+
             // SuperAdmin has access to everything
-            if (context.User.HasClaim(c => c.Type == "role" && c.Value == "SuperAdmin"))
+            if (IsRole("SuperAdmin"))
             {
                 context.Succeed(requirement);
                 return Task.CompletedTask;
             }
 
             // PlatformAdmin can view all pages (edit is restricted by EditPlatformKpiPolicy)
-            if (context.User.HasClaim(c => c.Type == "role" && c.Value == "PlatformAdmin"))
+            if (IsRole("PlatformAdmin"))
+            {
+                context.Succeed(requirement);
+                return Task.CompletedTask;
+            }
+
+            // Admin and User can view all Platform KPI pages (view-only)
+            if (IsRole("Admin") || IsRole("User"))
             {
                 context.Succeed(requirement);
                 return Task.CompletedTask;
@@ -80,6 +92,14 @@ namespace backend.Helpers.Authorization
             }
 
             return Task.CompletedTask;
+        }
+
+        private static string NormalizeRole(string? value)
+        {
+            return (value ?? string.Empty)
+                .Replace(" ", string.Empty)
+                .Trim()
+                .ToLowerInvariant();
         }
     }
 }
