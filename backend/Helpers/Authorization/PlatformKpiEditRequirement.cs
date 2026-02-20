@@ -23,12 +23,8 @@ namespace backend.Helpers.Authorization
             var user = context.User;
             if (!user.Identity?.IsAuthenticated ?? true) return Task.CompletedTask;
 
-            // 1. Check Role = PlatformAdmin (case-insensitive, trim spaces)
-            bool IsRole(string roleName) => user
-                .FindAll(c => c.Type == "role" || c.Type == ClaimTypes.Role)
-                .Any(c => string.Equals(NormalizeRole(c.Value), NormalizeRole(roleName), StringComparison.OrdinalIgnoreCase));
-
-            if (!IsRole("PlatformAdmin"))
+            // 1. Check Role = PlatformAdmin
+            if (!user.HasClaim(c => c.Type == "role" && c.Value == "PlatformAdmin"))
             {
                 return Task.CompletedTask;
             }
@@ -64,23 +60,15 @@ namespace backend.Helpers.Authorization
             if (pageIdObj != null && int.TryParse(pageIdObj.ToString(), out int pageId))
             {
                 var assignedPages = user.FindAll("assignedKpiPages").Select(c => c.Value).ToList();
+                var allowedPages = user.FindAll("allowedPages").Select(c => c.Value).ToList();
 
-                // Only assigned KPI pages grant edit. allowedPages no longer grants edit.
-                if (assignedPages.Contains(pageId.ToString()))
+                if (assignedPages.Contains(pageId.ToString()) || allowedPages.Contains(pageId.ToString()))
                 {
                     context.Succeed(requirement);
                 }
             }
 
             return Task.CompletedTask;
-        }
-
-        private static string NormalizeRole(string? value)
-        {
-            return (value ?? string.Empty)
-                .Replace(" ", string.Empty)
-                .Trim()
-                .ToLowerInvariant();
         }
     }
 }

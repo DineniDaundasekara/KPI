@@ -101,10 +101,12 @@ export class AuthService {
     }
 
     const assigned = this.getAssignedPages().map(normalize).filter(Boolean);
-    if (!assigned.length) {
-      return false;
+    if (assigned.includes(needle)) {
+      return true;
     }
 
-    return assigned.includes(needle);
+    // Fall back to allowed page list when no explicit assignment
+    const allowed = this.getAllowedPages().map(normalize).filter(Boolean);
+    return allowed.includes(needle);
   }
 }
