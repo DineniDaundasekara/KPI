@@ -43,23 +43,26 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 2rem;
-  padding-bottom: 1.5rem;
-  margin-bottom: 2.5rem;
-  border-bottom: 2px solid rgba(16, 33, 54, 0.08);
+  gap: 1.5rem;
+  padding-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid #E2E8F0;
 }
 
 .hero-content h1 {
-  font-size: clamp(2.2rem, 4vw, 3rem);
-  margin: 0 0 0.65rem;
-  color: #0057a6;
+  font-size: 2.1rem;
+  margin: 0 0 0.5rem 0;
+  color: #0057A6;
   font-weight: 600;
+  font-family: Arial, sans-serif;
+  letter-spacing: 0.3px;
 }
 
 .hero-subtitle {
   margin: 0;
-  color: #4c5d73;
-  font-size: 1.05rem;
+  color: #6b7b8c;
+  font-size: 1rem;
+  font-family: Arial, sans-serif;
 }
 
 
@@ -82,17 +85,21 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  padding: 0.85rem 1.1rem;
+  border-radius: 14px;
+  background: #0057A6;
+  border: 1px solid #0057A6;
 }
 
 .data-card h2 {
   margin: 0;
   font-size: 1.35rem;
-  color: #0b1f3b;
+  color: #ffffff;
 }
 
 .data-card p {
   margin: 0.35rem 0 0;
-  color: #4c5d73;
+  color: rgba(255, 255, 255, 0.82);
   font-size: 0.95rem;
 }
 
@@ -105,6 +112,7 @@
   border-collapse: collapse;
   min-width: 780px;
   font-size: 0.95rem;
+  border-radius: 0 0 12px 12px;
 }
 
 .data-table.condensed {
@@ -112,22 +120,32 @@
 }
 
 .data-table thead th {
-  background: linear-gradient(135deg, #0f66c3, #0a48a4);
+  background: #0057A6;
   color: #fff;
   padding: 0.85rem 0.75rem;
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.12);
+  letter-spacing: 0.4px;
+  border-right: 1px solid rgba(255, 255, 255, 0.85);
+}
+
+.data-table thead th:last-child {
+  border-right: none;
 }
 
 .data-table tbody td {
   border: 1px solid rgba(15, 27, 44, 0.08);
   padding: 0.8rem 0.75rem;
   text-align: center;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.92);
 }
 
 .data-table tbody tr:nth-child(even) td {
   background: rgba(244, 248, 255, 0.9);
+}
+
+.data-table tbody tr:hover td {
+  background: #eef5ff;
 }
 
 .state {

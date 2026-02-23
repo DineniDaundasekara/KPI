@@ -87,7 +87,7 @@ const LOCAL_REGION_TABLE: RegionRow[] = [
 	styleUrls: ['./otn-op.component.scss'],
 })
 export class OtnOpComponent implements OnInit, OnDestroy {
-	pageTitle = 'Platform KPI — OTN & Optical';
+	pageTitle = 'OTN & Optical';
 
 	otnOp1Data: OtnOp1Entry[] = [];
 	otnOp2Data: OtnOp2Entry[] = [];

@@ -73,7 +73,7 @@ const LOCAL_REGION_TABLE: RegionRow[] = [
 	styleUrls: ['./bb-anw.component.scss'],
 })
 export class BbAnwComponent implements OnInit, OnDestroy {
-	pageTitle = 'Platform KPI — BB & ANW';
+	pageTitle = 'BB & ANW';
 
 	data: BbAnwEntry[] = [];
 	private allEntries: BbAnwEntry[] = [];

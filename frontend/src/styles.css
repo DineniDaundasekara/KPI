@@ -44,6 +44,17 @@ body {
   display: block !important;
 }
 
+/* Consistent headline styling across platform/admin pages */
+.page-header h1,
+.hero-panel h1,
+.kpi-hero h1,
+.current-month-header h1,
+.header-left h1 {
+  color: #0057a6;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
 /* Standard export button style (Overall KPI layout + TM Activity color) */
 .export-btn {
   padding: 10px 20px;

@@ -73,7 +73,7 @@ const MONTH_NAMES = [
 export class RoutineMtncComponent implements OnInit {
   private readonly http = inject(HttpClient);
 
-  pageTitle = 'Platform KPI — Routine MTNC';
+  pageTitle = 'Routine MTNC';
   heroSubtitle = 'Routine maintenance cadence across IPNW, INT & NT, and BB&ANW footprints.';
 
   readonly columns = PLATFORM_COLUMNS;

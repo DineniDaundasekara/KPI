@@ -47,7 +47,7 @@ const LOCAL_REGION_TABLE: RegionRow[] = [
   styleUrls: ['./ip-nw-op.component.scss'],
 })
 export class IpNwOpComponent implements OnInit, OnDestroy {
-  pageTitle = 'Platform KPI - IP NW OP';
+  pageTitle = 'IP NW OP';
 
   data: IpNwOpKpiDto[] = [];
   metrics: IpNwOpMetric[] = [];

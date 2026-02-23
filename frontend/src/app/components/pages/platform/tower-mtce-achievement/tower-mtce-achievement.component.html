@@ -1,11 +1,15 @@
 <div class="kpi-page">
 
   <section class="hero-panel">
-    <h1>{{ pageTitle }}</h1>
-    <p>{{ heroSubtitle }}</p>
-    <button class="export-btn" (click)="exportToExcel()" [disabled]="loading">
-      Export to Excel
-    </button>
+    <div class="hero-content">
+      <h1>{{ pageTitle }}</h1>
+      <p class="hero-subtitle">{{ heroSubtitle }}</p>
+    </div>
+    <div class="hero-actions">
+      <button class="export-btn" (click)="exportToExcel()" [disabled]="loading">
+        Export to Excel
+      </button>
+    </div>
   </section>
 
   <div *ngIf="loading">Loading...</div>

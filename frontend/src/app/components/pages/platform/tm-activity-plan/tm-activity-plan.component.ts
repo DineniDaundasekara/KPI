@@ -376,7 +376,7 @@ export class TmActivityPlanComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly tmActivityService = inject(TmActivityService);
 
-  pageTitle = 'Platform KPI — TM Activity Plan';
+  pageTitle = 'TM Activity Plan';
   headers: string[] = [];
   towerSums: TowerSums = {};
   calculatedValues: string[] = [];

@@ -44,7 +44,7 @@ interface RegionData {
   styleUrls: ['./service-fulfilment.component.scss']
 })
 export class ServiceFulfilmentComponent implements OnInit {
-  pageTitle = 'Platform KPI — Service Fulfilment';
+  pageTitle = 'Service Fulfilment';
   
   // Form values
   formValues = {

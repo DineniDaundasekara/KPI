@@ -12,23 +12,20 @@ import { NavOption } from '../../page-config';
 })
 export class OverallKpiDropdownComponent {
   @Input() options: NavOption[] = [];
-  @Input() isOpen: boolean = false;
-  @Output() toggleMenu = new EventEmitter<void>();
   @Output() closeMenu = new EventEmitter<void>();
   @Output() selection = new EventEmitter<string>();
 
   constructor(private router: Router) {}
 
-  onToggleMenu(): void {
-    this.toggleMenu.emit();
-  }
+  onNavigate(): void {
+    const target = this.options[0]?.path;
+    if (!target) {
+      return;
+    }
 
-  onSelection(path: string): void {
-    // Navigate to the selected page
-    this.router.navigate([path]).then(() => {
-      // Close the menu after navigation
+    this.router.navigate([target]).then(() => {
       this.closeMenu.emit();
-      this.selection.emit(path);
+      this.selection.emit(target);
     }).catch((error) => {
       console.error('Navigation error:', error);
       this.closeMenu.emit();
