@@ -13,7 +13,7 @@ import { UserService, User, CreateUserDto, UpdateUserDto } from '../../../../ser
   styleUrls: ['./user-registration.component.scss']
 })
 export class UserRegistrationComponent implements OnInit {
-  pageTitle = 'Admin — User Registration';
+  pageTitle = 'User Registration';
   @ViewChild('formCard') formCard?: ElementRef<HTMLElement>;
   @ViewChild('nameField') nameField?: ElementRef<HTMLInputElement>;
 

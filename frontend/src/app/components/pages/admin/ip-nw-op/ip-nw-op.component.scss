@@ -69,18 +69,18 @@
 }
 
 .kpi-hero h1 {
-  font-size: clamp(2rem, 4vw, 3rem);
-  margin-bottom: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 1px;
-  color: #0f1b2c;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  margin: 0.5rem 0;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: #0057A6;
 }
 
 .kpi-hero .page-subtitle {
   margin: 0;
-  font-size: 1.1rem;
-  color: #1d3557;
-  opacity: 0.95;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #0f1b2c;
 }
 
 .meta-line {
@@ -240,8 +240,28 @@
 }
 
 .kpi-table thead {
-  background: linear-gradient(135deg, #0f66c3, #0a48a4);
+  background: #0057A6;
   color: #fff;
+}
+
+.kpi-table th {
+  border-right: 1px solid rgba(255, 255, 255, 0.85);
+}
+
+.kpi-table th:last-child {
+  border-right: none;
+}
+
+.kpi-table thead th {
+  background-clip: padding-box;
+}
+
+.kpi-table thead tr:first-child th:first-child {
+  border-top-left-radius: 12px;
+}
+
+.kpi-table thead tr:first-child th:last-child {
+  border-top-right-radius: 12px;
 }
 
 .kpi-table th,

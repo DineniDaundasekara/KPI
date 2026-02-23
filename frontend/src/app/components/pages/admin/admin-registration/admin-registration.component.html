@@ -7,12 +7,11 @@
       <p class="page-subtitle">Register Admin & Delete Admin</p>
     </div>
 
-    <button type="button" class="toggle-form-btn" (click)="toggleFormVisibility()" [attr.aria-expanded]="isFormVisible">
+    <button type="button" class="export-btn" (click)="toggleFormVisibility()" [attr.aria-expanded]="isFormVisible">
       <span class="material-symbols-outlined">{{ isFormVisible ? 'close' : 'person_add' }}</span>
       {{ isFormVisible ? 'Hide Form' : 'Add New Administrator' }}
     </button>
 
-    <div class="header-divider"></div>
   </header>
 
   <!-- MAIN CONTENT -->

@@ -57,10 +57,10 @@ body {
 
 /* Standard export button style (Overall KPI layout + TM Activity color) */
 .export-btn {
-  padding: 10px 20px;
+  padding: 12px 24px;
   border-radius: 8px;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 15px;
   cursor: pointer;
   transition: all 0.2s;
   border: 1px solid #cbd5e1;

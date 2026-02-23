@@ -8,10 +8,6 @@
   <section class="form-section">
     <form class="kpi-form" [formGroup]="form" (ngSubmit)="onSubmit()">
       <h2>{{ editingId ? 'Update Activity' : 'Add Activity' }}</h2>
-      <!-- <div class="field-group">
-        <input type="number" formControlName="no" placeholder="No" required />
-        <span class="error" *ngIf="form.controls.no.invalid && form.controls.no.touched">Required</span>
-      </div> -->
       <div class="field-group">
         <input type="text" formControlName="kpi" placeholder="KPI" required />
         <span class="error" *ngIf="form.controls.kpi.invalid && form.controls.kpi.touched">Required</span>
@@ -64,7 +60,6 @@
     <table *ngIf="!loading && records.length" class="kpi-table">
       <thead>
         <tr>
-          <th>No</th>
           <th>KPI</th>
           <th>Target</th>
           <th>Calculation</th>
@@ -77,7 +72,6 @@
       </thead>
       <tbody>
         <tr *ngFor="let record of records">
-          <td>{{ record.no }}</td>
           <td>{{ record.kpi }}</td>
           <td>{{ record.target }}</td>
           <td>{{ record.calculation }}</td>

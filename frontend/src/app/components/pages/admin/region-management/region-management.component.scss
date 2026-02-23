@@ -80,17 +80,26 @@
   align-items: center;
 }
 
+.eyebrow {
+  margin: 0;
+  color: #0f1b2c;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
 .header-center h1 {
   margin: 0.5rem 0;
   font-size: clamp(2rem, 4vw, 2.8rem);
   font-weight: 700;
-  color: #0f1b2c;
+  color: #0057A6;
 }
 
 .subtitle {
   max-width: 600px; /* Prevents text from stretching too wide */
   margin: 0 auto;
   line-height: 1.5;
+  color: #0f1b2c;
 }
 
 .count-pill {
@@ -439,10 +448,24 @@
       text-align: left;
       font-weight: 600;
       border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+      border-right: 1px solid rgba(255, 255, 255, 0.85);
       cursor: pointer;
+      background-clip: padding-box;
       -webkit-user-select: none;
       user-select: none;
       white-space: nowrap;
+    }
+
+    th:last-child {
+      border-right: none;
+    }
+
+    tr:first-child th:first-child {
+      border-top-left-radius: 12px;
+    }
+
+    tr:first-child th:last-child {
+      border-top-right-radius: 12px;
     }
   }
 

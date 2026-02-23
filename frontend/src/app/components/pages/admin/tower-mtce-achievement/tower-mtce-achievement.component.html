@@ -12,10 +12,6 @@
       <h2>{{ editingId ? 'Update KPI' : 'Add KPI' }}</h2>
 
       <div class="field-group">
-        <input type="number" formControlName="no" placeholder="No" />
-      </div>
-
-      <div class="field-group">
         <input type="text" formControlName="responsibility" placeholder="Responsibility" />
       </div>
 
@@ -55,7 +51,6 @@
     <table class="kpi-table" *ngIf="records.length">
       <thead>
         <tr>
-          <th>No</th>
           <th>Responsibility</th>
           <th>Frequency</th>
           <th>Weightage</th>
@@ -66,7 +61,6 @@
 
       <tbody>
         <tr *ngFor="let record of records">
-          <td>{{ record.no }}</td>
           <td>{{ record.responsibility }}</td>
           <td>{{ record.frequency }}</td>
           <td>{{ record.weightage }}</td>

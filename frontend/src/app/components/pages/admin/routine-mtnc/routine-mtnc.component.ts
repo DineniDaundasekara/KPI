@@ -6,7 +6,6 @@ import { finalize } from 'rxjs/operators';
 
 type RoutineRecord = {
   _id: number;  // Changed from string to number (int identity)
-  no: number;
   kpi: string;
   target: string;
   calculation: string;
@@ -43,7 +42,6 @@ export class AdminRoutineMtncComponent implements OnInit {
   private readonly apiBase = 'http://localhost:5043/api/mtnc-routine';
 
   form = this.fb.group({
-    no: ['', Validators.required],
     kpi: ['', Validators.required],
     target: ['', Validators.required],
     calculation: ['', Validators.required],
@@ -66,8 +64,7 @@ export class AdminRoutineMtncComponent implements OnInit {
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (response) => {
-          // sort by "no"
-          this.records = (response ?? []).sort((a, b) => (a.no ?? 0) - (b.no ?? 0));
+          this.records = (response ?? []).sort((a, b) => a._id - b._id);
         },
         error: (err) => {
           console.error('Failed to fetch data', err);
@@ -85,7 +82,6 @@ export class AdminRoutineMtncComponent implements OnInit {
 
     // ✅ normalize payload
     const payload = {
-      no: Number(this.form.value.no),
       kpi: (this.form.value.kpi ?? '').trim(),
       target: (this.form.value.target ?? '').trim(),
       calculation: (this.form.value.calculation ?? '').trim(),
@@ -119,7 +115,6 @@ export class AdminRoutineMtncComponent implements OnInit {
   onEdit(record: RoutineRecord): void {
     this.editingId = record._id;
     this.form.patchValue({
-      no: record.no?.toString() ?? '',
       kpi: record.kpi ?? '',
       target: record.target ?? '',
       calculation: record.calculation ?? '',
@@ -167,7 +162,6 @@ export class AdminRoutineMtncComponent implements OnInit {
 
   private resetForm(): void {
     this.form.reset({
-      no: '',
       kpi: '',
       target: '',
       calculation: '',

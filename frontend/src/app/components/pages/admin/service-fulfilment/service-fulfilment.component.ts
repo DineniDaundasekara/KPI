@@ -52,7 +52,7 @@ export class AdminServiceFulfilmentComponent implements OnInit {
       platform: ['', Validators.required],
       responsibleDgm: ['', Validators.required],
       definedOla: ['', Validators.required],
-      weightage: ['', [Validators.required, Validators.min(0), Validators.max(100)]],
+      weightage: [0],
       dataSources: ['', Validators.required],
       month: [this.defaultMonth, Validators.required],
       year: [this.defaultYear, Validators.required]

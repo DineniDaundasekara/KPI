@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
 /* Background and Container */
 .page-container {
   min-height: 100vh;
@@ -36,11 +38,11 @@
 .admin-header {
   text-align: center;
   margin-bottom: 40px;
-  h1 { font-size: 2.5rem; color: #003366; margin: 0; font-weight: 600; }
-  .subtitle { color: #555; margin: 5px 0; }
+  h1 { font-size: clamp(2rem, 4vw, 2.8rem); color: #0057A6; margin: 0.5rem 0; font-weight: 700; letter-spacing: 0.3px; font-family: 'Space Grotesk', 'Segoe UI', sans-serif; }
+  .subtitle { color: #0f1b2c; margin: 0; font-size: 1rem; line-height: 1.5; font-family: 'Space Grotesk', 'Segoe UI', sans-serif; }
   .stats-badge {
     font-size: 0.85rem;
-    color: #777;
+    color: #0f1b2c;
     .mode-tag { background: #eee; padding: 2px 8px; border-radius: 12px; }
   }
 }
@@ -109,13 +111,27 @@
   border-collapse: collapse;
   
   thead tr {
-    background-color: #0047ab;
+    background-color: #0057A6;
     color: white;
     text-align: left;
     font-size: 0.85rem;
+
+    th {
+      background-clip: padding-box;
+    }
+
+    th:first-child {
+      border-top-left-radius: 12px;
+    }
+
+    th:last-child {
+      border-top-right-radius: 12px;
+    }
   }
 
   th, td { padding: 15px 20px; }
+  th { border-right: 1px solid rgba(255, 255, 255, 0.85); }
+  th:last-child { border-right: none; }
   
   tbody tr {
     border-bottom: 1px solid #f2f2f2;

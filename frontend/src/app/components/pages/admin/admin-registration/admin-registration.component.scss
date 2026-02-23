@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&display=swap');
+
 /* Clean, professional CSS matching your sample */
 :host {
   display: block;
@@ -49,28 +51,25 @@
 
 .page-title {
   color: #0057a6;
-  font-size: 2rem;
+  font-size: clamp(2rem, 4vw, 2.8rem);
   font-weight: 700;
-  margin: 0 0 0.5rem 0;
+  margin: 0.5rem 0;
   text-align: left;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
+  letter-spacing: 0.3px;
 }
 
 .page-subtitle {
-  color: #6b7280;
+  color: #0f1b2c;
   font-size: 1rem;
   margin: 0;
   text-align: left;
   font-weight: 500;
+  line-height: 1.5;
+  max-width: 600px;
+  font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
 }
 
-.header-divider {
-  height: 3px;
-  background: linear-gradient(90deg, #0057a6, #00a86b);
-  border-radius: 2px;
-  margin-top: 0.5rem;
-  width: 100%;
-}
 
 .toggle-form-btn {
   border: none;
@@ -101,6 +100,12 @@
 
 .toggle-form-btn .material-symbols-outlined {
   font-size: 1.2rem;
+}
+
+.page-header .export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 /* Main Content */
@@ -584,13 +589,27 @@
 
 .table thead th {
   border: none;
-  background-color: rgba(249, 250, 251, 0.7);
-  color: #374151;
+  background-color: #0057A6;
+  color: #ffffff;
   font-weight: 600;
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   padding: 0.75rem 1rem;
+  border-right: 1px solid rgba(255, 255, 255, 0.85);
+  background-clip: padding-box;
+}
+
+.table thead th:last-child {
+  border-right: none;
+}
+
+.table thead tr:first-child th:first-child {
+  border-top-left-radius: 12px;
+}
+
+.table thead tr:first-child th:last-child {
+  border-top-right-radius: 12px;
 }
 
 .table tbody td {

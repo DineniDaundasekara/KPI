@@ -5,7 +5,6 @@ import { HttpClient } from '@angular/common/http';
 
 interface TowerKpi {
   id: number;  // Changed from string to number (int identity)
-  no: number;
   responsibility: string;
   frequency: string;
   weightage: string;
@@ -45,7 +44,6 @@ export class TowerMtceAchievementComponent implements OnInit {
 
   ngOnInit(): void {
     this.form = this.fb.group({
-      no: ['', Validators.required],
       responsibility: ['', Validators.required],
       frequency: ['', Validators.required],
       weightage: ['', Validators.required],

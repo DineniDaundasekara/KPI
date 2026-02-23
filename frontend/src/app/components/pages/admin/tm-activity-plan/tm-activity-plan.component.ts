@@ -6,7 +6,6 @@ import { finalize } from 'rxjs/operators';
 
 type ActivityRecord = {
   id?: number; // Backend uses 'id' (int)
-  no: string;
   kpi: string;
   target: string;
   calculation: string;
@@ -35,7 +34,6 @@ export class AdminTmActivityPlanComponent implements OnInit {
   errorMessage = '';
 
   form = this.fb.group({
-    no: ['', Validators.required],
     kpi: ['', Validators.required],
     target: ['', Validators.required],
     calculation: ['', Validators.required],
@@ -72,8 +70,7 @@ export class AdminTmActivityPlanComponent implements OnInit {
       return;
     }
 
-    const formValue = this.form.getRawValue();
-    const payload = { ...formValue, no: String(formValue.no) };
+    const payload = this.form.getRawValue();
     const request$ = this.editingId
       ? this.http.put(`http://localhost:5043/api/TmActivityPlans/${this.editingId}`, { id: this.editingId, ...payload })
       : this.http.post('http://localhost:5043/api/TmActivityPlans', payload);
@@ -96,7 +93,6 @@ export class AdminTmActivityPlanComponent implements OnInit {
   onEdit(record: ActivityRecord): void {
     this.editingId = record.id!;
     this.form.patchValue({
-      no: record.no,
       kpi: record.kpi,
       target: record.target,
       calculation: record.calculation,
@@ -131,7 +127,6 @@ export class AdminTmActivityPlanComponent implements OnInit {
 
   private resetForm(): void {
     this.form.reset({
-      no: '',
       kpi: '',
       target: '',
       calculation: '',
