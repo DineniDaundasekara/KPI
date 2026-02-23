@@ -339,6 +339,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
     return region.title;
   }
 
+  formatRegionTitle(value: string): string {
+    const raw = String(value ?? '').trim();
+    if (!raw) return '';
+
+    const regionMatch = raw.match(/^region\s*(\d+)/i);
+    if (regionMatch) {
+      const numberValue = Number(regionMatch[1]);
+      return `Region ${Number.isFinite(numberValue) ? numberValue : regionMatch[1]}`;
+    }
+
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  }
+
   trackByMeter(index: number, meter: MeterData): string {
     return meter.code;
   }

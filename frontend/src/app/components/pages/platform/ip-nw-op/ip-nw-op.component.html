@@ -1,17 +1,25 @@
 <div class="page-container">
   <div class="page-header">
-    <h1>{{ pageTitle }}</h1>
-    <p class="page-subtitle">IP Network Operations metrics and performance</p>
+    <div class="header-info">
+      <h1>{{ pageTitle }}</h1>
+      <p class="page-subtitle">IP Network Operations metrics and performance</p>
 
-    <div class="mt-3">
-      <small class="text-muted">
-        <i class="bi bi-info-circle me-1"></i>
-        {{ data.length }} KPIs loaded •
-        <span [class.text-success]="isEditingAllowed" [class.text-warning]="!isEditingAllowed">
-          <i class="bi" [ngClass]="isEditingAllowed ? 'bi-check-circle' : 'bi-exclamation-circle'"></i>
-          {{ isEditingAllowed ? 'Edit mode enabled' : 'View only mode' }}
-        </span>
-      </small>
+      <div class="mt-3">
+        <small class="text-muted">
+          <i class="bi bi-info-circle me-1"></i>
+          {{ data.length }} KPIs loaded •
+          <span [class.text-success]="isEditingAllowed" [class.text-warning]="!isEditingAllowed">
+            <i class="bi" [ngClass]="isEditingAllowed ? 'bi-check-circle' : 'bi-exclamation-circle'"></i>
+            {{ isEditingAllowed ? 'Edit mode enabled' : 'View only mode' }}
+          </span>
+        </small>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <button type="button" class="export-btn" (click)="exportToExcel()" [disabled]="loading || !data.length">
+        Export to Excel
+      </button>
     </div>
   </div>
 

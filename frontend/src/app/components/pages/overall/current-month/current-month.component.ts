@@ -367,9 +367,9 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
     this.noOverallResults = false;
     const month = this.selectedMonth;
     const year = this.selectedYear;
-    const url = `${this.overallResultsApiBase}?month=${month}&year=${year}`;
+    const url = `${this.overallResultsApiBase}/calculate?month=${month}&year=${year}`;
 
-    this.http.get<OverallKpiResultApi[]>(url).subscribe({
+    this.http.post<OverallKpiResultApi[]>(url, {}).subscribe({
       next: (rows) => {
         const list = Array.isArray(rows) ? rows : [];
         this.noOverallResults = list.length === 0;

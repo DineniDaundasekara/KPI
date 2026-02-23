@@ -7,7 +7,7 @@
       <p class="hero-subtitle">Tower maintenance KPIs, regional execution, and compliance planning.</p>
     </div>
     <div class="hero-actions">
-      <button type="button" (click)="exportToExcel()" [disabled]="!headers.length || loading">
+      <button type="button" class="export-btn" (click)="exportToExcel()" [disabled]="!headers.length || loading">
         Export to Excel
       </button>
     </div>

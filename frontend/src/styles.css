@@ -43,3 +43,26 @@ body {
 .dropdown-menu.visible {
   display: block !important;
 }
+
+/* Standard export button style (Overall KPI layout + TM Activity color) */
+.export-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid #cbd5e1;
+  background: linear-gradient(135deg, #4c98ee, #0f8a4c);
+  color: #ffffff;
+}
+
+.export-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #3f8ce6, #0c7b44);
+  border-color: #94a3b8;
+}
+
+.export-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
