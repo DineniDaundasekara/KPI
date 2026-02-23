@@ -15,7 +15,7 @@
 
 /* Left Section: Text */
 .header-left .eyebrow {
-  color: #2563eb;
+  color: #000000;
   font-weight: 700;
   letter-spacing: 0.05em;
   font-size: 12px;
@@ -23,10 +23,11 @@
 }
 
 .header-left h1 {
-  font-size: 28px;
-  color: #1e293b;
-  margin: 0;
-  font-weight: 800;
+  color: #0057a6;
+  font-size: 2.1rem;
+  font-weight: 700;
+  margin: 0.5rem 0;
+  letter-spacing: 0.3px;
 }
 
 .header-left .subtitle {
@@ -198,7 +199,7 @@
 
 /* NEW MARGIN STYLE */
 .group-margin {
-  border-right: 6px solid #3e77a2!important; /* subtle SLT green accent */
+  border-right: 3px solid #1f4b97!important; /* subtle SLT green accent */
 }
 
 .kpi-table {
@@ -224,8 +225,8 @@
 /* KPI table headers — SLT blue */
 .kpi-table th {
   height: 64px;
-  background: linear-gradient(180deg, #4d98d5 0%, #4d98d5 100%);
-  color: #ffffff;
+  background: linear-gradient(180deg, #1e4f94 0%, #163c71 100%);
+  color: #f7fbff;
   text-align: center;
   font-size: 15px;
   border: 2px solid #ffffff;
@@ -233,6 +234,29 @@
   box-sizing: border-box;
   vertical-align: middle;
   background-clip: padding-box;
+}
+
+.kpi-table thead tr.colSpan-header th {
+  color: #f7fbff;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+}
+
+.kpi-table thead tr.colSpan-header:nth-child(1) th {
+  background: linear-gradient(180deg, #2a5fae 0%, #20498a 100%);
+}
+
+.kpi-table thead tr.colSpan-header:nth-child(2) th {
+  background: linear-gradient(180deg, #1a7c6a 0%, #146254 100%);
+}
+
+.kpi-table thead tr.colSpan-header:nth-child(3) th {
+  background: linear-gradient(180deg, #1f7f8f 0%, #186876 100%);
+}
+
+.kpi-table thead tr:last-child th {
+  background: linear-gradient(180deg, #1e4f94 0%, #163c71 100%);
+  color: #eff6ff;
 }
 
 .kpi-table thead tr:first-child th:first-child {
@@ -246,8 +270,8 @@
 /* Final distribution table headers — SLT green by default */
 .final-distribution-table thead th {
   height: 64px;
-  background: linear-gradient(180deg, #16A34A 0%, #0F7A3B 100%);
-  color: #ffffff;
+  background: linear-gradient(180deg, #1a7c6a 0%, #146254 100%);
+  color: #f4fffb;
   text-align: center;
   font-size: 15px;
   border: 1px solid #ffffff;
@@ -267,20 +291,20 @@
 
 /* Header-row overrides for clearer hierarchy */
 .final-distribution-table thead .region-header {
-  background: linear-gradient(180deg, #3e77a2 0%, #3e77a2 100%); /* SLT blue */
-  color: #ffffff;
+  background: linear-gradient(180deg, #2a5fae 0%, #20498a 100%);
+  color: #f0f6ff;
 }
 .final-distribution-table thead .province-header {
-  background: linear-gradient(180deg, #3390b2 0%, #3390b2 100%); /* SLT green (lighter) */
-  color: #fff;
+  background: linear-gradient(180deg, #1a7c6a 0%, #146254 100%);
+  color: #f0fffb;
 }
 .final-distribution-table thead .ee-area-header {
-  background: linear-gradient(180deg, #43afd0 0%, #43afd0 100%); /* darker blue for engineer */
-  color: #fff;
+  background: linear-gradient(180deg, #1f7f8f 0%, #186876 100%);
+  color: #f1f6ff;
 }
 .final-distribution-table thead .metrics-labels-row th {
-  background: linear-gradient(180deg, #52b1e0 0%, #52b1e0 100%);
-  color: #fff;
+  background: linear-gradient(180deg, #1e4f94 0%, #163c71 100%);
+  color: #eff6ff;
 }
 
 /* Right Table Metric Widths */
@@ -289,8 +313,8 @@
 }
 
 .ee-area-header {
-  background: linear-gradient(180deg, #235db4 0%, #0B63D6 100%);
-  color: #ffffff;
+  background: linear-gradient(180deg, #1f7f8f 0%, #186876 100%);
+  color: #f1f6ff;
   font-weight: 800;
 }
 
@@ -321,10 +345,53 @@
 .kpi-table tbody tr:nth-child(even) td,
 .final-distribution-table tbody tr:nth-child(even) td { background-color: #ffffff; }
 .kpi-table tbody tr:nth-child(odd) td,
-.final-distribution-table tbody tr:nth-child(odd) td { background-color: #FBFDFF; }
+.final-distribution-table tbody tr:nth-child(odd) td { background-color: #F1F6FF; }
 
 .kpi-table tbody tr:hover td,
 .final-distribution-table tbody tr:hover td {
   background-color: #F3FBFF; /* very light SLT blue highlight */
   transition: background-color 120ms ease-in-out;
+}
+
+/* Summary rows (left table) */
+.kpi-table tbody tr.total-marks-row td {
+  background-color: #e7f0ff;
+  color: #0b2f6d;
+  font-weight: 700;
+}
+
+.kpi-table tbody tr.kpi-label-row td {
+  background-color: #e9f7f1;
+  color: #0b3d26;
+  font-weight: 700;
+}
+
+.kpi-table tbody tr.total-marks-row .total-points,
+.kpi-table tbody tr.kpi-label-row .kpi-label {
+  background-color: #dbeaff;
+  color: #0b2f6d;
+  font-weight: 800;
+}
+
+/* Summary rows (right table) */
+.final-distribution-table tbody tr.summary-row td {
+  background-color: #f2f7ff;
+}
+
+.final-distribution-table tbody tr.summary-row .maximum-points-cell {
+  background-color: #e6f0ff;
+  color: #0b2f6d;
+  font-weight: 700;
+}
+
+.final-distribution-table tbody tr.summary-row .points-achieved-cell {
+  background-color: #dbeaff;
+  color: #0b2f6d;
+  font-weight: 800;
+}
+
+.final-distribution-table tbody tr.total-row .points-achieved-cell {
+  background-color: #e0f4ea;
+  color: #0b3d26;
+  font-weight: 800;
 }
