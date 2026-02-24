@@ -38,19 +38,43 @@ namespace backend.Controllers
             if (user == null || !user.IsActive)
                 return Unauthorized("Invalid Service ID or inactive account.");
 
-            // 2. No Password Verification required (Service ID Only)
+            return await GenerateLoginResponse(user);
+        }
 
-            // 3. Generate JWT
+        [HttpPost("verify-azure-login")]
+        [AllowAnonymous]
+        public async Task<IActionResult> VerifyAzureLogin([FromBody] VerifyAzureLoginDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.ServiceId))
+                return BadRequest("Email and Service ID are required.");
+
+            // 1. Find User by both Email AND ServiceId
+            var user = await _context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.Email == dto.Email && u.ServiceId == dto.ServiceId);
+
+            if (user == null)
+                return Unauthorized("The provided Service ID does not match the authenticated Microsoft account.");
+
+            if (!user.IsActive)
+                return Unauthorized("User account is inactive.");
+
+            return await GenerateLoginResponse(user);
+        }
+
+        private async Task<IActionResult> GenerateLoginResponse(User user)
+        {
+            // 1. Generate JWT
             var token = GenerateJwtToken(user);
 
-            // 4. Update LastLogin
+            // 2. Update LastLogin
             user.LastLogin = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            // 5. Get Allowed Pages
+            // 3. Get Allowed Pages
             var pages = await _context.UserPageAccess
                 .Where(upa => upa.UserId == user.UserId)
-                .Select(upa => upa.Page.PageName) // Or PageCode/PageId depending on what frontend needs
+                .Select(upa => upa.Page.PageName)
                 .ToListAsync();
 
             var assignedPages = await _context.PlatformKpiAssignments
@@ -58,14 +82,13 @@ namespace backend.Controllers
                 .Select(pka => pka.Page.PageName)
                 .ToListAsync();
 
-            // Reconcile platform assignments for PlatformAdmin: ensure only one mapped page based on selected pages
+            // 4. Reconcile platform assignments for PlatformAdmin
             if (string.Equals(user.Role?.RoleName, "PlatformAdmin", StringComparison.OrdinalIgnoreCase))
             {
                 var targetPageId = MapKnownPageId(pages.FirstOrDefault());
 
                 if (targetPageId.HasValue)
                 {
-                    // If assignments differ, reset to the single target page
                     var existingIds = await _context.PlatformKpiAssignments
                         .Where(pka => pka.UserId == user.UserId)
                         .Select(pka => pka.PageId)
@@ -152,6 +175,12 @@ namespace backend.Controllers
 
     public class LoginDto
     {
+        public string ServiceId { get; set; }
+    }
+
+    public class VerifyAzureLoginDto
+    {
+        public string Email { get; set; }
         public string ServiceId { get; set; }
     }
 }

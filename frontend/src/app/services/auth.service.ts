@@ -40,18 +40,32 @@ export class AuthService {
   login(serviceId: string): Observable<User> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { serviceId })
       .pipe(
-        map((res) => ({
-          token: res.token,
-          name: res.name ?? res.Name ?? '',
-          role: res.role ?? res.Role ?? '',
-          pages: res.pages ?? res.Pages ?? [],
-          assignedPages: res.assignedPages ?? res.AssignedPages ?? []
-        })),
-        tap(user => {
-          localStorage.setItem('user', JSON.stringify(user));
-          this.userSubject.next(user);
-        })
+        map(res => this.mapLoginResponse(res)),
+        tap(user => this.handleAuthSuccess(user))
       );
+  }
+
+  verifyAzureLogin(email: string, serviceId: string): Observable<User> {
+    return this.http.post<LoginResponse>(`${this.apiUrl}/verify-azure-login`, { email, serviceId })
+      .pipe(
+        map(res => this.mapLoginResponse(res)),
+        tap(user => this.handleAuthSuccess(user))
+      );
+  }
+
+  private mapLoginResponse(res: LoginResponse): User {
+    return {
+      token: res.token,
+      name: res.name ?? res.Name ?? '',
+      role: res.role ?? res.Role ?? '',
+      pages: res.pages ?? res.Pages ?? [],
+      assignedPages: res.assignedPages ?? res.AssignedPages ?? []
+    };
+  }
+
+  private handleAuthSuccess(user: User) {
+    localStorage.setItem('user', JSON.stringify(user));
+    this.userSubject.next(user);
   }
 
   logout() {
