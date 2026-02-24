@@ -74,28 +74,15 @@ export class LoginComponent implements OnInit {
         this.loading = true;
         this.error = '';
 
-        if (this.isAzureAuthenticated) {
-            this.loginWithAzureStep2();
-        } else {
-            this.loginWithServiceIdOnly();
+        // Azure authentication is mandatory - users must complete Azure login first
+        if (!this.isAzureAuthenticated || !this.azureEmail) {
+            this.error = 'Please sign in with Microsoft first';
+            this.loading = false;
+            return;
         }
-    }
 
-    private loginWithServiceIdOnly() {
-        this.authService.login(this.serviceId)
-            .pipe(first())
-            .subscribe({
-                next: () => {
-                    this.handleLoginSuccess();
-                },
-                error: () => {
-                    this.error = 'Invalid Service ID or Login Failed';
-                    this.loading = false;
-                }
-            });
-    }
-
-    private loginWithAzureStep2() {
+        // Two-step verification: Azure email (proves SLT authentication) + Service ID (from database)
+        // These are completely independent - no linking between them
         this.authService.verifyAzureLogin(this.azureEmail, this.serviceId)
             .pipe(first())
             .subscribe({
@@ -103,8 +90,8 @@ export class LoginComponent implements OnInit {
                     this.handleLoginSuccess();
                 },
                 error: (error) => {
-                    console.error('Azure Verification Error:', error);
-                    this.error = error.error?.message || 'Service ID does not match Microsoft account';
+                    console.error('Authentication Error:', error);
+                    this.error = error.error || 'Authentication failed. Please verify your Service ID is registered in the system.';
                     this.loading = false;
                 }
             });

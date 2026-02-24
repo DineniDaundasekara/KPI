@@ -37,14 +37,8 @@ export class AuthService {
     return this.userSubject.value;
   }
 
-  login(serviceId: string): Observable<User> {
-    return this.http.post<LoginResponse>(`${this.apiUrl}/login`, { serviceId })
-      .pipe(
-        map(res => this.mapLoginResponse(res)),
-        tap(user => this.handleAuthSuccess(user))
-      );
-  }
-
+  // Service-ID-only login removed - Azure authentication is now mandatory
+  
   verifyAzureLogin(email: string, serviceId: string): Observable<User> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/verify-azure-login`, { email, serviceId })
       .pipe(

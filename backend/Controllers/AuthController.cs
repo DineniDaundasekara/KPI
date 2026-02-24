@@ -23,60 +23,37 @@ namespace backend.Controllers
             _configuration = configuration;
         }
 
-        [HttpPost("login")]
-        [AllowAnonymous] // Public endpoint
-        public async Task<IActionResult> Login([FromBody] LoginDto dto)
-        {
-            if (string.IsNullOrWhiteSpace(dto.ServiceId))
-                return BadRequest("Service ID is required.");
-
-            // 1. Find User
-            var user = await _context.Users
-                .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.ServiceId == dto.ServiceId);
-
-            if (user == null || !user.IsActive)
-                return Unauthorized("Invalid Service ID or inactive account.");
-
-            return await GenerateLoginResponse(user);
-        }
+        // Service-ID-only login removed - Azure authentication is now required
 
         [HttpPost("verify-azure-login")]
         [AllowAnonymous]
         public async Task<IActionResult> VerifyAzureLogin([FromBody] VerifyAzureLoginDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.ServiceId))
-                return BadRequest("Email and Service ID are required.");
+            // Step 1: Verify Azure email is provided (proves Azure authentication happened)
+            if (string.IsNullOrWhiteSpace(dto.Email))
+                return BadRequest("Azure authentication required. Please sign in with Microsoft first.");
+                
+            // Step 2: Verify Service ID is provided
+            if (string.IsNullOrWhiteSpace(dto.ServiceId))
+                return BadRequest("Service ID is required.");
 
-            // 1. Find User by ServiceId ONLY first
+            // Validate email format
+            if (!dto.Email.Contains("@"))
+                return BadRequest("Invalid email format from Azure authentication.");
+
+            // Step 3: Find User by ServiceId in database (completely independent of Azure email)
             var user = await _context.Users
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.ServiceId == dto.ServiceId);
 
             if (user == null)
-                return Unauthorized("The provided Service ID does not exist.");
+                return Unauthorized("Service ID not found in the system. Please contact your administrator.");
 
             if (!user.IsActive)
-                return Unauthorized("User account is inactive.");
+                return Unauthorized("Your account has been deactivated. Please contact your administrator.");
 
-            // 2. Check and Link Email
-            // Logic: If user has a dummy/internal email or no email, link it to the current Azure email.
-            // This handles the transition from Service ID-only login to Azure login.
-            bool isDummyOrMissingEmail = string.IsNullOrWhiteSpace(user.Email) || 
-                                       user.Email.EndsWith("@internal.slt", StringComparison.OrdinalIgnoreCase);
-
-            if (isDummyOrMissingEmail)
-            {
-                // Link the account to this Azure email permanently
-                user.Email = dto.Email;
-                await _context.SaveChangesAsync();
-            }
-            else if (!string.Equals(user.Email, dto.Email, StringComparison.OrdinalIgnoreCase))
-            {
-                // Strict check: if a real email already exists, it must match the one used to sign in
-                return Unauthorized("This Service ID is already linked to a different Microsoft account.");
-            }
-
+            // Step 4: Both checks passed - Generate JWT token and return user data
+            // Note: Azure email and Service ID are separate - no linking between them
             return await GenerateLoginResponse(user);
         }
 

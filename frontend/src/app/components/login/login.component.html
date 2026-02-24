@@ -15,7 +15,7 @@
                     <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
                 <div class="banner-text">
-                    <span class="auth-msg">Microsoft account verified</span>
+                    <span class="auth-msg">✓ Step 1: Microsoft authentication complete</span>
                     <span class="auth-email">{{ azureEmail }}</span>
                 </div>
             </div>
@@ -25,9 +25,9 @@
         <!-- Step 2: Service ID Input (Only shown if Azure Auth is successful) -->
         <ng-container *ngIf="isAzureAuthenticated">
             <div class="form-group mb-4">
-                <label for="serviceId" class="form-label">Verify your Service ID</label>
+                <label for="serviceId" class="form-label">Step 2: Enter Your Service ID</label>
                 <input type="text" id="serviceId" [(ngModel)]="serviceId" name="serviceId" class="form-control"
-                    placeholder="Enter matching Service ID" required>
+                    placeholder="Enter your Service ID" required>
             </div>
 
             <div *ngIf="error" class="error-message">
@@ -35,7 +35,7 @@
             </div>
 
             <button class="login-btn" (click)="login()" [disabled]="loading || !serviceId">
-                {{ loading ? 'Verifying...' : 'Complete Login' }}
+                {{ loading ? 'Verifying...' : 'Login' }}
             </button>
         </ng-container>
 
