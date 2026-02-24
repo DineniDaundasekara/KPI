@@ -75,7 +75,8 @@ export class App implements OnInit {
   }
 
   protected get isLoginPage(): boolean {
-    return this.currentUrl === '/login' || this.currentUrl === '/';
+    const path = window.location.pathname;
+    return path.startsWith('/login') || path === '/';
   }
 
   protected toggleMenu(menu: string): void {

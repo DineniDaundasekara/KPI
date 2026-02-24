@@ -48,16 +48,34 @@ namespace backend.Controllers
             if (string.IsNullOrWhiteSpace(dto.Email) || string.IsNullOrWhiteSpace(dto.ServiceId))
                 return BadRequest("Email and Service ID are required.");
 
-            // 1. Find User by both Email AND ServiceId
+            // 1. Find User by ServiceId ONLY first
             var user = await _context.Users
                 .Include(u => u.Role)
-                .FirstOrDefaultAsync(u => u.Email == dto.Email && u.ServiceId == dto.ServiceId);
+                .FirstOrDefaultAsync(u => u.ServiceId == dto.ServiceId);
 
             if (user == null)
-                return Unauthorized("The provided Service ID does not match the authenticated Microsoft account.");
+                return Unauthorized("The provided Service ID does not exist.");
 
             if (!user.IsActive)
                 return Unauthorized("User account is inactive.");
+
+            // 2. Check and Link Email
+            // Logic: If user has a dummy/internal email or no email, link it to the current Azure email.
+            // This handles the transition from Service ID-only login to Azure login.
+            bool isDummyOrMissingEmail = string.IsNullOrWhiteSpace(user.Email) || 
+                                       user.Email.EndsWith("@internal.slt", StringComparison.OrdinalIgnoreCase);
+
+            if (isDummyOrMissingEmail)
+            {
+                // Link the account to this Azure email permanently
+                user.Email = dto.Email;
+                await _context.SaveChangesAsync();
+            }
+            else if (!string.Equals(user.Email, dto.Email, StringComparison.OrdinalIgnoreCase))
+            {
+                // Strict check: if a real email already exists, it must match the one used to sign in
+                return Unauthorized("This Service ID is already linked to a different Microsoft account.");
+            }
 
             return await GenerateLoginResponse(user);
         }
