@@ -24,13 +24,13 @@ export const appConfig: ApplicationConfig = {
     {
       provide: MSAL_GUARD_CONFIG,
       useValue: {
-        interactionType: InteractionType.Redirect,
+        interactionType: InteractionType.Popup,
         authRequest: loginRequest
       }
     },
     {
       provide: MSAL_INTERCEPTOR_CONFIG, useValue: {
-        interactionType: InteractionType.Redirect,
+        interactionType: InteractionType.Popup,
         protectedResourceMap: new Map([
           // ['https://localhost:7251', ['api://eaea79e0-86c3-46ae-8c51-9d7c1c997ee2/access_as_user']],
           // ['http://localhost:5043', ['api://eaea79e0-86c3-46ae-8c51-9d7c1c997ee2/access_as_user']]
