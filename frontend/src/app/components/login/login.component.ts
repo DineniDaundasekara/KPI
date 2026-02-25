@@ -107,7 +107,10 @@ export class LoginComponent implements OnInit {
     cancelAzure() {
         this.isAzureAuthenticated = false;
         this.azureEmail = '';
+        this.serviceId = '';
         this.error = '';
+        console.log('[Login] Logging out from Azure...');
+        this.msalService.logoutRedirect();
     }
 
     private handleLoginSuccess() {

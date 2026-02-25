@@ -15,11 +15,11 @@
                     <polyline points="20 6 9 17 4 12"></polyline>
                 </svg>
                 <div class="banner-text">
-                    <span class="auth-msg">✓ Step 1: Microsoft authentication complete</span>
+                    <span class="auth-msg">Step 1: Microsoft authentication complete</span>
                     <span class="auth-email">{{ azureEmail }}</span>
                 </div>
             </div>
-            <button class="cancel-link" (click)="cancelAzure()" title="Sign in with different account">Change</button>
+            <button class="cancel-link" (click)="cancelAzure()" title="Sign out from Microsoft">Logout</button>
         </div>
 
         <!-- Step 2: Service ID Input (Only shown if Azure Auth is successful) -->
