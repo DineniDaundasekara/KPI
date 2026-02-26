@@ -12,7 +12,7 @@ import { routes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideZoneChangeDetection({ eventCoalescing: false }),
     provideHttpClient(withInterceptorsFromDi()),
     provideAnimations(),
     provideRouter(routes),
