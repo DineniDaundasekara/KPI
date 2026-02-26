@@ -332,7 +332,10 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
               id: row.id,
               number: rowIndex + 1,
               perspectives: row.perspectives,
-              strategicObjectives: row.strategicObjectives,
+              strategicObjectives: (row.strategicObjectives ?? '').replace(
+                /service assurance/gi,
+                'SA'
+              ),
               kpi: row.keyPerformanceIndicators,
 
               // ✅ Target = DescriptionOfKPI (same)

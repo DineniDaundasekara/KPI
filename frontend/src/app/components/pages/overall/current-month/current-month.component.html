@@ -47,21 +47,20 @@
       <table class="kpi-table">
         <thead>
           <tr class="colSpan-header">
-            <th colspan="7">R-GM</th>
+            <th colspan="6">R-GM</th>
           </tr>
           <tr class="colSpan-header">
-            <th colspan="7">P-DGM</th>
+            <th colspan="6">P-DGM</th>
           </tr>
           <tr class="colSpan-header">
-            <th colspan="7">NW EE/RTOM AREA</th>
+            <th colspan="6">NW EE/RTOM AREA</th>
           </tr>
           <tr>
-            <th class="col-num">Number</th>
-            <th class="col-persp">Perspectives</th>
-            <th class="col-kra">Strategic Objectives</th>
+            <th class="col-num">ID</th>
+            <th class="col-kra">Strategic<br>Objectives</th>
             <th class="col-kpi">KPI</th>
             <th class="col-target">Target</th>
-            <th class="col-weight">Weightage</th>
+            <th class="col-weight">Weight</th>
             <th class="col-points">Points</th>
           </tr>
         </thead>
@@ -69,7 +68,6 @@
         <tbody>
           <tr *ngFor="let row of kpiRows">
             <td class="col-num">{{ row.number }}</td>
-            <td class="col-persp">{{ row.perspectives }}</td>
             <td class="col-kra">{{ row.strategicObjectives }}</td>
             <td class="kpi-name-cell col-kpi"><b>{{ row.kpi }}</b></td>
             <td class="col-target">{{ row.target }}</td>
@@ -78,12 +76,12 @@
           </tr>
 
           <tr class="total-marks-row">
-            <td colspan="6" class="text-right"><b>Total Marks</b></td>
+            <td colspan="5" class="text-right"><b>Total Marks</b></td>
             <td class="text-center total-points"><b>{{ totalPointsApplicable | number }}</b></td>
           </tr>
 
           <tr class="kpi-label-row">
-            <td colspan="6" class="text-right"><b>KPI</b></td>
+            <td colspan="5" class="text-right"><b>KPI</b></td>
             <td class="kpi-label"></td>
           </tr>
         </tbody>
@@ -125,8 +123,8 @@
           <tr class="metrics-labels-row">
             <ng-container *ngFor="let _ of engineersFlat">
               <th class="achieved-header">Achieved KPI</th>
-              <th class="maximum-points-header">Maximum Points Per KPI</th>
-              <th class="points-achieved-header group-margin">Points Achieved</th>
+              <th class="maximum-points-header">Points<br>Applicable</th>
+              <th class="points-achieved-header group-margin">Points<br>Achieved</th>
             </ng-container>
           </tr>
         </thead>
