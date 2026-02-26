@@ -103,7 +103,11 @@
             <ng-container *ngFor="let region of regionGroups">
               <th *ngFor="let province of region.provinces" 
                   [attr.colspan]="province.engineers.length * 3" 
-                  class="province-header">
+                  class="province-header"
+                  [ngClass]="{
+                    'metro-1-header': province.province?.toLowerCase() === 'metro 1',
+                    'metro-2-header': province.province?.toLowerCase() === 'metro 2'
+                  }">
                 {{ province.province }}
               </th>
             </ng-container>

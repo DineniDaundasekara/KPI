@@ -302,6 +302,18 @@
   background: linear-gradient(180deg, #b9ded4 0%, #a3d2c6 100%);
   color: #003b7a;
 }
+.final-distribution-table thead .province-row th:nth-child(odd) {
+  background: linear-gradient(180deg, #bdebd6 0%, #a6dec6 100%);
+}
+.final-distribution-table thead .province-row th:nth-child(even) {
+  background: linear-gradient(180deg, #b2dfc8 0%, #9ad1b9 100%);
+}
+.final-distribution-table thead .metro-1-header {
+  background: linear-gradient(180deg, #bfe8d9 0%, #a7dccb 100%);
+}
+.final-distribution-table thead .metro-2-header {
+  background: linear-gradient(180deg, #b6e2cf 0%, #9fd6c2 100%);
+}
 .final-distribution-table thead .ee-area-header {
   background: linear-gradient(180deg, #b9dfea 0%, #a0cfdd 100%);
   color: #003b7a;
