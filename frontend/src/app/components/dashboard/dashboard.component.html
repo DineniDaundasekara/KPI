@@ -94,7 +94,7 @@
               class="meter-circle"
               [style.background]="getCircularProgressBackground(meter, region.meters)"
             >
-              <span class="meter-percent">{{ valueForMeter(meter).toFixed(1) }}</span>
+              <span class="meter-percent" [style.color]="getColorForValue(valueForMeter(meter))">{{ valueForMeter(meter).toFixed(1) }}</span>
             </div>
           </div>
           <div class="meter-label">

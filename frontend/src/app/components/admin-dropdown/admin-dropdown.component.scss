@@ -31,6 +31,9 @@
   border: 1px solid rgba(0, 87, 166, 0.12);
   z-index: 200;
   backdrop-filter: blur(8px);
+  max-height: 85vh;
+  overflow-y: auto;
+  overflow-x: hidden;
 
   opacity: 0;
   visibility: hidden;
@@ -173,6 +176,31 @@
 
 .dropdown.open .chevron {
   transform: rotate(180deg);
+}
+
+/* Scrollbar styling */
+.dropdown-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dropdown-menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dropdown-menu::-webkit-scrollbar-thumb {
+  background: rgba(0, 87, 166, 0.25);
+  border-radius: 3px;
+  transition: background 0.2s ease;
+}
+
+.dropdown-menu::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 87, 166, 0.4);
+}
+
+/* Firefox scrollbar */
+.dropdown-menu {
+  scrollbar-color: rgba(0, 87, 166, 0.25) transparent;
+  scrollbar-width: thin;
 }
 
 /* ensure Admin trigger uses same nav button tokens */

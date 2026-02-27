@@ -28,7 +28,11 @@ $border-radius-meter: 999px;
 // ---------- GLOBAL ----------
 :host {
   display: block;
-  min-height: 100vh;
+  width: 100%;
+  max-width: 100vw;
+  height: 100%;
+  min-height: calc(100vh - 140px);
+  overflow: hidden;
   background-image: url('/assets/admin/SLT-Mobitel.jpg');
   background-size: cover;
   background-position: center;
@@ -38,6 +42,7 @@ $border-radius-meter: 999px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   padding-bottom: 0;
+  box-sizing: border-box;
 
   // Overlay to lighten the background image
   &::before {
@@ -54,20 +59,28 @@ $border-radius-meter: 999px;
 }
 
 .dashboard {
-  max-width: 1440px;
-  margin: 0 auto;
-  padding: 0.75rem 0.5rem 1rem;
+  width: 100%;
+  max-width: 100vw;
+  height: 100%;
+  margin: 0;
+  padding: 0.5rem;
   position: relative;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .percentage-note {
-  margin: 0 0 0.4rem 0.5rem;
+  margin: 0 0 0.3rem 0;
   color: $gray-700;
   font-weight: 600;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   display: block;
   text-align: right;
+  flex-shrink: 0;
 }
 
 // ---------- STATS CARDS ----------
@@ -160,41 +173,104 @@ $border-radius-meter: 999px;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
-  gap: 0.75rem;
+  gap: 0.6rem;
+  width: 100%;
+  max-width: 100%;
+  flex: 1 1 auto;
+  align-items: stretch;
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-height: 0;
+  box-sizing: border-box;
 }
 
 .region-card {
   background: rgba(white, 0.8);
   backdrop-filter: blur(8px);
   border-radius: $border-radius-card;
-  padding: 0.9rem 1.1rem;
+  padding: 1rem 1.2rem 1rem;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.6rem;
+  gap: 0.3rem;
   box-shadow: $shadow-sm;
   border: 1px solid rgba(white, 0.7);
   transition: all 0.25s;
-  flex: 1 1 calc(25% - 1rem);
-  min-width: 210px;
+  flex: 1 1 calc(25% - 0.6rem);
+  min-width: 200px;
+  max-width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  // Different light background colors for each region
+  &:nth-child(1) {
+    background: rgba(255, 240, 220, 0.9); // Light coral/apricot
+    
+    .region-title {
+      border-left-color: #e65c2e; // Darker coral
+      
+      h3 {
+        color: #e65c2e;
+      }
+    }
+  }
+  
+  &:nth-child(2) {
+    background: rgba(220, 240, 255, 0.9); // Darker blue
+    
+    .region-title {
+      border-left-color: #2270cc; // Darker blue
+      
+      h3 {
+        color: #2270cc;
+      }
+    }
+  }
+  
+  &:nth-child(3) {
+    background: rgba(220, 245, 235, 0.9); // Darker mint
+    
+    .region-title {
+      border-left-color: #018a69; // Darker teal/mint
+      
+      h3 {
+        color: #018a69;
+      }
+    }
+  }
+  
+  &:nth-child(4) {
+    background: rgba(235, 230, 255, 0.9); // Darker lavender
+    
+    .region-title {
+      border-left-color: #7550b8; // Darker lavender
+      
+      h3 {
+        color: #7550b8;
+      }
+    }
+  }
 
   &:hover {
-    background: white;
     box-shadow: $shadow-md;
-    border-color: rgba($slt-teal, 0.2);
+    border-color: rgba($slt-teal, 0.3);
+    transform: translateY(-2px);
   }
 }
 
 .region-title {
-  min-width: 120px;
+  min-width: 100px;
   padding-left: 0.6rem;
-  margin-left: 0.9rem;
+  margin-left: 0;
   border-left: 4px solid $slt-teal;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.1rem;
+  padding-bottom: 0.1rem;
+  flex-shrink: 0;
 
   h3 {
     margin: 0;
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: $slt-blue;
     letter-spacing: -0.01em;
@@ -203,22 +279,37 @@ $border-radius-meter: 999px;
 
 // ---------- METERS ----------
 .meters-row {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.6rem;
+  display: grid;
+  grid-template-rows: repeat(3, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(80px, 1fr);
+  gap: 0.5rem 0.6rem;
   width: 100%;
-  padding-left: 0.9rem;
+  max-width: 100%;
+  padding-left: 0;
+  align-items: start;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  box-sizing: border-box;
 }
 
 .meter {
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   align-items: center;
-  width: auto;
-  gap: 0.6rem;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  gap: 0.2rem;
   transition: transform 0.2s;
-  cursor: pointer; // Indicate clickable
+  cursor: pointer;
+  padding: 0.1rem;
+  box-sizing: border-box;
+  min-height: 0;
+  min-width: 0;
 
   &:hover {
     transform: translateY(-6px);
@@ -235,10 +326,13 @@ $border-radius-meter: 999px;
 }
 
 .meter-progress {
-  width: 100px;
-  height: 100px;
+  width: 100%;
+  max-width: 130px;
+  aspect-ratio: 1;
   margin-bottom: 0;
-  pointer-events: none; // Allow clicks to pass through
+  pointer-events: none;
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .meter-circle {
@@ -258,8 +352,8 @@ $border-radius-meter: 999px;
   &::after {
     content: '';
     position: absolute;
-    width: 72px;
-    height: 72px;
+    width: 72%;
+    height: 72%;
     background: white;
     border-radius: 50%;
     box-shadow: inset 0 2px 6px rgba(0,0,0,0.02);
@@ -270,40 +364,50 @@ $border-radius-meter: 999px;
   position: relative;
   z-index: 2;
   font-weight: 800;
-  font-size: 1.35rem;
-  color: $slt-teal;
-  background: linear-gradient(145deg, $slt-teal, #007a63);
-  background-clip: text;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  letter-spacing: -0.5px;
-  pointer-events: none; // Allow clicks to pass through
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  letter-spacing: -0.3px;
+  pointer-events: none;
 }
 
 .meter-label {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  text-align: left;
+  align-items: center;
+  gap: 1px;
+  text-align: center;
   border-bottom: 2px solid transparent;
-  padding-bottom: 2px;
+  padding-bottom: 1px;
   transition: all 0.2s;
-  pointer-events: none; // Allow clicks to pass through
+  pointer-events: none;
   text-transform: uppercase;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.02em;
+  width: 100%;
+  max-width: 130px;
+  flex-shrink: 1;
+  overflow: hidden;
+  min-width: 0;
 }
 
 .meter-engineer {
-  font-size: 0.95rem;
+  font-size: clamp(0.75rem, 1.3vw, 0.85rem);
   font-weight: 700;
   color: $slt-blue;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
 .meter-area {
-  font-size: 0.85rem;
+  font-size: clamp(0.65rem, 1.2vw, 0.75rem);
   font-weight: 600;
   color: $gray-700;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
 // ---------- LOADING / ERROR ----------
@@ -547,16 +651,25 @@ $border-radius-meter: 999px;
 }
 
 // ---------- RESPONSIVE ----------
+@media (max-width: 1200px) {
+  .region-card {
+    flex: 1 1 calc(50% - 0.6rem);
+    min-width: 200px;
+  }
+}
+
 @media (max-width: 900px) {
   .dashboard {
-    padding: 1.5rem;
+    padding: 0.5rem;
   }
 
   .region-card {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     gap: 1.2rem;
     flex-basis: 100%;
+    min-width: 100%;
+    max-width: 100%;
   }
 
   .region-title {
@@ -565,10 +678,10 @@ $border-radius-meter: 999px;
     padding-left: 0;
     padding-bottom: 0.5rem;
     width: 100%;
+    text-align: center;
   }
 
   .meters-row {
-    justify-content: center;
     width: 100%;
   }
 
@@ -584,17 +697,33 @@ $border-radius-meter: 999px;
     grid-template-columns: 1fr;
   }
 
+  .dashboard {
+    padding: 0.3rem;
+  }
+
+  .region-card {
+    min-width: 100%;
+    max-width: 100%;
+    padding: 0.5rem;
+  }
+
+  .meters-row {
+    grid-auto-columns: minmax(70px, 1fr);
+  }
+
   .meter {
-    width: 100px;
+    width: 100%;
+    max-width: 100%;
+    min-width: 70px;
   }
 
   .meter-progress {
-    width: 100px;
-    height: 100px;
+    max-width: 90px;
   }
 
   .modal {
     padding: 1.5rem;
+    width: 95%;
   }
 
   .summary-grid {

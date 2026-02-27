@@ -314,15 +314,26 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   getCircularProgressBackground(meter: MeterData, meters: MeterData[]): string {
     const value = this.valueForMeter(meter);
-    const isMax = this.isMaxValue(meter, meters);
     const maxValue = 102; // Match React's maxValue
     const normalizedValue = Math.min(value, maxValue);
-    // 10% Accent - Green for max (good KPIs), 30% Secondary - SLT Blue for others
-    const color = isMax ? '#28A745' : `rgba(0, 87, 166, ${normalizedValue / 100})`;
-    // 60% Primary - Light grey trail
+    
+    // Color based on value thresholds
+    const color = this.getColorForValue(value);
+    
+    // Light grey trail
     const trailColor = '#E0E0E0';
     
     return `conic-gradient(${color} 0% ${normalizedValue}%, ${trailColor} ${normalizedValue}% 100%)`;
+  }
+
+  getColorForValue(value: number): string {
+    if (value > 80) {
+      return '#28A745'; // Green
+    } else if (value >= 30) {
+      return '#FFC107'; // Yellow
+    } else {
+      return '#DC3545'; // Red
+    }
   }
 
   getProgressTextColor(meter: MeterData, meters: MeterData[]): string {
