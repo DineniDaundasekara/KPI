@@ -232,7 +232,7 @@
   background: linear-gradient(180deg, #b8d2ff 0%, #9fbfff 100%);
   color: #003b7a;
   text-align: center;
-  font-size: 15px;
+  font-size: 16px;
   border: 2px solid #ffffff;
   font-weight: 700;
   box-sizing: border-box;
@@ -247,11 +247,25 @@
 }
 
 .kpi-table thead tr.colSpan-header:nth-child(1) th {
-  background: linear-gradient(180deg, #beddff 0%, #a6ccff 100%);
+  background: linear-gradient(
+    90deg,
+    #eef4ff 0%,
+    #bbd4ff 25%,
+    #a2c2ff 50%,
+    #bbd4ff 75%,
+    #eef4ff 100%
+  );
 }
 
 .kpi-table thead tr.colSpan-header:nth-child(2) th {
-  background: linear-gradient(180deg, #bfe6dd 0%, #a6d7cc 100%);
+  background: linear-gradient(
+    90deg,
+    #eef8f3 0%,
+    #bfe6dd 25%,
+    #a6d7cc 50%,
+    #bfe6dd 75%,
+    #eef8f3 100%
+  );
 }
 
 .kpi-table thead tr.colSpan-header:nth-child(3) th {
@@ -263,13 +277,6 @@
   color: #003b7a;
 }
 
-.kpi-table thead tr:first-child th:first-child {
-  border-top-left-radius: 12px;
-}
-
-.kpi-table thead tr:first-child th:last-child {
-  border-top-right-radius: 12px;
-}
 
 /* Final distribution table headers — SLT green by default */
 .final-distribution-table thead th {
@@ -277,7 +284,7 @@
   background: linear-gradient(180deg, #b9ded4 0%, #a3d2c6 100%);
   color: #003b7a;
   text-align: center;
-  font-size: 15px;
+  font-size: 16px;
   border: 1px solid #ffffff;
   font-weight: 700;
   box-sizing: border-box;
@@ -285,28 +292,55 @@
   background-clip: padding-box;
 }
 
-.final-distribution-table thead tr:first-child th:first-child {
-  border-top-left-radius: 12px;
-}
-
-.final-distribution-table thead tr:first-child th:last-child {
-  border-top-right-radius: 12px;
-}
 
 /* Header-row overrides for clearer hierarchy */
 .final-distribution-table thead .region-header {
-  background: linear-gradient(180deg, #bbd4ff 0%, #a2c2ff 100%);
+  background: linear-gradient(
+    90deg,
+    #eef4ff 0%,
+    #bbd4ff 25%,
+    #a2c2ff 50%,
+    #bbd4ff 75%,
+    #eef4ff 100%
+  );
   color: #003b7a;
 }
 .final-distribution-table thead .province-header {
-  background: linear-gradient(180deg, #b9ded4 0%, #a3d2c6 100%);
+  background: linear-gradient(
+    90deg,
+    #eef8f3 0%,
+    #b9ded4 25%,
+    #a3d2c6 50%,
+    #b9ded4 75%,
+    #eef8f3 100%
+  );
   color: #003b7a;
 }
 .final-distribution-table thead .province-row th:nth-child(odd) {
-  background: linear-gradient(180deg, #bdebd6 0%, #a6dec6 100%);
+  background: linear-gradient(
+    90deg,
+    #eef8f3 0%,
+    #c9f3df 25%,
+    #b0e4d0 50%,
+    #c9f3df 75%,
+    #eef8f3 100%
+  );
 }
 .final-distribution-table thead .province-row th:nth-child(even) {
-  background: linear-gradient(180deg, #b2dfc8 0%, #9ad1b9 100%);
+  background: linear-gradient(
+    90deg,
+    #eef8f3 0%,
+    #a9dac2 25%,
+    #8fcaa8 50%,
+    #a9dac2 75%,
+    #eef8f3 100%
+  );
+}
+.final-distribution-table thead .province-row th.group-margin:nth-child(odd) {
+  border-right: 3px solid #b0e4d0 !important;
+}
+.final-distribution-table thead .province-row th.group-margin:nth-child(even) {
+  border-right: 3px solid #8fcaa8 !important;
 }
 .final-distribution-table thead .metro-1-header {
   background: linear-gradient(180deg, #bfe8d9 0%, #a7dccb 100%);

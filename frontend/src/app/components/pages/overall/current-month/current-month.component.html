@@ -94,7 +94,7 @@
           <tr class="region-row">
             <ng-container *ngFor="let region of regionGroups">
               <th [attr.colspan]="region.totalEngineers * 3" class="region-header">
-                {{ region.region }}
+                {{ formatHeaderLabel(region.region) }}
               </th>
             </ng-container>
           </tr>
@@ -103,12 +103,12 @@
             <ng-container *ngFor="let region of regionGroups">
               <th *ngFor="let province of region.provinces" 
                   [attr.colspan]="province.engineers.length * 3" 
-                  class="province-header"
+                  class="province-header group-margin"
                   [ngClass]="{
                     'metro-1-header': province.province?.toLowerCase() === 'metro 1',
                     'metro-2-header': province.province?.toLowerCase() === 'metro 2'
                   }">
-                {{ province.province }}
+                {{ formatHeaderLabel(province.province) }}
               </th>
             </ng-container>
           </tr>
@@ -126,7 +126,7 @@
 
           <tr class="metrics-labels-row">
             <ng-container *ngFor="let _ of engineersFlat">
-              <th class="achieved-header">Achieved KPI</th>
+              <th class="achieved-header">Achieved<br>KPI</th>
               <th class="maximum-points-header">Points<br>Applicable</th>
               <th class="points-achieved-header group-margin">Points<br>Achieved</th>
             </ng-container>

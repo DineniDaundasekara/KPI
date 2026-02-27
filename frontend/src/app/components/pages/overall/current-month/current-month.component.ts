@@ -182,6 +182,21 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
     this.currentYear = this.selectedYear;
   }
 
+  formatHeaderLabel(value: string | null | undefined): string {
+    if (!value) return '';
+    const withSpaces = value.replace(/([a-zA-Z])([0-9])/g, '$1 $2');
+    return withSpaces
+      .split(/\s+/)
+      .map((part) => {
+        const isAllCaps = part === part.toUpperCase();
+        if (isAllCaps && part.length <= 4) {
+          return part;
+        }
+        return part.charAt(0).toUpperCase() + part.slice(1).toLowerCase();
+      })
+      .join(' ');
+  }
+
   @HostListener('window:focus')
   onWindowFocus(): void {
     this.loadRegions();
