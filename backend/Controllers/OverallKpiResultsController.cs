@@ -40,7 +40,7 @@ namespace backend.Controllers
         }
 
         [HttpPost("calculate")]
-        [Authorize(Policy = "AdminOnly")]
+        [Authorize]
         public async Task<ActionResult<List<OverallKpiResultDto>>> Calculate(
             [FromQuery] int? month,
             [FromQuery] int? year)

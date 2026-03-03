@@ -52,6 +52,7 @@ export class OtnOp2Component implements OnInit {
       },
       complete: () => {
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -133,6 +134,7 @@ export class OtnOp2Component implements OnInit {
       },
       complete: () => {
         this.saving = false;
+        this.cdr.detectChanges();
       }
     });
   }
