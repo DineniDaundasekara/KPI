@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { catchError, finalize } from 'rxjs/operators';
@@ -48,6 +48,7 @@ const TOWER_COLUMNS = [
 export class TowerMtceAchievementComponent implements OnInit {
 
   private readonly http = inject(HttpClient);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   pageTitle = 'Tower Maintenance';
   heroSubtitle = 'Quarterly tower maintenance achievement across NW regions.';
@@ -87,7 +88,10 @@ export class TowerMtceAchievementComponent implements OnInit {
           })
         )
     })
-    .pipe(finalize(() => (this.loading = false)))
+    .pipe(finalize(() => {
+      this.loading = false;
+      this.cdr.detectChanges();
+    }))
     .subscribe(({ distribution, kpis }) => {
 
       /* ---- tower distribution ---- */

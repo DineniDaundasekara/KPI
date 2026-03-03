@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -57,7 +57,11 @@ export class AdminRegistrationComponent implements OnInit {
   eligibleUsers: AdminUser[] = [];
   selectedUserId: number | null = null;
 
-  constructor(private fb: FormBuilder, private http: HttpClient) { }
+  constructor(
+    private fb: FormBuilder,
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef
+  ) { }
 
   ngOnInit(): void {
     this.buildForm();
@@ -77,9 +81,11 @@ export class AdminRegistrationComponent implements OnInit {
       next: (data) => {
         // Filter out SuperAdmins and Admins (already in the list)
         this.eligibleUsers = (data ?? []).filter(u => u.role !== 'SuperAdmin' && u.role !== 'Admin');
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load eligible users', err);
+        this.cdr.detectChanges();
       }
     });
   }
@@ -91,9 +97,11 @@ export class AdminRegistrationComponent implements OnInit {
       next: (data) => {
         this.admins = data ?? [];
         this.applyFilters();
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.errorMessage = this.getApiError(err, 'Failed to load admins.');
+        this.cdr.detectChanges();
       },
     });
   }
@@ -145,12 +153,14 @@ export class AdminRegistrationComponent implements OnInit {
         this.successMessage = `User "${userToPromote.name}" promoted to Admin successfully.`;
         this.adminForm.reset();
         this.isSubmitting = false;
+        this.cdr.detectChanges();
 
         setTimeout(() => (this.successMessage = ''), 3000);
       },
       error: (err) => {
         this.errorMessage = this.getApiError(err, 'Failed to promote user.');
         this.isSubmitting = false;
+        this.cdr.detectChanges();
       },
     });
   }
@@ -171,10 +181,12 @@ export class AdminRegistrationComponent implements OnInit {
         this.applyFilters();
 
         this.successMessage = `Admin "${admin.name}" removed from admin list (demoted to User).`;
+        this.cdr.detectChanges();
         setTimeout(() => (this.successMessage = ''), 3000);
       },
       error: (err) => {
         this.errorMessage = this.getApiError(err, 'Failed to remove admin.');
+        this.cdr.detectChanges();
       },
     });
   }
@@ -192,6 +204,7 @@ export class AdminRegistrationComponent implements OnInit {
     this.http.patch(`${this.apiBase}/${admin.userId}/status`, {}).subscribe({
       next: () => {
         this.successMessage = `Admin "${admin.name}" ${admin.isActive ? 'activated' : 'deactivated'}.`;
+        this.cdr.detectChanges();
         setTimeout(() => (this.successMessage = ''), 2000);
       },
       error: (err) => {
@@ -199,6 +212,7 @@ export class AdminRegistrationComponent implements OnInit {
         admin.isActive = oldValue;
         this.applyFilters();
         this.errorMessage = this.getApiError(err, 'Failed to update status.');
+        this.cdr.detectChanges();
       },
     });
   }

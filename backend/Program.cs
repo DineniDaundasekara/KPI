@@ -1,4 +1,5 @@
 using backend.Data;
+using backend.Services;
 using Microsoft.EntityFrameworkCore;
 using System.Text.Json.Serialization;
 
@@ -64,6 +65,9 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod();
     });
 });
+
+// Register MultiTable Service for SOAP UI data fetching
+builder.Services.AddHttpClient<IMultiTableService, MultiTableService>();
 
 var app = builder.Build();
 

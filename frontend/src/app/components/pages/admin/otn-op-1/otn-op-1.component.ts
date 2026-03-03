@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 
@@ -26,7 +26,8 @@ export class OtnOp1Component implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private otnOp1Service: OtnOp1Service
+    private otnOp1Service: OtnOp1Service,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -48,10 +49,12 @@ export class OtnOp1Component implements OnInit {
         next: (res: OtnOpKpi[]) => {
           this.loading = false;
           this.records = res;
+          this.cdr.detectChanges();
         },
         error: () => {
           this.loading = false;
           this.errorMessage = 'Failed to load KPI data';
+          this.cdr.detectChanges();
         }
       });
   }
@@ -74,10 +77,12 @@ export class OtnOp1Component implements OnInit {
           this.saving = false;
           this.resetForm();
           this.fetchData();
+          this.cdr.detectChanges();
         },
         error: () => {
           this.saving = false;
           this.errorMessage = 'Save failed';
+          this.cdr.detectChanges();
         }
       });
     } else {
@@ -86,10 +91,12 @@ export class OtnOp1Component implements OnInit {
           this.saving = false;
           this.resetForm();
           this.fetchData();
+          this.cdr.detectChanges();
         },
         error: () => {
           this.saving = false;
           this.errorMessage = 'Save failed';
+          this.cdr.detectChanges();
         }
       });
     }
@@ -115,10 +122,12 @@ export class OtnOp1Component implements OnInit {
         next: () => {
           this.saving = false;
           this.fetchData();
+          this.cdr.detectChanges();
         },
         error: () => {
           this.saving = false;
           this.errorMessage = 'Delete failed';
+          this.cdr.detectChanges();
         }
       });
   }

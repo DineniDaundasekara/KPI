@@ -1,6 +1,6 @@
 ﻿import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../../services/auth.service';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import * as ExcelJS from 'exceljs';
 import { firstValueFrom, forkJoin, of } from 'rxjs';
@@ -178,7 +178,8 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 		private otnOp1Service: OtnOp1Service,
 		private otnOp2Service: OtnOp2Service,
 		private regionService: RegionService,
-		private authService: AuthService
+		private authService: AuthService,
+		private cdr: ChangeDetectorRef
 	) {}
 
 	ngOnInit(): void {
@@ -456,12 +457,14 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 							this.otnOp1Data = this.transformOtnOp1Records(otnOp1Kpis, op1MetricMap);
 							this.otnOp2Data = this.transformOtnOp2Records(otnOp2Kpis, op2MetricMap);
 							this.loading = false;
+							this.cdr.detectChanges();
 						} catch (mappingError) {
 							console.error('Failed to transform OTN KPI data:', mappingError);
 							this.otnOp1Data = [];
 							this.otnOp2Data = [];
 							this.loading = false;
 							this.error = 'Failed to prepare OTN KPI data.';
+							this.cdr.detectChanges();
 						}
 					},
 					error: (metricsErr) => {
@@ -470,6 +473,7 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 						this.otnOp2Data = [];
 						this.loading = false;
 						this.error = 'Failed to load OTN KPI metrics.';
+						this.cdr.detectChanges();
 					},
 				});
 			},
@@ -479,6 +483,7 @@ export class OtnOpComponent implements OnInit, OnDestroy {
 				this.otnOp2Data = [];
 				this.loading = false;
 				this.error = 'Failed to load OTN KPI data.';
+				this.cdr.detectChanges();
 			},
 		});
 	}

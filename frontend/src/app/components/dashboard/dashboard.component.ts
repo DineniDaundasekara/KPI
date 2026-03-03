@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { trigger, transition, style, animate, state } from '@angular/animations';
@@ -125,6 +125,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
 
   constructor(
     private http: HttpClient,
+    private cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private platformId: any
   ) {}
 
@@ -244,6 +245,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         });
         this.totals = totals;
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load dashboard data', err);
@@ -255,6 +257,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
         this.engineerCount = 0;
         this.provinceCount = 0;
         this.leaCount = 0;
+        this.cdr.detectChanges();
       },
     });
   }

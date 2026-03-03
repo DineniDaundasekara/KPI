@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../../services/auth.service';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RegionService, Region } from '../../../../services/region.service';
 import { BbAnwService, BbAnwDto } from '../../../../services/bb-anw.service';
@@ -162,7 +162,8 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 	constructor(
 		private regionService: RegionService,
 		private bbAnwService: BbAnwService,
-		private authService: AuthService
+		private authService: AuthService,
+		private cdr: ChangeDetectorRef
 	) {}
 
 	ngOnInit(): void {
@@ -342,6 +343,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 				this.allEntries = list.map((row, index) => this.mapDtoToEntry(row, index + 1));
 				this.applyPeriodFilter();
 				this.loading = false;
+				this.cdr.detectChanges();
 			},
 			error: (err) => {
 				console.error('Failed to load BB & ANW admin data:', err);
@@ -349,6 +351,7 @@ export class BbAnwComponent implements OnInit, OnDestroy {
 				this.data = [];
 				this.loading = false;
 				this.error = 'Failed to load BB & ANW KPI data.';
+				this.cdr.detectChanges();
 			},
 		});
 	}

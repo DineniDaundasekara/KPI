@@ -1,5 +1,5 @@
 // src/app/components/pages/admin/user-registration/user-registration.component.ts
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
@@ -13,6 +13,7 @@ import { UserService, User, CreateUserDto, UpdateUserDto } from '../../../../ser
   styleUrls: ['./user-registration.component.scss']
 })
 export class UserRegistrationComponent implements OnInit {
+  private readonly cdr = inject(ChangeDetectorRef);
   pageTitle = 'User Registration';
   @ViewChild('formCard') formCard?: ElementRef<HTMLElement>;
   @ViewChild('nameField') nameField?: ElementRef<HTMLInputElement>;
@@ -53,11 +54,13 @@ export class UserRegistrationComponent implements OnInit {
       next: (users: User[]) => {
         this.users = users;
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (error: any) => {
         this.error = 'Failed to fetch users. Please check if backend is running.';
         console.error('Error fetching users:', error);
         this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -109,11 +112,13 @@ export class UserRegistrationComponent implements OnInit {
           this.fetchUsers();
           this.resetForm();
           this.isLoading = false;
+          this.cdr.detectChanges();
         },
         error: (error: any) => {
           this.error = 'Failed to update user: ' + error.message;
           console.error('Update error:', error);
           this.isLoading = false;
+          this.cdr.detectChanges();
         }
       });
     } else {
@@ -123,11 +128,13 @@ export class UserRegistrationComponent implements OnInit {
           this.users.push(newUser);
           this.resetForm();
           this.isLoading = false;
+          this.cdr.detectChanges();
         },
         error: (error: any) => {
           this.error = 'Failed to create user: ' + error.message;
           console.error('Create error:', error);
           this.isLoading = false;
+          this.cdr.detectChanges();
         }
       });
     }
@@ -166,11 +173,13 @@ export class UserRegistrationComponent implements OnInit {
           this.cancelEdit();
         }
         this.isLoading = false;
+        this.cdr.detectChanges();
       },
       error: (error: any) => {
         this.error = 'Failed to delete user: ' + error.message;
         console.error('Delete error:', error);
         this.isLoading = false;
+        this.cdr.detectChanges();
       }
     });
   }

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { catchError, finalize } from 'rxjs/operators';
@@ -375,6 +375,7 @@ const TABLE_TITLES = [
 export class TmActivityPlanComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly tmActivityService = inject(TmActivityService);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   pageTitle = 'TM Activity Plan';
   headers: string[] = [];
@@ -402,7 +403,10 @@ export class TmActivityPlanComponent implements OnInit {
         this.setError('Unable to load TM KPI definitions. Showing cached snapshot.');
         return of([...MOCK_HARDCODED_DATA]);
       }),
-      finalize(() => (this.loading = false))
+      finalize(() => {
+        this.loading = false;
+        this.cdr.detectChanges();
+      })
     ).subscribe(hardcoded => {
       // Use processed mock data (since /api/ProcessedDataFetch1 doesn't exist)
       this.tableData = [...MOCK_PROCESSED_DATA];
