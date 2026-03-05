@@ -1,7 +1,8 @@
 ﻿/*
  * File: AppDbContext.cs
- * Entity Framework Core database context that defines all application
- * DbSets and configures entity mappings, relationships, and constraints.
+ * Entity Framework Core database context for the KPI Management System.
+ * Defines all database entities, relationships, and table configurations.
+ * Includes authentication, KPI definitions, metrics from multiple platforms, and audit trails.
  */
 
 using backend.Models;
@@ -11,18 +12,22 @@ namespace backend.Data
 {
     // =========================================================
     // APPLICATION DATABASE CONTEXT
-    // Central EF Core context for all database tables and mappings
+    // Entity Framework Core DbContext for KPI Management System
+    // Handles all database entity definitions, relationships, and table mappings
     // =========================================================
     public class AppDbContext : DbContext
     {
-        // Inject database configuration options
+        // Inject database options from dependency injection container
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
         {
         }
 
         // =========================================================
-        // AUTHENTICATION & USER MANAGEMENT
+        // AUTHENTICATION & AUTHORIZATION ENTITIES
+        // User roles, pages, access controls, and platform assignments
+        // =========================================================
+        // AUTH & USERS
         // =========================================================
         public DbSet<Role> Roles { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
@@ -31,139 +36,124 @@ namespace backend.Data
         public DbSet<PlatformKpiAssignment> PlatformKpiAssignments { get; set; } = null!;
 
         // =========================================================
-        // EMAIL RECIPIENT MANAGEMENT
+        // EMAIL MANAGEMENT
+        // Email recipients for notifications and alerts
         // =========================================================
         public DbSet<EmailRecipient> EmailRecipients { get; set; } = null!;
 
         // =========================================================
-        // REGION / AREA DATA
+        // REGION & AREA MANAGEMENT
+        // Geographic regions (LEA codes) and RTOM areas for area-based reporting
         // =========================================================
         public DbSet<RegionData> RegionData { get; set; } = null!;
         public DbSet<RtomArea> RtomArea { get; set; } = null!;
 
         // =========================================================
-        // MAINTENANCE ROUTINE KPI
+        // MAINTENANCE ROUTINE MANAGEMENT
+        // Routine maintenance KPI definitions and tracking
         // =========================================================
         public DbSet<MtncRoutine> MtncRoutines { get; set; } = null!;
 
         // =========================================================
-        // KPI DEFINITIONS AND RESULTS
+        // KPI DEFINITIONS & OVERALL RESULTS
+        // Master KPI definitions and aggregated overall results
         // =========================================================
         public DbSet<KpiDefinition> KpiDefinitions { get; set; } = null!;
         public DbSet<OverallKpiResult> OverallKpiResults { get; set; } = null!;
 
         // =========================================================
-        // SERVICE FULFILMENT KPI (FORM DATA)
+        // SERVICE FULFILMENT KPI (2025)
+        // Service level KPI definitions and monthly metrics
         // =========================================================
         public DbSet<ServiceFulfilmentKpi> ServiceFulfilmentKpis { get; set; } = null!;
         public DbSet<ServiceFulfilmentKpiMetric> ServiceFulfilmentKpiMetrics { get; set; } = null!;
 
+        
+
         // =========================================================
-        // BB&ANW KPI
+        // BROADBAND & ANW KPI (FORM 7 - RENAMED)
+        // BB&ANW KPI definitions with node-level metrics
         // =========================================================
         public DbSet<BbAnwKpi> BbAnwKpis { get; set; } = null!;
         public DbSet<BbAnwKpiNode> BbAnwKpiNodes { get; set; } = null!;
 
+
         // =========================================================
-        // TM ACTIVITY PLAN
+        // TRANSMISSION ACTIVITY PLAN (TM ACTIVITY PLAN)
+        // Transmission maintenance activity and planned KPI tracking
         // =========================================================
         public DbSet<TmActivity1> TmActivity1 { get; set; } = null!;
 
         // =========================================================
-        // TOWER KPI
+        // TOWER MAINTENANCE ACHIEVEMENT
+        // Tower site maintenance KPI tracking
         // =========================================================
         public DbSet<TowerKpi> TowerKpis { get; set; } = null!;
 
         // =========================================================
-        // IP NETWORK OPERATION KPI
+        // IP NETWORK OPERATIONS KPI (FORM 6)
+        // IP network availability and performance metrics
         // =========================================================
         public DbSet<IpNwOpKpi> IpNwOpKpis { get; set; } = null!;
         public DbSet<IpNwOpKpiMetric> IpNwOpKpiMetrics { get; set; } = null!;
 
         // =========================================================
-        // OTN OPERATION KPI (FORM 8 & 9)
+        // OTN OPERATIONS KPI (FORM 8 & FORM 9)
+        // OTN Op1 and OTN Op2 platform KPI definitions and metrics
         // =========================================================
         public DbSet<OtnOp1> OtnOp1 { get; set; } = null!;
         public DbSet<OtnOp1Metrics> OtnOp1Metrics { get; set; } = null!;
         public DbSet<OtnOp2> OtnOp2 { get; set; } = null!;
         public DbSet<OtnOp2Metrics> OtnOp2Metrics { get; set; } = null!;
 
+
         // =========================================================
-        // ENTITY CONFIGURATION
-        // Configure table mappings, keys, indexes, and relationships
+        // DATABASE SCHEMA CONFIGURATION
+        // Configures entity-to-table mappings, relationships, constraints, and indexes
+        // Called by EF Core during context initialization
         // =========================================================
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             // =========================================================
-            // ROLES TABLE CONFIGURATION
+            // AUTHENTICATION & AUTHORIZATION CONFIGURATION
+            // Defines User, Role, Page, and Access Control entities
             // =========================================================
+
             modelBuilder.Entity<Role>(entity =>
             {
                 entity.ToTable("Roles", "dbo");
                 entity.HasKey(e => e.RoleId);
-
-                entity.Property(e => e.RoleName)
-                    .IsRequired()
-                    .HasMaxLength(50);
-
-                // Ensure role names are unique
+                entity.Property(e => e.RoleName).IsRequired().HasMaxLength(50);
                 entity.HasIndex(e => e.RoleName).IsUnique();
             });
 
-            // =========================================================
-            // USERS TABLE CONFIGURATION
-            // =========================================================
             modelBuilder.Entity<User>(entity =>
             {
                 entity.ToTable("Users", "dbo");
                 entity.HasKey(e => e.UserId);
-
-                entity.Property(e => e.ServiceId)
-                    .IsRequired()
-                    .HasMaxLength(20);
-
-                // Ensure service ID is unique
+                entity.Property(e => e.ServiceId).IsRequired().HasMaxLength(20);
                 entity.HasIndex(e => e.ServiceId).IsUnique();
-
-                entity.Property(e => e.Email)
-                    .HasMaxLength(150);
-
+                entity.Property(e => e.Email).HasMaxLength(150);
                 entity.HasIndex(e => e.Email).IsUnique();
-
-                // User → Role relationship
+                
                 entity.HasOne(d => d.Role)
                     .WithMany()
                     .HasForeignKey(d => d.RoleId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
 
-            // =========================================================
-            // PAGES TABLE CONFIGURATION
-            // =========================================================
             modelBuilder.Entity<Page>(entity =>
             {
                 entity.ToTable("Page", "dbo");
                 entity.HasKey(e => e.PageId);
-
-                entity.Property(e => e.PageCode)
-                    .IsRequired()
-                    .HasMaxLength(50);
-
+                entity.Property(e => e.PageCode).IsRequired().HasMaxLength(50);
                 entity.HasIndex(e => e.PageCode).IsUnique();
-
-                entity.Property(e => e.PageName)
-                    .IsRequired()
-                    .HasMaxLength(100);
+                entity.Property(e => e.PageName).IsRequired().HasMaxLength(100);
             });
 
-            // =========================================================
-            // USER PAGE ACCESS (MANY-TO-MANY RELATIONSHIP)
-            // =========================================================
             modelBuilder.Entity<UserPageAccess>(entity =>
             {
                 entity.ToTable("UserPageAccess", "dbo");
-
-                // Composite primary key
                 entity.HasKey(e => new { e.UserId, e.PageId });
 
                 entity.HasOne(d => d.User)
@@ -177,15 +167,11 @@ namespace backend.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // =========================================================
-            // PLATFORM KPI ASSIGNMENTS
-            // =========================================================
             modelBuilder.Entity<PlatformKpiAssignment>(entity =>
             {
                 entity.ToTable("PlatformKpiAssignment", "dbo");
                 entity.HasKey(e => e.AssignmentId);
-
-                // Ensure one assignment per user and page
+                
                 entity.HasIndex(e => new { e.UserId, e.PageId }).IsUnique();
 
                 entity.HasOne(d => d.User)
@@ -199,38 +185,31 @@ namespace backend.Data
                     .OnDelete(DeleteBehavior.Cascade);
             });
 
-            // =========================================================
-            // EMAIL RECIPIENTS TABLE
-            // =========================================================
+            // EMAIL RECIPIENTS
             modelBuilder.Entity<EmailRecipient>(entity =>
             {
                 entity.ToTable("EmailRecipients", "dbo");
                 entity.HasKey(x => x.Id);
-
-                // Identity column generated by database
+                
                 entity.Property(x => x.Id)
                     .HasColumnName("id")
-                    .ValueGeneratedOnAdd();
-
+                    .ValueGeneratedOnAdd(); // Identity column - auto-generated by database
+                
                 entity.Property(x => x.Email)
                     .HasColumnName("email")
-                    .HasMaxLength(50)
+                    .HasMaxLength(50)  // Match database: nvarchar(50)
                     .IsRequired();
-
+                
                 entity.Property(x => x.V)
                     .HasColumnName("v")
                     .IsRequired();
             });
 
-            // =========================================================
-            // TM ACTIVITY PLAN TABLE
-            // =========================================================
+            // TM ACTIVITY PLAN
             modelBuilder.Entity<TmActivity1>(entity =>
             {
                 entity.ToTable("tmtable1", "dbo");
-
                 entity.HasKey(x => x.Id);
-
                 entity.Property(x => x.Id).HasColumnName("id");
                 entity.Property(x => x.No).HasColumnName("no");
                 entity.Property(x => x.Kpi).HasColumnName("kpi");
@@ -245,18 +224,14 @@ namespace backend.Data
                 entity.Property(x => x.V).HasColumnName("v");
             });
 
-            // =========================================================
-            // TOWER KPI TABLE
-            // =========================================================
+            // KPI TOWER
             modelBuilder.Entity<TowerKpi>(entity =>
             {
                 entity.ToTable("kpitowertable", "dbo");
                 entity.HasKey(x => x.Id);
-
                 entity.Property(x => x.Id)
                     .HasColumnName("id")
-                    .ValueGeneratedOnAdd();
-
+                    .ValueGeneratedOnAdd(); // Identity column - auto-generated by database
                 entity.Property(x => x.No).HasColumnName("no");
                 entity.Property(x => x.Responsibility).HasColumnName("responsibility");
                 entity.Property(x => x.Frequency).HasColumnName("frequency");
@@ -269,18 +244,14 @@ namespace backend.Data
                 entity.Property(x => x.V).HasColumnName("v");
             });
 
-            // =========================================================
-            // MAINTENANCE ROUTINE TABLE
-            // =========================================================
+            // MAINTENANCE ROUTINE
             modelBuilder.Entity<MtncRoutine>(entity =>
             {
                 entity.ToTable("mtncroutinetable1", "dbo");
                 entity.HasKey(x => x.Id);
-
                 entity.Property(x => x.Id)
                     .HasColumnName("id")
-                    .ValueGeneratedOnAdd();
-
+                    .ValueGeneratedOnAdd(); // Identity column - auto-generated by database
                 entity.Property(x => x.No).HasColumnName("no");
                 entity.Property(x => x.Kpi).HasColumnName("kpi");
                 entity.Property(x => x.Target).HasColumnName("target");
@@ -294,13 +265,410 @@ namespace backend.Data
                 entity.Property(x => x.V).HasColumnName("v");
             });
 
-            // =========================================================
-            // ADDITIONAL KPI TABLE CONFIGURATIONS
-            // (IP KPI, BB KPI, OTN KPI, Service Fulfilment, etc.)
-            // =========================================================
-            // NOTE: These sections configure relationships, identity
-            // columns, indexes, and constraints to match database schema.
-            // Logic and mappings remain identical to the original code.
+            // IP NW OP KPI
+            // IP NW OP KPI (FORM 6) - UPDATED
+            modelBuilder.Entity<IpNwOpKpi>(entity =>
+            {
+                entity.ToTable("IpNwOpKpi", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("id")
+                      .ValueGeneratedOnAdd(); // ✅ INT IDENTITY
+
+                entity.Property(x => x.NetworkEngineerKpi)
+                      .HasColumnName("network_engineer_kpi")
+                      .HasMaxLength(255);
+
+                entity.Property(x => x.Division)
+                      .HasColumnName("division")
+                      .HasMaxLength(255);
+
+                entity.Property(x => x.Section)
+                      .HasColumnName("section")
+                      .HasMaxLength(50);
+
+                entity.Property(x => x.KpiPercent)
+                      .HasColumnName("kpi_percent");
+
+                entity.Property(x => x.UpdatedAt)
+                      .HasColumnName("updated_at");
+            });
+
+            modelBuilder.Entity<IpNwOpKpiMetric>(entity =>
+            {
+                entity.ToTable("IpNwOpKpiMetrics", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("id")
+                      .ValueGeneratedOnAdd(); // ✅ INT IDENTITY
+
+                entity.Property(x => x.IpNwOpKpiId)
+                      .HasColumnName("ip_nw_op_kpi_id"); // ✅ INT FK (NO MaxLength)
+
+                entity.Property(x => x.AreaCode)
+                      .HasColumnName("area_code")
+                      .HasMaxLength(50)
+                      .IsRequired();
+
+                entity.Property(x => x.UnavailableMinutes).HasColumnName("unavailable_minutes");
+                entity.Property(x => x.TotalMinutes).HasColumnName("total_minutes");
+                entity.Property(x => x.TotalNodes).HasColumnName("total_nodes");
+
+                // ✅ NEW columns in metrics table
+                entity.Property(x => x.Month).HasColumnName("month");
+                entity.Property(x => x.Year).HasColumnName("year");
+
+                entity.HasOne(x => x.IpNwOpKpi)
+                      .WithMany(k => k.Metrics)
+                      .HasForeignKey(x => x.IpNwOpKpiId)
+                      .HasConstraintName("FK_IpNwOpKpiMetrics_IpNwOpKpi")
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // ✅ Match DB unique constraint: (ip_nw_op_kpi_id, area_code, month, year)
+                entity.HasIndex(x => new { x.IpNwOpKpiId, x.AreaCode, x.Month, x.Year })
+                      .IsUnique()
+                      .HasDatabaseName("UQ_IpNwOpKpiMetrics");
+            });
+
+            // =========================
+            // BB&ANW KPI (Form7 renamed tables)
+            // =========================
+            modelBuilder.Entity<BbAnwKpi>(entity =>
+            {
+                entity.ToTable("BbAnwKpi", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id).HasColumnName("id").ValueGeneratedOnAdd();
+
+                entity.Property(x => x.NetworkEngineerKpi).HasColumnName("network_engineer_kpi").HasMaxLength(200);
+                entity.Property(x => x.Division).HasColumnName("division").HasMaxLength(100);
+                entity.Property(x => x.Section).HasColumnName("section").HasMaxLength(50);
+
+                entity.Property(x => x.KpiPercent)
+                      .HasColumnName("kpi_percent")
+                      .HasColumnType("decimal(6,2)"); // ✅ match DB type
+
+                entity.HasMany(x => x.Nodes)
+                      .WithOne(n => n.Kpi)
+                      .HasForeignKey(n => n.BbAnwKpiId)
+                      .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            modelBuilder.Entity<BbAnwKpiNode>(entity =>
+            {
+                entity.ToTable("BbAnwKpiNode", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id).HasColumnName("id").ValueGeneratedOnAdd();
+
+                entity.Property(x => x.BbAnwKpiId).HasColumnName("bb_anw_kpi_id");
+                entity.Property(x => x.NodeCode).HasColumnName("node_code").HasMaxLength(50);
+
+                entity.Property(x => x.UnavailableMinutes).HasColumnName("unavailable_minutes");
+                entity.Property(x => x.TotalMinutes).HasColumnName("total_minutes");
+                entity.Property(x => x.TotalNodes).HasColumnName("total_nodes");
+
+                entity.Property(x => x.Month).HasColumnName("month");
+                entity.Property(x => x.Year).HasColumnName("year");
+
+                // ✅ prevent duplicates
+                entity.HasIndex(x => new { x.BbAnwKpiId, x.NodeCode, x.Month, x.Year })
+                      .IsUnique()
+                      .HasDatabaseName("UQ_BbAnwKpiNode_Row");
+            });
+
+            // KPI DEFINITIONS
+            // KPI DEFINITIONS (finaldatatables) - UPDATED (rowNumber + v removed)
+            modelBuilder.Entity<KpiDefinition>(entity =>
+            {
+                entity.ToTable("finaldatatables", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                    .HasColumnName("id")
+                    .ValueGeneratedOnAdd();
+
+                // ❌ removed: rowNumber
+
+                entity.Property(x => x.Perspectives)
+                    .HasColumnName("perspectives")
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(x => x.StrategicObjectives)
+                    .HasColumnName("strategicObjectives")
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(x => x.KeyPerformanceIndicators)
+                    .HasColumnName("keyPerformanceIndicators")
+                    .HasMaxLength(100)
+                    .IsRequired();
+
+                entity.Property(x => x.Unit)
+                    .HasColumnName("unit")
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(x => x.DescriptionOfKPI)
+                    .HasColumnName("descriptionOfKPI")
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(x => x.Weightage)
+                    .HasColumnName("weightage")
+                    .HasColumnType("decimal(10,4)")
+                    .IsRequired();
+
+                entity.Property(x => x.CreatedAt)
+                    .HasColumnName("createdAt")
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(x => x.UpdatedAt)
+                    .HasColumnName("updatedAt")
+                    .HasMaxLength(50)
+                    .IsRequired();
+
+                entity.Property(x => x.Month)
+                    .HasColumnName("month")
+                    .IsRequired();
+
+                entity.Property(x => x.Year)
+                    .HasColumnName("year")
+                    .IsRequired();
+
+                entity.Property(x => x.PointsApplicable)
+                    .HasColumnName("pointsApplicable")
+                    .IsRequired();
+
+                // ❌ removed: v
+            });
+
+            modelBuilder.Entity<OverallKpiResult>(entity =>
+            {
+                entity.ToTable("OverallKpiResult", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                    .HasColumnName("Id")
+                    .ValueGeneratedOnAdd();
+
+                entity.Property(x => x.KpiCode).HasColumnName("KpiCode").HasMaxLength(50);
+                entity.Property(x => x.KpiDefinitionId).HasColumnName("KpiDefinitionId");
+                entity.Property(x => x.KpiName).HasColumnName("KpiName").HasMaxLength(255);
+                entity.Property(x => x.Platform).HasColumnName("Platform").HasMaxLength(100);
+                entity.Property(x => x.AreaCode).HasColumnName("AreaCode").HasMaxLength(50).IsRequired();
+                entity.Property(x => x.TargetValue).HasColumnName("TargetValue").HasColumnType("decimal(18,4)");
+                entity.Property(x => x.AchievedKpi).HasColumnName("AchievedValue").HasColumnType("decimal(10,4)");
+                entity.Property(x => x.MaximumPointsPerKpi).HasColumnName("PointsApplicable").HasColumnType("decimal(18,4)");
+                entity.Property(x => x.PointsAchieved).HasColumnName("PointsAchieved").HasColumnType("decimal(18,4)");
+                entity.Property(x => x.Month).HasColumnName("Month");
+                entity.Property(x => x.Year).HasColumnName("Year");
+                entity.Property(x => x.CalculatedAt).HasColumnName("CalculatedAt");
+
+                entity.HasIndex(x => new { x.KpiDefinitionId, x.AreaCode, x.Month, x.Year })
+                      .IsUnique()
+                      .HasDatabaseName("UQ_OverallKpiResult_Row");
+            });
+
+            //servicefullilment
+            modelBuilder.Entity<ServiceFulfilmentKpi>(entity =>
+            {
+                entity.ToTable("ServiceFulfilmentKpi", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("id")
+                      .ValueGeneratedOnAdd(); // ✅ INT IDENTITY
+
+                entity.Property(x => x.Kpi).HasColumnName("kpi");
+                entity.Property(x => x.Target).HasColumnName("target");
+                entity.Property(x => x.Calculation).HasColumnName("calculation");
+                entity.Property(x => x.Platform).HasColumnName("platform");
+                entity.Property(x => x.ResponsibleDgm).HasColumnName("responsibledgm");
+                entity.Property(x => x.DefineDoladetails).HasColumnName("definedoladetails");
+                entity.Property(x => x.Weightage).HasColumnName("weightage");
+                entity.Property(x => x.DataSources).HasColumnName("datasources");
+
+                entity.Property(x => x.Month).HasColumnName("month");
+                entity.Property(x => x.Year).HasColumnName("year");
+                entity.Property(x => x.UpdatedAt).HasColumnName("updatedAt");
+            });
+            modelBuilder.Entity<ServiceFulfilmentKpiMetric>(entity =>
+            {
+                entity.ToTable("ServiceFulfilmentKpiMetrics", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("id")
+                      .ValueGeneratedOnAdd(); // ✅ INT IDENTITY
+
+                entity.Property(x => x.ServiceFulfilmentKpiId)
+                      .HasColumnName("ServiceFulfilmentKpiId"); // ✅ INT FK (no MaxLength)
+
+                entity.Property(x => x.AreaCode)
+                      .HasColumnName("area_code")
+                      .HasMaxLength(50);
+
+               entity.Property(x => x.KpiValue)
+                    .HasColumnName("kpi_value")
+                    .HasColumnType("decimal(18,2)");
+                entity.Property(x => x.Month).HasColumnName("month");
+                entity.Property(x => x.Year).HasColumnName("year");
+
+                entity.HasOne(x => x.ServiceFulfilmentKpi)
+                      .WithMany(k => k.Metrics)
+                      .HasForeignKey(x => x.ServiceFulfilmentKpiId)
+                      .HasConstraintName("FK_ServiceFulfilmentKpiMetrics_ServiceFulfilmentKpi")
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // ✅ Important: prevent duplicates for same KPI+area+month+year
+                entity.HasIndex(x => new { x.ServiceFulfilmentKpiId, x.AreaCode, x.Month, x.Year })
+                      .IsUnique()
+                      .HasDatabaseName("UQ_ServiceFulfilmentKpiMetrics_Row");
+            });
+
+
+            //OTNOP1 AND OTNOP2 
+            // =========================
+            // OtnOp1 (Form8) + Metrics
+            // =========================
+            modelBuilder.Entity<OtnOp1>(entity =>
+            {
+                entity.ToTable("OtnOp1", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("Id")
+                      .ValueGeneratedOnAdd(); // INT IDENTITY
+
+                entity.Property(x => x.NetworkEngineerKpi)
+                      .HasColumnName("NetworkEngineerKpi")
+                      .HasMaxLength(255)
+                      .IsRequired();
+
+                entity.Property(x => x.Division)
+                      .HasColumnName("Division")
+                      .HasMaxLength(100);
+
+                entity.Property(x => x.Section)
+                      .HasColumnName("Section")
+                      .HasMaxLength(100);
+
+                entity.Property(x => x.KpiPercent)
+                      .HasColumnName("KpiPercent")
+                      .HasColumnType("decimal(6,3)");
+            });
+
+            modelBuilder.Entity<OtnOp1Metrics>(entity =>
+            {
+                entity.ToTable("OtnOp1Metrics", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("Id")
+                      .ValueGeneratedOnAdd();
+
+                entity.Property(x => x.OtnOp1Id)
+                      .HasColumnName("OtnOp1Id")
+                      .IsRequired();
+
+                entity.Property(x => x.Site)
+                      .HasColumnName("Site")
+                      .HasMaxLength(20)
+                      .IsRequired();
+
+                entity.Property(x => x.UnavailableMinutes).HasColumnName("UnavailableMinutes");
+                entity.Property(x => x.TotalMinutes).HasColumnName("TotalMinutes");
+                entity.Property(x => x.TotalNodes).HasColumnName("TotalNodes");
+
+                entity.Property(x => x.Year).HasColumnName("Year");
+                entity.Property(x => x.Month).HasColumnName("Month");
+
+                entity.HasOne(x => x.OtnOp1)
+                      .WithMany(k => k.Metrics)
+                      .HasForeignKey(x => x.OtnOp1Id)
+                      .HasConstraintName("FK_Otn1M_Otn1")
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                // matches: UQ_Otn1M UNIQUE (OtnOp1Id, Site, Year, Month)
+                entity.HasIndex(x => new { x.OtnOp1Id, x.Site, x.Year, x.Month })
+                      .IsUnique()
+                      .HasDatabaseName("UQ_Otn1M");
+            });
+
+
+            // =========================
+            // OtnOp2 (Form9) + Metrics
+            // =========================
+            modelBuilder.Entity<OtnOp2>(entity =>
+            {
+                entity.ToTable("OtnOp2", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("Id")
+                      .ValueGeneratedOnAdd();
+
+                entity.Property(x => x.NetworkEngineerKpi)
+                      .HasColumnName("NetworkEngineerKpi")
+                      .HasMaxLength(255)
+                      .IsRequired();
+
+                entity.Property(x => x.Division)
+                      .HasColumnName("Division")
+                      .HasMaxLength(100);
+
+                entity.Property(x => x.Section)
+                      .HasColumnName("Section")
+                      .HasMaxLength(100);
+
+                entity.Property(x => x.KpiPercent)
+                      .HasColumnName("KpiPercent")
+                      .HasColumnType("decimal(6,3)");
+            });
+
+            modelBuilder.Entity<OtnOp2Metrics>(entity =>
+            {
+                entity.ToTable("OtnOp2Metrics", "dbo");
+                entity.HasKey(x => x.Id);
+
+                entity.Property(x => x.Id)
+                      .HasColumnName("Id")
+                      .ValueGeneratedOnAdd();
+
+                entity.Property(x => x.OtnOp2Id)
+                      .HasColumnName("OtnOp2Id")
+                      .IsRequired();
+
+                entity.Property(x => x.Site)
+                      .HasColumnName("Site")
+                      .HasMaxLength(20)
+                      .IsRequired();
+
+                entity.Property(x => x.TotalFailedLinks).HasColumnName("TotalFailedLinks");
+                entity.Property(x => x.LinksSlaNotViolated).HasColumnName("LinksSlaNotViolated");
+
+                entity.Property(x => x.Year).HasColumnName("Year");
+                entity.Property(x => x.Month).HasColumnName("Month");
+
+                entity.HasOne(x => x.OtnOp2)
+                      .WithMany(k => k.Metrics)
+                      .HasForeignKey(x => x.OtnOp2Id)
+                      .HasConstraintName("FK_Otn2M_Otn2")
+                      .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasIndex(x => new { x.OtnOp2Id, x.Site, x.Year, x.Month })
+                      .IsUnique()
+                      .HasDatabaseName("UQ_Otn2M");
+            });
+
+
+
+
 
             base.OnModelCreating(modelBuilder);
         }
