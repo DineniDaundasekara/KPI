@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -24,8 +24,7 @@ interface TowerKpi {
   styleUrls: ['./tower-mtce-achievement.component.scss']
 })
 export class TowerMtceAchievementComponent implements OnInit {
-
-  pageTitle = 'Tower Maintenance KPI (Admin)';
+  pageTitle = 'Tower Maintenance Achievement';
   records: TowerKpi[] = [];
 
   form!: FormGroup;
@@ -39,7 +38,8 @@ export class TowerMtceAchievementComponent implements OnInit {
 
   constructor(
     private fb: FormBuilder,
-    private http: HttpClient
+    private http: HttpClient,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -63,13 +63,15 @@ export class TowerMtceAchievementComponent implements OnInit {
     this.errorMessage = '';
 
     this.http.get<TowerKpi[]>(this.apiUrl).subscribe({
-      next: data => {
+      next: (data: TowerKpi[]) => {
         this.records = data;
         this.loading = false;
+        this.cdr.detectChanges();
       },
-      error: () => {
+      error: (err: any) => {
         this.errorMessage = 'Failed to load KPI data';
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -95,10 +97,11 @@ export class TowerMtceAchievementComponent implements OnInit {
         this.resetForm();
         this.loadData();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error(err);
         this.errorMessage = err?.error ?? 'Failed to update KPI';
         this.saving = false;
+        this.cdr.detectChanges();
       }
     });
   } else {
@@ -107,10 +110,11 @@ export class TowerMtceAchievementComponent implements OnInit {
         this.resetForm();
         this.loadData();
       },
-      error: (err) => {
+      error: (err: any) => {
         console.error(err);
         this.errorMessage = err?.error ?? 'Failed to add KPI';
         this.saving = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -138,9 +142,10 @@ export class TowerMtceAchievementComponent implements OnInit {
 
     this.http.delete(`${this.apiUrl}/${id}`).subscribe({
       next: () => this.loadData(),
-      error: () => {
+      error: (err: any) => {
         this.errorMessage = 'Failed to delete KPI';
         this.saving = false;
+        this.cdr.detectChanges();
       }
     });
   }

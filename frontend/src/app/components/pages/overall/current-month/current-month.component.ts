@@ -9,9 +9,9 @@ import {
   OnInit,
   QueryList,
   ViewChildren,
+  ChangeDetectorRef,
 } from '@angular/core';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { finalize } from 'rxjs/operators';
 import { Subscription } from 'rxjs';
 import { Region as RegionApi, RegionService } from '../../../../services/region.service';
 import * as ExcelJS from 'exceljs';
@@ -127,7 +127,7 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
   private readonly rowChangesSub = new Subscription();
   private pendingFrame: number | null = null;
 
-  constructor(private http: HttpClient, private regionService: RegionService) {
+  constructor(private http: HttpClient, private regionService: RegionService, private cdr: ChangeDetectorRef) {
     const now = new Date();
     this.currentYear = now.getFullYear();
     this.currentMonth = now.toLocaleString('en-US', { month: 'long' });
@@ -322,7 +322,6 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.http
       .get<KpiDefinition[]>(url)
-      .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (res) => {
           const list = (res ?? []).sort((a, b) => a.id - b.id);
@@ -333,6 +332,8 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
             this.computeTotals();
             this.scheduleRowSync();
             this.noOverallResults = true;
+            this.loading = false;
+            this.cdr.detectChanges();
             return;
           }
 
@@ -377,6 +378,8 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
           this.kpiRows = [];
           this.computeTotals();
           this.scheduleRowSync();
+          this.loading = false;
+          this.cdr.detectChanges();
         },
       });
   }
@@ -427,12 +430,16 @@ export class CurrentMonthComponent implements OnInit, AfterViewInit, OnDestroy {
           });
         }
         this.scheduleRowSync();
+        this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed loading overall KPI results:', err);
         this.noOverallResults = true;
         this.computeTotals();
         this.scheduleRowSync();
+        this.loading = false;
+        this.cdr.detectChanges();
       },
     });
   }

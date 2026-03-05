@@ -1,4 +1,4 @@
-﻿﻿import { Component, OnInit } from '@angular/core';
+﻿﻿import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -28,7 +28,10 @@ export class AdminIpNwOpComponent implements OnInit {
   loading = false;
   error: string | null = null;
 
-  constructor(private ipNwOpService: IpNwOpService) {}
+  constructor(
+    private ipNwOpService: IpNwOpService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadData();
@@ -43,12 +46,14 @@ export class AdminIpNwOpComponent implements OnInit {
         this.data = Array.isArray(res) ? res : [];
         this.sortData();
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error(err);
         this.data = [];
         this.error = 'Failed to load data. Please try again.';
         this.loading = false;
+        this.cdr.detectChanges();
       },
     });
   }

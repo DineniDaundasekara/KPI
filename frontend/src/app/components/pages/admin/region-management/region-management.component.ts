@@ -1,4 +1,4 @@
-import { Inject } from '@angular/core';
+import { Inject, ChangeDetectorRef } from '@angular/core';
 
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
@@ -24,7 +24,10 @@ type RegionKey = 'region' | 'province' | 'networkengineer' | 'leacode';
   styleUrls: ['./region-management.component.scss'],
 })
 export class RegionManagementComponent {
-  constructor(@Inject(RegionService) private regionService: RegionService) {}
+  constructor(
+    @Inject(RegionService) private regionService: RegionService,
+    private cdr: ChangeDetectorRef
+  ) {}
   
   pageTitle = 'Region Management';
   showForm = false;
@@ -74,10 +77,12 @@ export class RegionManagementComponent {
         });
         
         console.log('Processed regions:', this.regions); // Debug log
+        this.cdr.detectChanges();
       },
       error: (err: unknown) => {
         console.error('Error loading regions:', err);
         this.error = 'Failed to load region data';
+        this.cdr.detectChanges();
       }
     });
   }
@@ -164,11 +169,13 @@ export class RegionManagementComponent {
         this.success = 'Region added successfully.';
         this.isSubmitting = false;
         this.closeForm(form);
+        this.cdr.detectChanges();
       },
       error: (err: unknown) => {
         console.error('Error creating region:', err);
         this.error = 'Failed to add region.';
         this.isSubmitting = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -257,10 +264,12 @@ export class RegionManagementComponent {
           leacode: res.leacode || res.leaCode || res.lea || row.leacode
         });
         this.cancelCellEdit();
+        this.cdr.detectChanges();
       },
       error: (err: unknown) => {
         console.error('Error updating region:', err);
         alert('Update failed');
+        this.cdr.detectChanges();
       }
     });
   }
@@ -279,10 +288,12 @@ export class RegionManagementComponent {
     this.regionService.delete(id).subscribe({
       next: () => {
         this.regions = this.regions.filter(r => r.id !== id);
+        this.cdr.detectChanges();
       },
       error: (err: unknown) => {
         console.error('Error deleting region:', err);
         alert('Delete failed');
+        this.cdr.detectChanges();
       }
     });
   } 

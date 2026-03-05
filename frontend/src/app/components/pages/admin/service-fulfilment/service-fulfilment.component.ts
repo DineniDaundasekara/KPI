@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ServiceFulfilmentKpiDto, ServiceFulfilmentKpiService } from '../../../../services/service-fulfilment-kpi.service';
@@ -16,6 +16,7 @@ export class AdminServiceFulfilmentComponent implements OnInit {
   private readonly defaultMonth = 11;
   private readonly defaultYear = 2025;
   private readonly document = inject(DOCUMENT);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   // Header
   pageTitle = 'Service Fulfilment KPIs';
@@ -76,11 +77,13 @@ export class AdminServiceFulfilmentComponent implements OnInit {
         this.avgWeightage = data.length ? Number((totalWeight / data.length).toFixed(1)) : 0;
         this.dgmCount = new Set(data.map(k => k.responsibleDgm)).size;
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: err => {
         console.error(err);
         this.errorMessage = 'Failed to load KPI data';
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -129,11 +132,13 @@ export class AdminServiceFulfilmentComponent implements OnInit {
         this.resetForm();
         this.loadKpis();
         this.showForm = false;
+        this.cdr.detectChanges();
       },
       error: err => {
         console.error(err);
         this.errorMessage = 'Save failed';
         this.saving = false;
+        this.cdr.detectChanges();
       },
       complete: () => this.saving = false
     });
@@ -170,10 +175,14 @@ export class AdminServiceFulfilmentComponent implements OnInit {
     if (!id || !confirm('Delete this KPI?')) return;
 
     this.serviceFulfilmentKpiService.delete(id).subscribe({
-      next: () => this.loadKpis(),
+      next: () => {
+        this.loadKpis();
+        this.cdr.detectChanges();
+      },
       error: err => {
         console.error(err);
         this.errorMessage = 'Delete failed';
+        this.cdr.detectChanges();
       }
     });
   }

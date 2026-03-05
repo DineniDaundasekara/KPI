@@ -1,6 +1,6 @@
 ﻿import { CommonModule } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import * as ExcelJS from 'exceljs';
@@ -119,7 +119,8 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private ipNwOpService: IpNwOpService,
     private regionService: RegionService,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
@@ -281,12 +282,14 @@ export class IpNwOpComponent implements OnInit, OnDestroy {
         this.data = Array.isArray(records) ? (records as IpNwOpKpiDto[]) : [];
         this.metrics = this.selectedKey ? this.buildMetricsFromKpis(this.data, this.selectedKey) : [];
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load IP NW OP admin data:', err);
         this.data = [];
         this.loading = false;
         this.error = 'Failed to load IP NW OP KPI data.';
+        this.cdr.detectChanges();
       }
     });
   }

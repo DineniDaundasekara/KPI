@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
@@ -20,6 +20,7 @@ type EmailRecipient = {
 export class EmailServiceComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   pageTitle = 'Email Recipients Management';
   formTitle = 'Add Recipient';
@@ -49,7 +50,10 @@ export class EmailServiceComponent implements OnInit {
 
     this.http
       .get<EmailRecipient[]>(`${this.apiBase}/recipients`)
-      .pipe(finalize(() => (this.loading = false)))
+      .pipe(finalize(() => {
+        this.loading = false;
+        this.cdr.detectChanges();
+      }))
       .subscribe({
         next: (response) => {
           // ✅ sort like your KPI tables

@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { OtnOp2Service, OtnOpKpi, CreateOtnOpKpi } from '../../../../services/otn-op2.service';
@@ -14,6 +14,7 @@ export class OtnOp2Component implements OnInit {
 
   private readonly fb = inject(FormBuilder);
   private readonly otnOp2Service = inject(OtnOp2Service);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   pageTitle = 'INT & NT OP_02';
 
@@ -41,14 +42,17 @@ export class OtnOp2Component implements OnInit {
     this.otnOp2Service.getAllKpis().subscribe({
       next: data => {
         this.records = data;
+        this.cdr.detectChanges();
       },
       error: err => {
         console.error(err);
         this.errorMessage = 'Failed to load KPI data';
         this.loading = false;
+        this.cdr.detectChanges();
       },
       complete: () => {
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -74,11 +78,13 @@ export class OtnOp2Component implements OnInit {
           this.resetForm();
           this.fetchData();
           this.saving = false;
+          this.cdr.detectChanges();
         },
         error: (err: any) => {
           console.error(err);
           this.errorMessage = 'Save failed';
           this.saving = false;
+          this.cdr.detectChanges();
         }
       });
     } else {
@@ -87,11 +93,13 @@ export class OtnOp2Component implements OnInit {
           this.resetForm();
           this.fetchData();
           this.saving = false;
+          this.cdr.detectChanges();
         },
         error: (err: any) => {
           console.error(err);
           this.errorMessage = 'Save failed';
           this.saving = false;
+          this.cdr.detectChanges();
         }
       });
     }
@@ -114,14 +122,19 @@ export class OtnOp2Component implements OnInit {
     this.saving = true;
 
     this.otnOp2Service.deleteKpi(id).subscribe({
-      next: () => this.fetchData(),
+      next: () => {
+        this.fetchData();
+        this.cdr.detectChanges();
+      },
       error: err => {
         console.error(err);
         this.errorMessage = 'Delete failed';
         this.saving = false;
+        this.cdr.detectChanges();
       },
       complete: () => {
         this.saving = false;
+        this.cdr.detectChanges();
       }
     });
   }

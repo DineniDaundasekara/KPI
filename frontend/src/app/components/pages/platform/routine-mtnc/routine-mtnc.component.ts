@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { forkJoin, of } from 'rxjs';
@@ -72,6 +72,7 @@ const MONTH_NAMES = [
 })
 export class RoutineMtncComponent implements OnInit {
   private readonly http = inject(HttpClient);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   pageTitle = 'Routine MTNC';
   heroSubtitle = 'Routine maintenance cadence across IPNW, INT & NT, and BB&ANW footprints.';
@@ -146,7 +147,10 @@ export class RoutineMtncComponent implements OnInit {
         })
       )
     })
-      .pipe(finalize(() => (this.loading = false)))
+      .pipe(finalize(() => {
+        this.loading = false;
+        this.cdr.detectChanges();
+      }))
       .subscribe(({ msan, vpn, slbn, routine }) => {
         this.platformDataMap = { msan, vpn, slbn };
         this.routineData = routine ?? [];

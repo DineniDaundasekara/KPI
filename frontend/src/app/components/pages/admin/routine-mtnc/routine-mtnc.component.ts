@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
@@ -25,6 +25,7 @@ type RoutineRecord = {
 export class AdminRoutineMtncComponent implements OnInit {
   private readonly http = inject(HttpClient);
   private readonly fb = inject(FormBuilder);
+  private readonly cdr = inject(ChangeDetectorRef);
 
   pageTitle = 'Routine MTNC';
   formTitle = 'Add KPI';
@@ -61,7 +62,10 @@ export class AdminRoutineMtncComponent implements OnInit {
 
     this.http
       .get<RoutineRecord[]>(this.apiBase)
-      .pipe(finalize(() => (this.loading = false)))
+      .pipe(finalize(() => {
+        this.loading = false;
+        this.cdr.detectChanges();
+      }))
       .subscribe({
         next: (response) => {
           this.records = (response ?? []).sort((a, b) => a._id - b._id);

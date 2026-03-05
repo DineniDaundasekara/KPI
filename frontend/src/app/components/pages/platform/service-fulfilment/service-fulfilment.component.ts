@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
@@ -181,7 +181,8 @@ export class ServiceFulfilmentComponent implements OnInit {
     private toastr: ToastrService,
     private serviceFulfilmentKpiService: ServiceFulfilmentKpiService,
     private regionService: RegionService,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) {
     this.yearOptions = this.generateYearOptions();
   }
@@ -264,6 +265,7 @@ export class ServiceFulfilmentComponent implements OnInit {
           areaKeys: this.getAreaKeys(),
           visibleColumns: this.visibleColumns 
         });
+        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Failed to load Service Fulfilment metrics:', err);
@@ -271,6 +273,7 @@ export class ServiceFulfilmentComponent implements OnInit {
         this.metricsLoading = false;
         this.metricsError = `Failed to load KPI metrics for ${this.getMonthLabel(month)} ${year}. Please check if data exists for this period.`;
         this.rebuildKpiMatrix();
+        this.cdr.detectChanges();
       }
     });
   }
@@ -972,12 +975,14 @@ export class ServiceFulfilmentComponent implements OnInit {
         this.metricsLoading = false;
         this.editingCell = { rowId: null, key: null };
         this.activeEditValue = '';
+        this.cdr.detectChanges();
         this.toastr.success(`Saved ${this.optionMapping[areaCode] || areaCode} metric successfully.`, 'Success');
         this.loadMetrics();
       },
       error: (err) => {
         this.metricsLoading = false;
         console.error('Failed to save Service Fulfilment metric value', err);
+        this.cdr.detectChanges();
         this.toastr.error('Saving metric failed. Please try again.', 'Save Failed');
       }
     });

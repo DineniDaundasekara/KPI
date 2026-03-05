@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BbAnwService, BbAnwHeaderDto } from '../../../../services/bb-anw.service';
@@ -24,7 +24,10 @@ export class BbAnwComponent implements OnInit {
 
   form: BbAnwHeaderDto = this.emptyForm();
 
-  constructor(private service: BbAnwService) {}
+  constructor(
+    private service: BbAnwService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadData();
@@ -45,11 +48,15 @@ export class BbAnwComponent implements OnInit {
     this.error = '';
 
     this.service.getHeaders().subscribe({
-      next: res => this.data = Array.isArray(res) ? res : [],
+      next: res => {
+        this.data = Array.isArray(res) ? res : [];
+        this.cdr.detectChanges();
+      },
       error: () => {
         this.error = 'Failed to load data';
         this.data = [];
         this.loading = false;
+        this.cdr.detectChanges();
       },
       complete: () => this.loading = false
     });
@@ -69,11 +76,13 @@ export class BbAnwComponent implements OnInit {
       next: () => {
         this.closeForm();
         this.loadData();
+        this.cdr.detectChanges();
       },
       error: err => {
         console.error(err);
         this.error = 'Save failed';
         this.saving = false;
+        this.cdr.detectChanges();
       },
       complete: () => this.saving = false
     });
@@ -97,8 +106,14 @@ export class BbAnwComponent implements OnInit {
 
     this.saving = true;
     this.service.delete(id).subscribe({
-      next: () => this.loadData(),
-      error: () => this.error = 'Delete failed',
+      next: () => {
+        this.loadData();
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.error = 'Delete failed';
+        this.cdr.detectChanges();
+      },
       complete: () => this.saving = false
     });
   }
