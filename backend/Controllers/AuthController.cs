@@ -1,3 +1,8 @@
+/*
+ * File: AuthController.cs
+ * Handles authentication including Azure login verification and JWT token generation.
+ */
+
 using backend.Data;
 using backend.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +19,10 @@ namespace backend.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
+        // Database context for accessing user data
         private readonly AppDbContext _context;
+
+        // Configuration provider used to read JWT settings
         private readonly IConfiguration _configuration;
 
         public AuthController(AppDbContext context, IConfiguration configuration)
@@ -23,25 +31,29 @@ namespace backend.Controllers
             _configuration = configuration;
         }
 
-        // Service-ID-only login removed - Azure authentication is now required
+        // =========================================================
+        // AZURE LOGIN VERIFICATION
+        // =========================================================
 
+        // POST: /api/auth/verify-azure-login
+        // Verifies Azure authenticated user and validates Service ID in system
         [HttpPost("verify-azure-login")]
         [AllowAnonymous]
         public async Task<IActionResult> VerifyAzureLogin([FromBody] VerifyAzureLoginDto dto)
         {
-            // Step 1: Verify Azure email is provided (proves Azure authentication happened)
+            // Ensure Azure email exists (proves Azure login happened)
             if (string.IsNullOrWhiteSpace(dto.Email))
                 return BadRequest("Azure authentication required. Please sign in with Microsoft first.");
-                
-            // Step 2: Verify Service ID is provided
+
+            // Ensure Service ID is provided
             if (string.IsNullOrWhiteSpace(dto.ServiceId))
                 return BadRequest("Service ID is required.");
 
-            // Validate email format
+            // Basic validation of Azure email format
             if (!dto.Email.Contains("@"))
                 return BadRequest("Invalid email format from Azure authentication.");
 
-            // Step 3: Find User by ServiceId in database (completely independent of Azure email)
+            // Find user in system using Service ID
             var user = await _context.Users
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.ServiceId == dto.ServiceId);
@@ -52,32 +64,36 @@ namespace backend.Controllers
             if (!user.IsActive)
                 return Unauthorized("Your account has been deactivated. Please contact your administrator.");
 
-            // Step 4: Both checks passed - Generate JWT token and return user data
-            // Note: Azure email and Service ID are separate - no linking between them
+            // Generate token and return login response
             return await GenerateLoginResponse(user);
         }
 
+        // =========================================================
+        // LOGIN RESPONSE GENERATION
+        // =========================================================
+
         private async Task<IActionResult> GenerateLoginResponse(User user)
         {
-            // 1. Generate JWT
+            // Generate JWT token
             var token = GenerateJwtToken(user);
 
-            // 2. Update LastLogin
+            // Update user's last login timestamp
             user.LastLogin = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            // 3. Get Allowed Pages
+            // Retrieve pages user is allowed to access
             var pages = await _context.UserPageAccess
                 .Where(upa => upa.UserId == user.UserId)
                 .Select(upa => upa.Page.PageName)
                 .ToListAsync();
 
+            // Retrieve platform KPI page assignments
             var assignedPages = await _context.PlatformKpiAssignments
                 .Where(pka => pka.UserId == user.UserId)
                 .Select(pka => pka.Page.PageName)
                 .ToListAsync();
 
-            // 4. Reconcile platform assignments for PlatformAdmin
+            // Ensure PlatformAdmin has correct platform assignment
             if (string.Equals(user.Role?.RoleName, "PlatformAdmin", StringComparison.OrdinalIgnoreCase))
             {
                 var targetPageId = MapKnownPageId(pages.FirstOrDefault());
@@ -89,6 +105,7 @@ namespace backend.Controllers
                         .Select(pka => pka.PageId)
                         .ToListAsync();
 
+                    // Replace assignment if inconsistent
                     if (existingIds.Count != 1 || existingIds[0] != targetPageId.Value)
                     {
                         var toRemove = _context.PlatformKpiAssignments.Where(pka => pka.UserId == user.UserId);
@@ -113,17 +130,24 @@ namespace backend.Controllers
             return Ok(new { token, user.Name, Role = user.Role?.RoleName, Pages = pages, AssignedPages = assignedPages });
         }
 
+        // =========================================================
+        // JWT TOKEN GENERATION
+        // =========================================================
+
         private string GenerateJwtToken(User user)
         {
             var jwtSettings = _configuration.GetSection("JwtSettings");
-            var secretKey = jwtSettings["Secret"] ?? "SuperSecretKeyForDevelopmentOnly12345!@#$%"; // Fallback if config missing
+
+            // Secret key used to sign JWT
+            var secretKey = jwtSettings["Secret"] ?? "SuperSecretKeyForDevelopmentOnly12345!@#$%";
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
+            // Claims included in JWT
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.ServiceId),
-                new Claim("ServiceId", user.ServiceId), // Custom claim
+                new Claim("ServiceId", user.ServiceId),
                 new Claim("serviceId", user.ServiceId),
                 new Claim(ClaimTypes.Role, user.Role?.RoleName ?? "User"),
                 new Claim("role", user.Role?.RoleName ?? "User"),
@@ -141,6 +165,7 @@ namespace backend.Controllers
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
+        // Map platform page names to system page IDs
         private static byte? MapKnownPageId(string? input)
         {
             var key = NormalizeKey(input);
@@ -159,6 +184,7 @@ namespace backend.Controllers
             };
         }
 
+        // Normalize page names for comparison
         private static string NormalizeKey(string? value)
         {
             return new string((value ?? string.Empty)
@@ -168,11 +194,13 @@ namespace backend.Controllers
         }
     }
 
+    // DTO used for Service ID login
     public class LoginDto
     {
         public string ServiceId { get; set; }
     }
 
+    // DTO used for Azure authentication verification
     public class VerifyAzureLoginDto
     {
         public string Email { get; set; }
