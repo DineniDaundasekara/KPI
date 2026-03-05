@@ -1,189 +1,758 @@
-/*
- File: dashboard.component.scss
- Description: Styling for the SLT KPI dashboard.
- Provides responsive layout, circular KPI meters,
- region cards, loading states, and modal UI.
+/* File: dashboard.component.scss
+   Description: KPI dashboard styles
+   Purpose: Styling for dashboard layout, regions, meters, animations, and responsive design.
+   Features: Professional pastel theme, SLT brand colors, smooth animations, accessibility
 */
 
-/* ===============================
-   COLOR VARIABLES
-================================ */
+// ============================================
+// SLT DASHBOARD – PROFESSIONAL PASTEL THEME
+// Brand: #0057a6 (SLT Blue), #02b28c (SLT Teal)
+// Pastel palette: soft, accessible, airy
+// Icons: clean line style, consistent weight
+// ============================================
 
+// ---------- DESIGN TOKENS ----------
 $slt-blue: #0057a6;
 $slt-teal: #02b28c;
+$slt-slate: #1e293b;
+$pastel-blue: #e2edff;
+$pastel-mint: #d6f0ec;
+$pastel-lavender: #ede7ff;
+$pastel-peach: #ffefe5;
+$pastel-rose: #ffe5e5;
+$white-soft: #fbfdff;
 $gray-50: #f8fafc;
 $gray-200: #e2e8f0;
 $gray-500: #64748b;
 $gray-700: #334155;
-
+$shadow-sm: 0 8px 20px -6px rgba(0, 87, 166, 0.12);
+$shadow-md: 0 16px 30px -10px rgba(0, 87, 166, 0.18);
 $border-radius-card: 24px;
+$border-radius-icon: 18px;
+$border-radius-meter: 999px;
 
-/* ===============================
-   DASHBOARD CONTAINER
-================================ */
+// ---------- GLOBAL ----------
+:host {
+  display: block;
+  width: 100%;
+  max-width: 100vw;
+  height: 100%;
+  min-height: calc(100vh - 140px);
+  overflow: hidden;
+  background-image: url('/assets/admin/SLT-Mobitel.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  position: relative;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 0;
+  box-sizing: border-box;
+
+  // Overlay to lighten the background image
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(145deg, rgba($white-soft, 0.85), rgba($gray-50, 0.9));
+    z-index: 1;
+    pointer-events: none;
+  }
+}
 
 .dashboard {
   width: 100%;
+  max-width: 100vw;
+  height: 100%;
+  margin: 0;
+  padding: 0.5rem;
+  position: relative;
+  z-index: 2;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
 }
-
-/* Percentage note */
 
 .percentage-note {
-  text-align: right;
-  font-size: 0.75rem;
-  font-weight: 600;
+  margin: 0 0 0.3rem 0;
   color: $gray-700;
-  margin-bottom: 4px;
+  font-weight: 600;
+  font-size: 0.75rem;
+  display: block;
+  text-align: right;
+  flex-shrink: 0;
 }
 
-/* ===============================
-   REGION CARDS
-================================ */
+// ---------- STATS CARDS ----------
+// .stats-grid, .stat-card, .stat-icon, .stat-content, .stat-label, .stat-value retained for potential reuse
+// .stats-grid {
+//   display: grid;
+//   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+//   gap: 1.5rem;
+//   margin-bottom: 2.8rem;
+// }
+//
+// .stat-card {
+//   background: white;
+//   border-radius: $border-radius-card;
+//   padding: 1.5rem 1.2rem;
+//   display: flex;
+//   align-items: center;
+//   gap: 1.2rem;
+//   box-shadow: $shadow-sm;
+//   border: 1px solid rgba(255, 255, 255, 0.6);
+//   transition: all 0.2s ease;
+//   backdrop-filter: blur(4px);
+//
+//   &:hover {
+//     transform: translateY(-3px);
+//     box-shadow: $shadow-md;
+//     border-color: rgba($slt-teal, 0.2);
+//   }
+// }
+//
+// .stat-icon {
+//   width: 56px;
+//   height: 56px;
+//   border-radius: $border-radius-icon;
+//   display: flex;
+//   align-items: center;
+//   justify-content: center;
+//   color: $slt-blue;
+//   background: $pastel-blue;
+//   transition: all 0.2s;
+//
+//   svg {
+//     width: 26px;
+//     height: 26px;
+//     stroke-width: 1.6;
+//   }
+//
+//   &--blue {
+//     background: $pastel-blue;
+//     color: $slt-blue;
+//   }
+//   &--teal {
+//     background: $pastel-mint;
+//     color: $slt-teal;
+//   }
+//   &--lavender {
+//     background: $pastel-lavender;
+//     color: #5e4b8b; // deeper lavender accent
+//   }
+//   &--mint {
+//     background: $pastel-mint;
+//     color: #1f7a6b;
+//   }
+// }
+//
+// .stat-content {
+//   display: flex;
+//   flex-direction: column;
+// }
+//
+// .stat-label {
+//   font-size: 0.78rem;
+//   font-weight: 600;
+//   text-transform: uppercase;
+//   letter-spacing: 0.04em;
+//   color: $gray-500;
+//   margin-bottom: 0.2rem;
+// }
+//
+// .stat-value {
+//   font-size: 2rem;
+//   font-weight: 700;
+//   line-height: 1;
+//   color: $slt-blue;
+//   letter-spacing: -0.02em;
+// }
 
+// ---------- REGION CARDS ----------
 .regions-wrapper {
   display: flex;
+  flex-direction: row;
   flex-wrap: wrap;
   gap: 0.6rem;
+  width: 100%;
+  max-width: 100%;
+  flex: 1 1 auto;
+  align-items: stretch;
+  overflow-x: hidden;
+  overflow-y: auto;
+  min-height: 0;
+  box-sizing: border-box;
 }
 
 .region-card {
-  background: white;
+  background: rgba(white, 0.8);
+  backdrop-filter: blur(8px);
   border-radius: $border-radius-card;
-  padding: 1rem;
+  padding: 1rem 1.2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.3rem;
+  box-shadow: $shadow-sm;
+  border: 1px solid rgba(white, 0.7);
+  transition: all 0.25s;
   flex: 1 1 calc(25% - 0.6rem);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+  min-width: 200px;
+  max-width: 100%;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+
+  // Different light background colors for each region
+  &:nth-child(1) {
+    background: rgba(255, 240, 220, 0.9); // Light coral/apricot
+    
+    .region-title {
+      border-left-color: #e65c2e; // Darker coral
+      
+      h3 {
+        color: #e65c2e;
+      }
+    }
+  }
+  
+  &:nth-child(2) {
+    background: rgba(220, 240, 255, 0.9); // Darker blue
+    
+    .region-title {
+      border-left-color: #2270cc; // Darker blue
+      
+      h3 {
+        color: #2270cc;
+      }
+    }
+  }
+  
+  &:nth-child(3) {
+    background: rgba(220, 245, 235, 0.9); // Darker mint
+    
+    .region-title {
+      border-left-color: #018a69; // Darker teal/mint
+      
+      h3 {
+        color: #018a69;
+      }
+    }
+  }
+  
+  &:nth-child(4) {
+    background: rgba(235, 230, 255, 0.9); // Darker lavender
+    
+    .region-title {
+      border-left-color: #7550b8; // Darker lavender
+      
+      h3 {
+        color: #7550b8;
+      }
+    }
+  }
+
+  &:hover {
+    box-shadow: $shadow-md;
+    border-color: rgba($slt-teal, 0.3);
+    transform: translateY(-2px);
+  }
 }
 
-.region-title h3 {
-  margin: 0;
-  font-weight: 600;
-  color: $slt-blue;
+.region-title {
+  min-width: 100px;
+  padding-left: 0.6rem;
+  margin-left: 0;
+  border-left: 4px solid $slt-teal;
+  margin-bottom: 0.1rem;
+  padding-bottom: 0.1rem;
+  flex-shrink: 0;
+
+  h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: $slt-blue;
+    letter-spacing: -0.01em;
+  }
 }
 
-/* ===============================
-   KPI METERS
-================================ */
-
+// ---------- METERS ----------
 .meters-row {
   display: grid;
   grid-template-rows: repeat(3, 1fr);
   grid-auto-flow: column;
-  gap: 8px;
+  grid-auto-columns: minmax(80px, 1fr);
+  gap: 0.5rem 0.6rem;
+  width: 100%;
+  max-width: 100%;
+  padding-left: 0;
+  align-items: start;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  box-sizing: border-box;
 }
 
 .meter {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  gap: 0.2rem;
+  transition: transform 0.2s;
   cursor: pointer;
+  padding: 0.1rem;
+  box-sizing: border-box;
+  min-height: 0;
+  min-width: 0;
+
+  &:hover {
+    transform: translateY(-6px);
+
+    .meter-circle {
+      box-shadow: 0 12px 24px -8px rgba($slt-teal, 0.25);
+    }
+
+    .meter-label {
+      color: $slt-blue;
+      border-bottom-color: $slt-teal;
+    }
+  }
 }
 
-/* Circular meter */
+.meter-progress {
+  width: 100%;
+  max-width: 130px;
+  aspect-ratio: 1;
+  margin-bottom: 0;
+  pointer-events: none;
+  flex-shrink: 1;
+  min-width: 0;
+}
 
 .meter-circle {
   width: 100%;
   height: 100%;
   border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $gray-50; // fallback, overridden by dynamic style
+  box-shadow: inset 0 0 0 6px rgba($slt-slate, 0.04), 0 10px 20px -8px rgba($slt-slate, 0.1);
+  transition: box-shadow 0.2s, transform 0.2s;
   position: relative;
-}
+  pointer-events: none; // Allow clicks to pass through
 
-/* Percentage text */
+  // inner white circle
+  &::after {
+    content: '';
+    position: absolute;
+    width: 72%;
+    height: 72%;
+    background: white;
+    border-radius: 50%;
+    box-shadow: inset 0 2px 6px rgba(0,0,0,0.02);
+  }
+}
 
 .meter-percent {
+  position: relative;
+  z-index: 2;
   font-weight: 800;
-  font-size: 1.2rem;
+  font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+  letter-spacing: -0.3px;
+  pointer-events: none;
 }
-
-/* Label */
 
 .meter-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
   text-align: center;
-  font-size: 0.8rem;
+  border-bottom: 2px solid transparent;
+  padding-bottom: 1px;
+  transition: all 0.2s;
+  pointer-events: none;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  width: 100%;
+  max-width: 130px;
+  flex-shrink: 1;
+  overflow: hidden;
+  min-width: 0;
 }
 
-/* ===============================
-   LOADING / ERROR
-================================ */
+.meter-engineer {
+  font-size: clamp(0.75rem, 1.3vw, 0.85rem);
+  font-weight: 700;
+  color: $slt-blue;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
 
+.meter-area {
+  font-size: clamp(0.65rem, 1.2vw, 0.75rem);
+  font-weight: 600;
+  color: $gray-700;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+
+// ---------- LOADING / ERROR ----------
 .message-screen {
+  min-height: 100vh;
   display: flex;
-  justify-content: center;
   align-items: center;
-  height: 100vh;
+  justify-content: center;
+  padding: 2rem;
 }
 
 .message-card {
   background: white;
-  padding: 2rem;
-  border-radius: 30px;
+  border-radius: 36px;
+  padding: 2.5rem 3.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+  box-shadow: $shadow-md;
+  border: 1px solid rgba($slt-blue, 0.1);
+  color: $slt-slate;
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 
 .spinner {
   width: 44px;
   height: 44px;
-  border-radius: 50%;
-  border: 4px solid #eee;
+  border: 4px solid rgba($slt-blue, 0.1);
   border-top: 4px solid $slt-teal;
-  animation: spin 1s linear infinite;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-/* ===============================
-   MODAL
-================================ */
-
+// ---------- MODAL (DETAILS) ----------
 .modal-overlay {
   position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba($slt-slate, 0.6);
+  display: flex !important;
   align-items: center;
   justify-content: center;
+  padding: 1.5rem;
+  z-index: 9999;
+  animation: fadeIn 0.2s;
 }
 
 .modal {
-  background: white;
+  background: white !important;
   border-radius: 32px;
-  padding: 2rem;
   width: min(900px, 98%);
+  max-height: 90vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2rem 2rem 2.2rem;
+  box-shadow: 0 30px 60px -20px rgba($slt-blue, 0.5);
+  border: 2px solid $gray-200;
+  animation: slideUp 0.25s;
+  position: relative;
+  z-index: 10000;
+  display: block !important;
+  opacity: 1 !important;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+    margin: 32px 0;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: $slt-teal;
+    border-radius: 10px;
+    border: 2px solid white;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background: darken($slt-teal, 10%);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(0); opacity: 1; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.8rem;
+
+  h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: $slt-blue;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+  }
+}
+
+.meta-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: $gray-700;
+  font-size: 1.05rem;
+  background: $pastel-mint;
+  padding: 0.6rem 1.2rem;
+  border-radius: 40px;
+  width: fit-content;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  svg {
+    stroke: $slt-teal;
+  }
 }
 
 .close-btn {
+  background: $gray-200;
   border: none;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: $slt-slate;
+  transition: all 0.2s;
   cursor: pointer;
+
+  &:hover {
+    background: $gray-500;
+    color: white;
+  }
 }
 
-/* ===============================
-   KPI TABLE
-================================ */
+// ---------- SUMMARY CARDS (MODAL) ----------
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
 
+.summary-item {
+  background: $gray-50;
+  border-radius: 18px;
+  padding: 1rem 1.2rem;
+  border-left: 4px solid $slt-teal;
+
+  .summary-label {
+    display: block;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $gray-500;
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+  }
+
+  .summary-value {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: $slt-blue;
+    line-height: 1.2;
+  }
+}
+
+
+// ---------- KPI TABLE (MODAL) ----------
 .kpi-table {
   border: 1px solid $gray-200;
   border-radius: 20px;
+  overflow: hidden;
+  margin-top: 0.5rem;
 }
 
 .kpi-table-header {
   display: grid;
   grid-template-columns: 1.5fr 0.7fr 0.9fr 0.9fr;
-  background: #e2edff;
-  padding: 1rem;
+  background: $pastel-blue;
+  padding: 1rem 1.5rem;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: $slt-blue;
+  border-bottom: 1px solid rgba($slt-blue, 0.1);
 }
 
 .kpi-table-row {
   display: grid;
   grid-template-columns: 1.5fr 0.7fr 0.9fr 0.9fr;
-  padding: 1rem;
+  padding: 0.9rem 1.5rem;
+  background: white;
   border-bottom: 1px solid $gray-200;
+  font-size: 0.95rem;
+  align-items: center;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:nth-child(even) {
+    background: rgba($pastel-blue, 0.3);
+  }
+}
+
+.kpi-name {
+  font-weight: 600;
+  color: $slt-slate;
+  word-break: break-word;
+  padding-right: 0.5rem;
 }
 
 .empty-state {
+  padding: 2.5rem;
   text-align: center;
-  padding: 2rem;
+  color: $gray-500;
+  font-style: italic;
+}
+
+// ---------- RESPONSIVE ----------
+@media (max-width: 1200px) {
+  .region-card {
+    flex: 1 1 calc(50% - 0.6rem);
+    min-width: 200px;
+  }
+}
+
+@media (max-width: 900px) {
+  .dashboard {
+    padding: 0.5rem;
+  }
+
+  .region-card {
+    flex-direction: column;
+    align-items: center;
+    gap: 1.2rem;
+    flex-basis: 100%;
+    min-width: 100%;
+    max-width: 100%;
+  }
+
+  .region-title {
+    border-left: none;
+    border-bottom: 3px solid $slt-teal;
+    padding-left: 0;
+    padding-bottom: 0.5rem;
+    width: 100%;
+    text-align: center;
+  }
+
+  .meters-row {
+    width: 100%;
+  }
+
+  .kpi-table-header,
+  .kpi-table-row {
+    grid-template-columns: 1fr 0.7fr 0.7fr 0.7fr;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard {
+    padding: 0.3rem;
+  }
+
+  .region-card {
+    min-width: 100%;
+    max-width: 100%;
+    padding: 0.5rem;
+  }
+
+  .meters-row {
+    grid-auto-columns: minmax(70px, 1fr);
+  }
+
+  .meter {
+    width: 100%;
+    max-width: 100%;
+    min-width: 70px;
+  }
+
+  .meter-progress {
+    max-width: 90px;
+  }
+
+  .modal {
+    padding: 1.5rem;
+    width: 95%;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi-table-header,
+  .kpi-table-row {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+    padding: 1rem;
+  }
+
+  .kpi-table-header {
+    display: none; // Hide header on mobile, rely on row labels
+  }
+
+  .kpi-table-row {
+    border-bottom: 2px solid $gray-200;
+    &::before {
+      content: attr(data-label);
+      font-weight: 600;
+      color: $slt-blue;
+    }
+  }
 }
