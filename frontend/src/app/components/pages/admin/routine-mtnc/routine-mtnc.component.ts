@@ -1,9 +1,19 @@
+/*
+ File: routine-mtnc.component.ts
+ Description: Routine maintenance KPI admin management
+ Purpose: CRUD operations for routine maintenance KPI definitions.
+ Features: Data table management, add/edit/delete operations, form validation
+*/
+
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
 
+/* ========== DATA TYPES ========== */
+
+/* Routine maintenance record */
 type RoutineRecord = {
   _id: number;  // Changed from string to number (int identity)
   kpi: string;

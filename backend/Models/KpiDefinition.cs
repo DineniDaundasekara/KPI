@@ -67,4 +67,3 @@ namespace backend.Models
         public short Year { get; set; }
     }
 }
-}

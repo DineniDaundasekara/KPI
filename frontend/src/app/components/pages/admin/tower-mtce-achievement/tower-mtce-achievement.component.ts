@@ -1,8 +1,18 @@
+/*
+ File: tower-mtce-achievement.component.ts
+ Description: Tower maintenance achievement admin page
+ Purpose: CRUD operations for tower maintenance KPI targets and performance.
+ Features: Data table management, target configuration, achievement tracking
+*/
+
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 
+/* ========== DATA INTERFACES ========== */
+
+/* Tower maintenance KPI entity */
 interface TowerKpi {
   id: number;  // Changed from string to number (int identity)
   responsibility: string;

@@ -1,7 +1,16 @@
+/*
+ File: bb-anw.component.ts
+ Description: Broadband & Access Network KPI admin management
+ Purpose: CRUD operations for BB & ANW KPI metrics including node-level details.
+ Features: Data table management, add/edit/delete operations, form handling
+*/
+
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { BbAnwService, BbAnwHeaderDto } from '../../../../services/bb-anw.service';
+
+/* ========== BB ANW ADMIN COMPONENT ========== */
 
 @Component({
   selector: 'app-bb-anw',
@@ -11,17 +20,24 @@ import { BbAnwService, BbAnwHeaderDto } from '../../../../services/bb-anw.servic
   styleUrls: ['./bb-anw.component.scss']
 })
 export class BbAnwComponent implements OnInit {
-
+  /* Page display title */
   pageTitle = 'BB & ANW – KPI Management';
+  /* BB ANW KPI data table */
   data: BbAnwHeaderDto[] = [];
 
+  /* Loading state indicator */
   loading = false;
+  /* Save operation state */
   saving = false;
+  /* Error message display */
   error = '';
 
+  /* Currently editing row ID */
   editingId: number | null = null;
+  /* Form visibility toggle */
   showForm = false;
 
+  /* Form data object */
   form: BbAnwHeaderDto = this.emptyForm();
 
   constructor(

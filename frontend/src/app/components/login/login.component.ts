@@ -1,3 +1,10 @@
+/*
+ File: login.component.ts
+ Description: User login component
+ Purpose: Handles user authentication through Azure AD and local service ID login.
+ Features: Azure SSO with MSAL, local login fallback, session persistence
+*/
+
 import { Component, Inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -8,6 +15,8 @@ import { AuthenticationResult } from '@azure/msal-browser';
 import { first } from 'rxjs/operators';
 import { loginRequest } from '../../auth-config';
 
+/* ========== LOGIN COMPONENT ========== */
+
 @Component({
     selector: 'app-login',
     standalone: true,
@@ -16,10 +25,15 @@ import { loginRequest } from '../../auth-config';
     styleUrls: ['./login.component.css']
 })
 export class LoginComponent implements OnInit {
+    /* User's service ID input for local login */
     serviceId = '';
+    /* Loading state indicator */
     loading = false;
+    /* Error message display */
     error = '';
+    /* Azure authentication status */
     isAzureAuthenticated = false;
+    /* Authenticated Azure email address */
     azureEmail = '';
 
     constructor(

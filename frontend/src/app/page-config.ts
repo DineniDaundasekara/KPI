@@ -1,8 +1,21 @@
+/* File: page-config.ts
+   Description: Navigation configuration
+   Purpose: Defines navigation options for Overall, Platform, and Admin sections.
+*/
+
+/* ========== DATA INTERFACES ========== */
+
+/* Navigation option structure */
 export interface NavOption {
+  /* Display label for navigation item */
   label: string;
+  /* Route path */
   path: string;
+  /* Page title for header */
   title: string;
 }
+
+/* ========== OVERALL KPI NAVIGATION ========== */
 
 export const overallNavOptions: NavOption[] = [
   {
@@ -11,6 +24,8 @@ export const overallNavOptions: NavOption[] = [
     title: 'Overall KPI — Current Month'
   }
 ];
+
+/* ========== PLATFORM KPI NAVIGATION ========== */
 
 export const platformNavOptions: NavOption[] = [
   {
@@ -49,6 +64,8 @@ export const platformNavOptions: NavOption[] = [
     title: 'Platform KPI — Tower MTCE Achievement'
   }
 ];
+
+/* ========== ADMIN MANAGEMENT NAVIGATION ========== */
 
 export const adminNavOptions: NavOption[] = [
   {

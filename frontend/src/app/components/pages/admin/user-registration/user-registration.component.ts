@@ -1,9 +1,18 @@
+/*
+ File: user-registration.component.ts
+ Description: User account registration and management page
+ Purpose: Allows admins to create, update, and delete standard user accounts.
+ Features: Form validation, user listing, role assignment, page access control
+*/
+
 // src/app/components/pages/admin/user-registration/user-registration.component.ts
 import { Component, ElementRef, OnInit, ViewChild, ChangeDetectorRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { UserService, User, CreateUserDto, UpdateUserDto } from '../../../../services/user.service';
+
+/* ========== USER REGISTRATION COMPONENT ========== */
 
 @Component({
   selector: 'app-user-registration',

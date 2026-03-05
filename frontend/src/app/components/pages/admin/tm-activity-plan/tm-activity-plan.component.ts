@@ -1,9 +1,19 @@
-import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
+/*
+ File: tm-activity-plan.component.ts
+ Description: TM Activity Plan KPI admin management
+ Purpose: CRUD operations for TM activity  plan KPI metrics.
+ Features: Data table management, activity tracking, form validation
+*/
+
+import { Component, OnInit, inject, Change DetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
 
+/* ========== TM ACTIVITY PLAN ADMIN COMPONENT ========== */
+
+/* Type definition for activity record */
 type ActivityRecord = {
   id?: number; // Backend uses 'id' (int)
   kpi: string;

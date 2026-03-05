@@ -1,39 +1,63 @@
+/* File: tm-activity.service.ts
+   Description: TM Activity Plans service
+   Purpose: Manages TM (Telecom Management) Activity Plan CRUD operations.
+*/
+
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+/* ========== DATA INTERFACES ========== */
+
+/* Activity plan record */
 export interface ActivityRecord {
+  /* Unique activity plan identifier */
   id?: number;
+  /* Record number */
   no: string;
+  /* KPI name */
   kpi: string;
+  /* Target value */
   target: string;
+  /* Calculation method */
   calculation: string;
+  /* Platform this applies to */
   platform: string;
+  /* Responsible Director General Manager */
   responsibleDGM: string;
+  /* Defined OLA (Operating Level Agreement) details */
   definedOLADetails: string;
+  /* Data sources for this activity */
   dataSources: string;
 }
+
+/* ========== TM ACTIVITY SERVICE ========== */
 
 @Injectable({
   providedIn: 'root'
 })
 export class TmActivityService {
+  /* Backend API base URL */
   private apiBase = 'http://localhost:5043/api/TmActivityPlans';
 
   constructor(private http: HttpClient) {}
 
+  /* Retrieve all activity plans */
   getAll(): Observable<ActivityRecord[]> {
     return this.http.get<ActivityRecord[]>(this.apiBase);
   }
 
+  /* Create new activity plan */
   add(data: Omit<ActivityRecord, 'id'>): Observable<ActivityRecord> {
     return this.http.post<ActivityRecord>(this.apiBase, data);
   }
 
+  /* Update existing activity plan */
   update(id: number, data: Partial<ActivityRecord>): Observable<ActivityRecord> {
     return this.http.put<ActivityRecord>(`${this.apiBase}/${id}`, data);
   }
 
+  /* Delete activity plan by ID */
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiBase}/${id}`);
   }

@@ -1,3 +1,9 @@
+/* File: app.config.ts
+   Description: Angular application configuration
+   Purpose: Centralized configuration for providers, routing, HTTP client setup,
+   animations, MSAL authentication, and JWT interceptor registration.
+*/
+
 import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
@@ -9,6 +15,8 @@ import { createMsalInstance, loginRequest } from './auth-config';
 import { JwtInterceptor } from './interceptors/jwt.interceptor';
 
 import { routes } from './app.routes';
+
+/* ========== APPLICATION CONFIGURATION ========== */
 
 export const appConfig: ApplicationConfig = {
   providers: [

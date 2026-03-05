@@ -74,5 +74,3 @@ namespace backend.Models
         public DateTime? CalculatedAt { get; set; }
     }
 }
-    }
-}

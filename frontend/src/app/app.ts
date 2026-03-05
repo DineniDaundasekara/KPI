@@ -1,3 +1,10 @@
+/* File: app.ts
+   Description: Root Angular application component
+   Purpose: Main app shell component that provides navigation structure,
+   header, dropdown menus, and routing outlet for all pages.
+   Features: Navigation state management, router event handling, user authentication status
+*/
+
 import { Component, HostListener, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet, Router, NavigationEnd, NavigationError, Event as RouterEvent } from '@angular/router';
@@ -11,6 +18,8 @@ import { AdminDropdownComponent } from './components/admin-dropdown/admin-dropdo
 import { LogoutButtonComponent } from './components/logout-button/logout-button.component';
 import { HasRoleDirective } from './directives/has-role.directive';
 import { AuthService } from './services/auth.service';
+
+/* ========== ROOT COMPONENT ========== */
 
 @Component({
   selector: 'app-root',
@@ -30,18 +39,28 @@ import { AuthService } from './services/auth.service';
   styleUrls: ['./app.css']
 })
 export class App implements OnInit {
+  /* Application title */
   protected readonly title = signal('Network Key Performance Indicator (KPI)');
+  /* Currently open dropdown menu */
   protected readonly openMenu = signal<string | null>(null);
+  /* Logged-in user name */
   protected readonly userName = signal<string>('Guest');
+  /* Navigation options for Overall KPI section */
   protected readonly overallOptions = overallNavOptions;
+  /* Navigation options for Platform KPI section */
   protected readonly platformOptions = platformNavOptions;
+  /* Navigation options for Admin section */
   protected readonly adminOptions = adminNavOptions;
+  /* Current URL path */
   protected currentUrl = '';
+  /* Navigation error message */
   protected navError: string | null = null;
+  /* Last error encountered */
   protected lastError: string | null = null;
 
   constructor(private authService: AuthService, private router: Router) { }
 
+  /* Initialize component and set up router event subscriptions */
   ngOnInit(): void {
     this.currentUrl = this.router.url;
     this.router.events.subscribe((ev: RouterEvent) => {
@@ -54,7 +73,7 @@ export class App implements OnInit {
       }
     });
 
-    // Get user from AuthService
+    /* Subscribe to user authentication state changes */
     this.authService.user$.subscribe(user => {
       if (user) {
         this.userName.set(user.name);
@@ -64,10 +83,12 @@ export class App implements OnInit {
     });
   }
 
+  /* Handle menu selection (delegated to dropdown components) */
   protected handleSelection(path: string): void {
     // Navigation is handled by the dropdown components
   }
 
+  /* Execute user logout and clear session */
   protected logout(): void {
     console.log('[Navigation] Logout requested');
     this.authService.logout();

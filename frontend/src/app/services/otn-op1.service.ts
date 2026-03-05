@@ -1,38 +1,67 @@
+/* File: otn-op1.service.ts
+   Description: OTN Operations 1 KPI service
+   Purpose: Manages OTN OP1 KPI data with site-level availability metrics.
+*/
+
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-// Interfaces
+/* ========== DATA INTERFACES ========== */
+
+/* OTN Operations KPI */
 export interface OtnOpKpi {
+  /* Unique KPI identifier */
   id: number;
+  /* Network engineer responsible */
   networkEngineerKpi: string;
+  /* Division/department */
   division?: string;
+  /* Section/team */
   section?: string;
+  /* Overall KPI percentage */
   kpiPercent?: number;
 }
 
+/* OTN Operations KPI creation payload */
 export interface CreateOtnOpKpi {
+  /* Network engineer responsible */
   networkEngineerKpi: string;
+  /* Division/department */
   division?: string;
+  /* Section/team */
   section?: string;
+  /* Overall KPI percentage */
   kpiPercent?: number;
 }
 
+/* OTN OP1 metric - site-level availability tracking */
 export interface OtnOp1Metric {
+  /* Unique metric identifier */
   id: number;
+  /* Foreign key to OTN OP1 KPI */
   otnOp1Id: number;
+  /* Site name/code */
   site: string;
+  /* Minutes site was unavailable */
   unavailableMinutes: number;
+  /* Total operational minutes */
   totalMinutes: number;
+  /* Total number of nodes at site */
   totalNodes: number;
+  /* Metric year */
   year: number;
+  /* Metric month */
   month: number;
 }
+
+/* ========== OTN OP1 SERVICE ========== */
 
 @Injectable({
   providedIn: 'root'
 })
 export class OtnOp1Service {
+  /* Backend API base URL */
   private readonly apiUrl = 'http://localhost:5043';
 
   constructor(private http: HttpClient) {}
