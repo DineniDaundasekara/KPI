@@ -1,3 +1,9 @@
+/*
+ * File: ClaimsTransformation.cs
+ * Implements Azure AD claims transformation to extract user information from tokens
+ * and populate custom claims for authorization logic.
+ */
+
 using backend.Data;
 using backend.Models;
 using Microsoft.AspNetCore.Authentication;
@@ -6,8 +12,13 @@ using System.Security.Claims;
 
 namespace backend.Helpers
 {
+    // =========================================================
+    // CLAIMS TRANSFORMATION
+    // Transforms Azure AD token claims into application-specific claims
+    // =========================================================
     public class ClaimsTransformation : IClaimsTransformation
     {
+        // Database context for accessing user and assignment data
         private readonly AppDbContext _context;
 
         public ClaimsTransformation(AppDbContext context)
@@ -15,6 +26,7 @@ namespace backend.Helpers
             _context = context;
         }
 
+        // Transforms the principal by extracting user info and adding custom claims
         public async Task<ClaimsPrincipal> TransformAsync(ClaimsPrincipal principal)
         {
             // Avoid running transformation if already done
@@ -68,7 +80,7 @@ namespace backend.Helpers
             identity.AddClaim(new Claim("serviceId", user.ServiceId));
             identity.AddClaim(new Claim("UserId", user.UserId.ToString()));
 
-            // Allowed Pages
+            // Allowed Pages - pages the user can access
             var allowedPages = await _context.UserPageAccess
                 .Where(upa => upa.UserId == user.UserId)
                 .Select(upa => upa.PageId)
@@ -79,7 +91,7 @@ namespace backend.Helpers
                 identity.AddClaim(new Claim("allowedPages", pageId.ToString()));
             }
 
-            // Assigned KPI Pages
+            // Assigned KPI Pages - pages the user can edit (Platform KPI only)
             var assignedKpiPages = await _context.PlatformKpiAssignments
                 .Where(pka => pka.UserId == user.UserId)
                 .Select(pka => pka.PageId)
