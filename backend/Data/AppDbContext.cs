@@ -1,89 +1,123 @@
-﻿using backend.Models;
+﻿/*
+ * File: AppDbContext.cs
+ * Entity Framework Core database context for the KPI Management System.
+ * Defines all database entities, relationships, and table configurations.
+ * Includes authentication, KPI definitions, metrics from multiple platforms, and audit trails.
+ */
+
+using backend.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Data
 {
+    // =========================================================
+    // APPLICATION DATABASE CONTEXT
+    // Entity Framework Core DbContext for KPI Management System
+    // Handles all database entity definitions, relationships, and table mappings
+    // =========================================================
     public class AppDbContext : DbContext
     {
+        // Inject database options from dependency injection container
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
         {
         }
 
-        // =========================
+        // =========================================================
+        // AUTHENTICATION & AUTHORIZATION ENTITIES
+        // User roles, pages, access controls, and platform assignments
+        // =========================================================
         // AUTH & USERS
-        // =========================
+        // =========================================================
         public DbSet<Role> Roles { get; set; } = null!;
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<Page> Pages { get; set; } = null!;
         public DbSet<UserPageAccess> UserPageAccess { get; set; } = null!;
         public DbSet<PlatformKpiAssignment> PlatformKpiAssignments { get; set; } = null!;
 
-        // =========================
-        // EMAILS
-        // =========================
+        // =========================================================
+        // EMAIL MANAGEMENT
+        // Email recipients for notifications and alerts
+        // =========================================================
         public DbSet<EmailRecipient> EmailRecipients { get; set; } = null!;
 
-        // =========================
-        // REGION / AREA
-        // =========================
+        // =========================================================
+        // REGION & AREA MANAGEMENT
+        // Geographic regions (LEA codes) and RTOM areas for area-based reporting
+        // =========================================================
         public DbSet<RegionData> RegionData { get; set; } = null!;
         public DbSet<RtomArea> RtomArea { get; set; } = null!;
 
-        // =========================
-        // MAINTENANCE ROUTINE
-        // =========================
+        // =========================================================
+        // MAINTENANCE ROUTINE MANAGEMENT
+        // Routine maintenance KPI definitions and tracking
+        // =========================================================
         public DbSet<MtncRoutine> MtncRoutines { get; set; } = null!;
 
-        // =========================
-        // KPI DEFINITIONS
-        // =========================
+        // =========================================================
+        // KPI DEFINITIONS & OVERALL RESULTS
+        // Master KPI definitions and aggregated overall results
+        // =========================================================
         public DbSet<KpiDefinition> KpiDefinitions { get; set; } = null!;
         public DbSet<OverallKpiResult> OverallKpiResults { get; set; } = null!;
 
-        // =========================
-        // FORMS (2025)
-        // =========================
+        // =========================================================
+        // SERVICE FULFILMENT KPI (2025)
+        // Service level KPI definitions and monthly metrics
+        // =========================================================
         public DbSet<ServiceFulfilmentKpi> ServiceFulfilmentKpis { get; set; } = null!;
         public DbSet<ServiceFulfilmentKpiMetric> ServiceFulfilmentKpiMetrics { get; set; } = null!;
 
         
 
-        // =========================
-        // BB&ANW (FORM 7 renamed)
-        // =========================
+        // =========================================================
+        // BROADBAND & ANW KPI (FORM 7 - RENAMED)
+        // BB&ANW KPI definitions with node-level metrics
+        // =========================================================
         public DbSet<BbAnwKpi> BbAnwKpis { get; set; } = null!;
         public DbSet<BbAnwKpiNode> BbAnwKpiNodes { get; set; } = null!;
 
 
-        // =========================
-        // TM ACTIVITY PLAN
-        // =========================
+        // =========================================================
+        // TRANSMISSION ACTIVITY PLAN (TM ACTIVITY PLAN)
+        // Transmission maintenance activity and planned KPI tracking
+        // =========================================================
         public DbSet<TmActivity1> TmActivity1 { get; set; } = null!;
 
-        // =========================
-        // KPI TOWER
-        // =========================
+        // =========================================================
+        // TOWER MAINTENANCE ACHIEVEMENT
+        // Tower site maintenance KPI tracking
+        // =========================================================
         public DbSet<TowerKpi> TowerKpis { get; set; } = null!;
 
-        // =========================
-        // IP NW OP KPI (FORM 6)
-        // =========================
+        // =========================================================
+        // IP NETWORK OPERATIONS KPI (FORM 6)
+        // IP network availability and performance metrics
+        // =========================================================
         public DbSet<IpNwOpKpi> IpNwOpKpis { get; set; } = null!;
         public DbSet<IpNwOpKpiMetric> IpNwOpKpiMetrics { get; set; } = null!;
 
-        //OTNOP1 AND OTNOP2
+        // =========================================================
+        // OTN OPERATIONS KPI (FORM 8 & FORM 9)
+        // OTN Op1 and OTN Op2 platform KPI definitions and metrics
+        // =========================================================
         public DbSet<OtnOp1> OtnOp1 { get; set; } = null!;
         public DbSet<OtnOp1Metrics> OtnOp1Metrics { get; set; } = null!;
         public DbSet<OtnOp2> OtnOp2 { get; set; } = null!;
         public DbSet<OtnOp2Metrics> OtnOp2Metrics { get; set; } = null!;
 
 
+        // =========================================================
+        // DATABASE SCHEMA CONFIGURATION
+        // Configures entity-to-table mappings, relationships, constraints, and indexes
+        // Called by EF Core during context initialization
+        // =========================================================
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // =========================
-            // AUTHENTICATION & AUTHORIZATION
-            // =========================
+            // =========================================================
+            // AUTHENTICATION & AUTHORIZATION CONFIGURATION
+            // Defines User, Role, Page, and Access Control entities
+            // =========================================================
 
             modelBuilder.Entity<Role>(entity =>
             {

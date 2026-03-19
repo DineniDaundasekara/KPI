@@ -1,3 +1,10 @@
+/*
+ File: admin-registration.component.ts
+ Description: Admin user registration and management page
+ Purpose: Allows Super Admin to create, update, and delete admin user accounts.
+ Features: Form validation, user listing, edit functionality, page/role assignment
+*/
+
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import {
@@ -9,6 +16,9 @@ import {
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpClientModule, HttpErrorResponse } from '@angular/common/http';
 
+/* ========== DATA INTERFACES ========== */
+
+/* Admin user entity */
 interface AdminUser {
   userId: number;       // Matches Backend UserDto.UserId
   name: string;

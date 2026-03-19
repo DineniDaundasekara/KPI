@@ -1,36 +1,66 @@
+/* File: bb-anw.service.ts
+   Description: Broadband Access Network KPI service
+   Purpose: Manages BB ANW KPI data for platform and admin pages.
+   Features: CRUD operations for BB ANW KPIs with node-level metrics
+*/
+
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
+/* ========== DATA INTERFACES ========== */
+
+/* Single node metric for BB ANW */
 export interface BbAnwNodeDto {
+  /* Node code identifier */
   nodeCode: string;
+  /* Minutes node was unavailable */
   unavailableMinutes?: number | null;
+  /* Total operational minutes */
   totalMinutes?: number | null;
+  /* Total number of nodes */
   totalNodes?: number | null;
-  month: number; // ✅ new
-  year: number;  // ✅ new
+  /* Metric month */
+  month: number;
+  /* Metric year */
+  year: number;
 }
 
+/* Full BB ANW KPI with detailed node metrics */
 export interface BbAnwDto {
-  id?: number; // ✅ int id now
+  /* Unique KPI identifier */
+  id?: number;
+  /* Network engineer responsible for KPI */
   networkEngineerKpi: string;
+  /* Division/department */
   division?: string | null;
+  /* Section/team */
   section?: string | null;
-  kpiPercent?: number | null; // ok (backend returns decimal -> json number)
+  /* Overall KPI percentage achievement */
+  kpiPercent?: number | null;
+  /* Node-level metrics */
   nodes?: BbAnwNodeDto[] | null;
 }
 
-// ✅ ADMIN HEADER ONLY
+/* Admin view - simplified BB ANW header data */
 export interface BbAnwHeaderDto {
-  id?: number; // ✅ int id now
+  /* Unique KPI identifier */
+  id?: number;
+  /* Network engineer responsible for KPI */
   networkEngineerKpi: string;
+  /* Division/department */
   division?: string | null;
+  /* Section/team */
   section?: string | null;
+  /* Overall KPI percentage achievement */
   kpiPercent?: number | null;
 }
 
+/* ========== BB ANW SERVICE ========== */
+
 @Injectable({ providedIn: 'root' })
 export class BbAnwService {
+  /* Backend API endpoint */
   private readonly apiUrl = 'http://localhost:5043/api/bb-anw';
 
   constructor(private http: HttpClient) {}
@@ -38,14 +68,17 @@ export class BbAnwService {
   // ---------------------------
   // PLATFORM KPI (FULL)
   // ---------------------------
+  /* Get all platform BB ANW KPIs with full details */
   getAll(): Observable<BbAnwDto[]> {
     return this.http.get<BbAnwDto[]>(this.apiUrl);
   }
 
+  /* Get specific BB ANW KPI by ID */
   getById(id: number): Observable<BbAnwDto> {
     return this.http.get<BbAnwDto>(`${this.apiUrl}/${id}`);
   }
 
+  /* Create new BB ANW KPI */
   add(data: BbAnwDto): Observable<any> {
     return this.http.post(`${this.apiUrl}/add`, data);
   }

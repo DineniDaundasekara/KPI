@@ -1,13 +1,19 @@
+/*
+ File: final-table.component.ts
+ Description: KPI definitions final table management page
+ Purpose: CRUD operations for KPI definition setup including weightage calculation.
+ Features: KPI definition management, point allocation, metric tracking
+*/
+
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
 
-/* =======================
-   TYPES
-======================= */
+/* ========== DATA TYPES ========== */
 
+/* KPI definition entity */
 export type KpiDefinition = {
   id: number;
   perspectives: string;

@@ -1,9 +1,19 @@
+/*
+ File: email-service.component.ts
+ Description: Email recipient management page
+ Purpose: Manages email distribution list for KPI notifications and reports.
+ Features: Add/remove email recipients, recipient validation, list management
+*/
+
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
 
+/* ========== EMAIL SERVICE COMPONENT ========== */
+
+/* Email recipient entity */
 type EmailRecipient = {
   id: number;     // SQL id column (int identity)
   email: string;  // SQL email column

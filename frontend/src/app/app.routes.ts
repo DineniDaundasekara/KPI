@@ -1,10 +1,18 @@
+/* File: app.routes.ts
+   Description: Application routing configuration
+   Purpose: Defines all application routes with their components and guard protections.
+   Routes: Login, Dashboard, Overall KPI, Platform KPI, Admin pages
+*/
+
 import { Routes } from '@angular/router';
 import { AuthGuard } from './guards/auth.guard';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
-// Overall KPI Components
+/* ========== ROUTE COMPONENT IMPORTS ========== */
+
+/* Overall KPI Components */
 import { CurrentMonthComponent } from './components/pages/overall/current-month/current-month.component';
-//import { PreviousMonthComponent } from './components/pages/overall/previous-month/previous-month.component';
-// Platform KPI Components
+// Placeholder for future previous month component
+/* Platform KPI Components */
 import { ServiceFulfilmentComponent } from './components/pages/platform/service-fulfilment/service-fulfilment.component';
 import { IpNwOpComponent } from './components/pages/platform/ip-nw-op/ip-nw-op.component';
 import { BbAnwComponent } from './components/pages/platform/bb-anw/bb-anw.component';
@@ -12,7 +20,7 @@ import { OtnOpComponent } from './components/pages/platform/otn-op/otn-op.compon
 import { TmActivityPlanComponent } from './components/pages/platform/tm-activity-plan/tm-activity-plan.component';
 import { RoutineMtncComponent } from './components/pages/platform/routine-mtnc/routine-mtnc.component';
 import { TowerMtceAchievementComponent } from './components/pages/platform/tower-mtce-achievement/tower-mtce-achievement.component';
-// Admin Components
+/* Admin Components */
 import { AdminRegistrationComponent } from './components/pages/admin/admin-registration/admin-registration.component';
 import { UserRegistrationComponent } from './components/pages/admin/user-registration/user-registration.component';
 import { AdminServiceFulfilmentComponent } from './components/pages/admin/service-fulfilment/service-fulfilment.component';
@@ -27,14 +35,19 @@ import { AdminRoutineMtncComponent } from './components/pages/admin/routine-mtnc
 import { EmailServiceComponent } from './components/pages/admin/email-service/email-service.component';
 import { FinalTableComponent } from './components/pages/admin/final-table/final-table.component';
 
+/* ========== ROUTE DEFINITIONS ========== */
+
 export const routes: Routes = [
+  /* Default route redirects to login */
   { path: '', redirectTo: 'login', pathMatch: 'full' },
+  /* Authentication page */
   { path: 'login', loadComponent: () => import('./components/login/login.component').then(m => m.LoginComponent) },
+  /* Main dashboard with KPI overview */
   { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
-  // Overall KPI Routes
+  /* Overall KPI Routes */
   { path: 'overall/current-month', component: CurrentMonthComponent, canActivate: [AuthGuard] },
-  //{ path: 'overall/previous-month', component: PreviousMonthComponent, canActivate: [AuthGuard] },
-  // Platform KPI Routes
+  // Placeholder for future previous month route
+  /* Platform KPI Routes */
   { path: 'platform/service-fulfilment', component: ServiceFulfilmentComponent, canActivate: [AuthGuard] },
   { path: 'platform/ip-nw-op', component: IpNwOpComponent, canActivate: [AuthGuard] },
   { path: 'platform/bb-anw', component: BbAnwComponent, canActivate: [AuthGuard] },
@@ -42,7 +55,7 @@ export const routes: Routes = [
   { path: 'platform/tm-activity-plan', component: TmActivityPlanComponent, canActivate: [AuthGuard] },
   { path: 'platform/routine-mtnc', component: RoutineMtncComponent, canActivate: [AuthGuard] },
   { path: 'platform/tower-mtce-achievement', component: TowerMtceAchievementComponent, canActivate: [AuthGuard] },
-  // Admin Routes
+  /* Admin Routes - requires Admin or SuperAdmin role */
   { path: 'admin/admin-registration', component: AdminRegistrationComponent, canActivate: [AuthGuard], data: { roles: ['Admin', 'SuperAdmin'] } },
   { path: 'admin/user-registration', component: UserRegistrationComponent, canActivate: [AuthGuard], data: { roles: ['Admin', 'SuperAdmin'] } },
   { path: 'admin/service-fulfilment', component: AdminServiceFulfilmentComponent, canActivate: [AuthGuard], data: { roles: ['Admin', 'SuperAdmin'] } },

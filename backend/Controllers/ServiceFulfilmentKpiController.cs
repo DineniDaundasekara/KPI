@@ -1,3 +1,9 @@
+/*
+ * File: ServiceFulfilmentKpiController.cs
+ * Provides API endpoints for managing Service Fulfilment KPIs and their
+ * associated area-level KPI metrics including CRUD operations and metric upserts.
+ */
+
 using System;
 using System.Linq;
 using System.Threading.Tasks;
@@ -12,41 +18,55 @@ using backend.Helpers.Authorization;
 
 namespace backend.Controllers
 {
+    // =========================================================
+    // SERVICE FULFILMENT KPI CONTROLLER
+    // Handles KPI definitions and KPI metric values per area
+    // =========================================================
     [ApiController]
     [Route("service-fulfilment-kpi")]
     [Authorize]
     public class ServiceFulfilmentKpiController : ControllerBase
     {
+        // Database context
         private readonly AppDbContext _context;
-        private readonly IAuthorizationService _authorizationService;
-        private const int PageId = 2; // Service Fulfilment
 
+        // Authorization service for page-based permission checks
+        private readonly IAuthorizationService _authorizationService;
+
+        // Page identifier used for authorization
+        private const int PageId = 2;
+
+        // Inject dependencies
         public ServiceFulfilmentKpiController(AppDbContext context, IAuthorizationService authorizationService)
         {
             _context = context;
             _authorizationService = authorizationService;
         }
 
-        // =========================
-        // MASTER LIST
+        // =========================================================
+        // MASTER KPI LIST
         // GET /service-fulfilment-kpi?month=11&year=2025
-        // =========================
+        // =========================================================
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] byte? month, [FromQuery] short? year)
         {
+            // Check view permission
             var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
             if (!authResult.Succeeded) return Forbid();
 
             var query = _context.ServiceFulfilmentKpis.AsNoTracking();
 
+            // Apply month filter if provided
             if (month.HasValue && month.Value > 0)
                 query = query.Where(x => x.Month == month.Value);
 
+            // Apply year filter if provided
             if (year.HasValue && year.Value > 0)
                 query = query.Where(x => x.Year == year.Value);
 
+            // Retrieve KPI definitions
             var result = await query
-                .OrderBy(x => x.Id) // ? no 'No' column now
+                .OrderBy(x => x.Id)
                 .Select(x => new ServiceFulfilmentKpiDto
                 {
                     Id = x.Id,
@@ -67,10 +87,13 @@ namespace backend.Controllers
             return Ok(result);
         }
 
-        // GET /service-fulfilment-kpi/5
+        // =========================================================
+        // GET KPI BY ID
+        // =========================================================
         [HttpGet("{id:int}")]
         public async Task<IActionResult> GetById(int id)
         {
+            // Check view permission
             var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
             if (!authResult.Succeeded) return Forbid();
 
@@ -83,7 +106,10 @@ namespace backend.Controllers
             return Ok(MapToDto(entity));
         }
 
+        // =========================================================
+        // CREATE NEW KPI
         // POST /service-fulfilment-kpi/add
+        // =========================================================
         [HttpPost("add")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Add([FromBody] ServiceFulfilmentKpiDto dto)
@@ -92,14 +118,16 @@ namespace backend.Controllers
 
             var now = DateTime.UtcNow;
 
+            // Create new KPI entity
             var entity = new ServiceFulfilmentKpi
             {
-                // ? Id is identity - do NOT set it
+                // Identity column is auto-generated
                 UpdatedAt = now.ToString("O"),
                 Month = dto.Month != 0 ? dto.Month : (byte)now.Month,
                 Year = dto.Year != 0 ? dto.Year : (short)now.Year
             };
 
+            // Apply DTO values
             ApplyDtoToEntity(entity, dto);
 
             _context.ServiceFulfilmentKpis.Add(entity);
@@ -108,7 +136,10 @@ namespace backend.Controllers
             return CreatedAtAction(nameof(GetById), new { id = entity.Id }, MapToDto(entity));
         }
 
-        // PUT /service-fulfilment-kpi/update/5
+        // =========================================================
+        // UPDATE EXISTING KPI
+        // PUT /service-fulfilment-kpi/update/{id}
+        // =========================================================
         [HttpPut("update/{id:int}")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Update(int id, [FromBody] ServiceFulfilmentKpiDto dto)
@@ -116,14 +147,20 @@ namespace backend.Controllers
             var entity = await _context.ServiceFulfilmentKpis.FirstOrDefaultAsync(x => x.Id == id);
             if (entity == null) return NotFound();
 
+            // Apply updated values
             ApplyDtoToEntity(entity, dto);
+
+            // Update modification timestamp
             entity.UpdatedAt = DateTime.UtcNow.ToString("O");
 
             await _context.SaveChangesAsync();
+
             return Ok(MapToDto(entity));
         }
 
-        // DELETE /service-fulfilment-kpi/delete/5
+        // =========================================================
+        // DELETE KPI
+        // =========================================================
         [HttpDelete("delete/{id:int}")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
@@ -132,24 +169,27 @@ namespace backend.Controllers
             if (entity == null) return NotFound();
 
             _context.ServiceFulfilmentKpis.Remove(entity);
+
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        // =========================
-        // METRICS
+        // =========================================================
+        // KPI METRICS
         // GET /service-fulfilment-kpi/metrics?month=11&year=2025&area=CENHKMD
-        // =========================
+        // =========================================================
         [HttpGet("metrics")]
         public async Task<IActionResult> GetMetrics([FromQuery] byte month, [FromQuery] short year, [FromQuery] string? area)
         {
+            // Check view permission
             var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
             if (!authResult.Succeeded) return Forbid();
 
             if (month == 0 || year == 0)
                 return BadRequest("Month and Year must be greater than zero.");
 
+            // Join KPI definitions with KPI metric values
             var query =
                 from metric in _context.ServiceFulfilmentKpiMetrics.AsNoTracking()
                 join kpi in _context.ServiceFulfilmentKpis.AsNoTracking()
@@ -157,6 +197,7 @@ namespace backend.Controllers
                 where metric.Month == month && metric.Year == year
                 select new { metric, kpi };
 
+            // Filter by area if provided
             if (!string.IsNullOrWhiteSpace(area))
             {
                 var normalized = area.Trim().ToUpper();
@@ -164,7 +205,7 @@ namespace backend.Controllers
             }
 
             var result = await query
-                .OrderBy(x => x.kpi.Id) // ? no 'No' column now
+                .OrderBy(x => x.kpi.Id)
                 .Select(x => new
                 {
                     id = x.kpi.Id,
@@ -174,7 +215,6 @@ namespace backend.Controllers
                     responsibleDgm = x.kpi.ResponsibleDgm,
                     definedoladetails = x.kpi.DefineDoladetails,
                     weightage = x.kpi.Weightage,
-
                     area = x.metric.AreaCode ?? string.Empty,
                     kpi_value = x.metric.KpiValue,
                     month = x.metric.Month,
@@ -185,34 +225,34 @@ namespace backend.Controllers
             return Ok(result);
         }
 
-        // POST /service-fulfilment-kpi/metrics
-        // POST /service-fulfilment-kpi/metrics
+        // =========================================================
+        // UPSERT KPI METRIC VALUE
+        // =========================================================
         [HttpPost("metrics")]
         public async Task<IActionResult> UpsertMetric([FromBody] UpsertServiceFulfilmentMetricDto dto)
         {
-            // EditPlatformKpiPolicy applies to PlatformAdmin logic
-            // Admin can also edit? The matrix says Admin can edit in Admin section.
-            // If Admin, bypass date check?
-            // "SuperAdmin: Cannot edit". "Admin: Cannot edit".
-            // So ONLY PlatformAdmin (with date check) can edit.
-            
+            // Platform-level edit permission
             var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "EditPlatformKpiPolicy");
             if (!authResult.Succeeded) return Forbid();
-            
+
             if (dto == null) return BadRequest("Request body is required.");
             if (dto.ServiceFulfilmentKpiId <= 0) return BadRequest("ServiceFulfilmentKpiId must be > 0.");
             if (dto.Month == 0 || dto.Year == 0) return BadRequest("Month and Year must be greater than zero.");
 
+            // Ensure KPI exists
             var kpi = await _context.ServiceFulfilmentKpis
                 .FirstOrDefaultAsync(x => x.Id == dto.ServiceFulfilmentKpiId);
 
             if (kpi == null)
                 return NotFound($"Service Fulfilment KPI with id '{dto.ServiceFulfilmentKpiId}' was not found.");
 
+            // Normalize area code
             var normalizedArea = (dto.AreaCode ?? string.Empty).Trim().ToUpper();
+
             if (string.IsNullOrWhiteSpace(normalizedArea))
                 return BadRequest("AreaCode is required.");
 
+            // Check if metric already exists
             var metric = await _context.ServiceFulfilmentKpiMetrics.FirstOrDefaultAsync(x =>
                 x.ServiceFulfilmentKpiId == dto.ServiceFulfilmentKpiId &&
                 x.AreaCode.ToUpper() == normalizedArea &&
@@ -221,6 +261,7 @@ namespace backend.Controllers
 
             if (metric == null)
             {
+                // Insert new metric record
                 metric = new ServiceFulfilmentKpiMetric
                 {
                     ServiceFulfilmentKpiId = dto.ServiceFulfilmentKpiId,
@@ -229,10 +270,12 @@ namespace backend.Controllers
                     Month = dto.Month,
                     Year = dto.Year
                 };
+
                 _context.ServiceFulfilmentKpiMetrics.Add(metric);
             }
             else
             {
+                // Update existing metric
                 metric.AreaCode = normalizedArea;
                 metric.KpiValue = dto.KpiValue;
                 metric.Month = dto.Month;
@@ -241,6 +284,7 @@ namespace backend.Controllers
 
             await _context.SaveChangesAsync();
 
+            // Build response payload
             var response = new
             {
                 id = kpi.Id,
@@ -259,6 +303,9 @@ namespace backend.Controllers
             return Ok(response);
         }
 
+        // =========================================================
+        // ENTITY → DTO MAPPING
+        // =========================================================
         private static ServiceFulfilmentKpiDto MapToDto(ServiceFulfilmentKpi entity) => new ServiceFulfilmentKpiDto
         {
             Id = entity.Id,
@@ -275,6 +322,9 @@ namespace backend.Controllers
             UpdatedAt = entity.UpdatedAt
         };
 
+        // =========================================================
+        // APPLY DTO VALUES TO ENTITY
+        // =========================================================
         private static void ApplyDtoToEntity(ServiceFulfilmentKpi entity, ServiceFulfilmentKpiDto dto)
         {
             entity.Kpi = dto.Kpi ?? string.Empty;

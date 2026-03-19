@@ -1,16 +1,32 @@
+/* File: auth.service.ts
+   Description: Authentication service
+   Purpose: Manages user authentication, token storage, and user state.
+   Features: Azure login verification, JWT token management, user role checking,
+   page permissions, logout functionality
+*/
+
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, map, tap } from 'rxjs'; // Import necessary RxJS operators
 
+/* ========== DATA INTERFACES ========== */
+
+/* Authenticated user object */
 export interface User {
+  /* JWT authentication token */
   token: string;
+  /* User's display name */
   name: string;
+  /* User's role (Admin, User, etc.) */
   role: string;
-  pages?: string[]; // Added pages
+  /* Assigned pages for user */
+  pages?: string[];
+  /* Alternative field name for pages */
   assignedPages?: string[];
 }
 
+/* Login API response structure */
 type LoginResponse = {
   token: string;
   Name?: string;
@@ -23,22 +39,29 @@ type LoginResponse = {
   assignedPages?: string[];
 };
 
+/* ========== AUTHENTICATION SERVICE ========== */
+
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
-  private apiUrl = 'http://localhost:5043/api/auth'; // Hardcoded for simplicity
+  /* Backend API endpoint for authentication */
+  private apiUrl = 'http://localhost:5043/api/auth';
+  /* Observable user state subject */
   private userSubject = new BehaviorSubject<User | null>(this.getUserFromStorage());
-  public user$ = this.userSubject.asObservable(); // Expose as user$
+  /* Public observable for user state */
+  public user$ = this.userSubject.asObservable();
 
   constructor(private http: HttpClient, private router: Router) { }
 
+  /* Get current user value from subject */
   public get userValue(): User | null {
     return this.userSubject.value;
   }
 
   // Service-ID-only login removed - Azure authentication is now mandatory
   
+  /* Verify Azure login and get user authenticated with service ID */
   verifyAzureLogin(email: string, serviceId: string): Observable<User> {
     return this.http.post<LoginResponse>(`${this.apiUrl}/verify-azure-login`, { email, serviceId })
       .pipe(
@@ -47,6 +70,7 @@ export class AuthService {
       );
   }
 
+  /* Map login response from multiple naming conventions to User object */
   private mapLoginResponse(res: LoginResponse): User {
     return {
       token: res.token,
@@ -57,38 +81,46 @@ export class AuthService {
     };
   }
 
+  /* Store user in localStorage and update subject */
   private handleAuthSuccess(user: User) {
     localStorage.setItem('user', JSON.stringify(user));
     this.userSubject.next(user);
   }
 
+  /* Clear user session and redirect to login */
   logout() {
     localStorage.removeItem('user');
     this.userSubject.next(null);
     this.router.navigate(['/login']);
   }
 
+  /* Retrieve user from browser storage */
   private getUserFromStorage(): User | null {
     const userStr = localStorage.getItem('user');
     return userStr ? JSON.parse(userStr) : null;
   }
 
+  /* Get current user's authentication token */
   getToken(): string | null {
     return this.userValue?.token || null;
   }
 
+  /* Get current user's role */
   getRole(): string | null {
     return this.userValue?.role || null;
   }
 
+  /* Get list of all allowed pages for current user */
   getAllowedPages(): string[] {
     return this.userValue?.pages || [];
   }
 
+  /* Get list of assigned pages for current user */
   getAssignedPages(): string[] {
     return this.userValue?.assignedPages || [];
   }
 
+  /* Check if user can edit a specific page based on role and page assignment */
   canEditPage(pageName: string): boolean {
     const normalize = (value: string | null | undefined) =>
       (value ?? '').trim().toLowerCase().replace(/[\s_-]+/g, '');

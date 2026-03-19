@@ -1,48 +1,91 @@
+/* File: service-fulfilment-kpi.service.ts
+   Description: Service Fulfilment KPI service
+   Purpose: Manages service-level KPI definitions and metrics
+   with area-based performance tracking.
+*/
+
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
+/* ========== DATA INTERFACES ========== */
+
+/* Service Fulfilment KPI definition */
 export interface ServiceFulfilmentKpiDto {
+  /* Unique KPI identifier */
   id?: number | string;
+  /* KPI name/description */
   kpi: string;
+  /* Target value for KPI */
   target: string;
+  /* Calculation method */
   calculation: string;
+  /* Platform this KPI applies to */
   platform: string;
+  /* Responsible DGM (Director General Manager) */
   responsibleDgm: string;
+  /* Defined OLA (Operating Level Agreement) details */
   defineDoladetails?: string;
+  /* Alternative field name for OLA details */
   definedoladetails?: string;
+  /* Weight of this KPI in overall score */
   weightage: number;
+  /* Data sources for this KPI */
   dataSources: string;
+  /* Metric month */
   month: number;
+  /* Metric year */
   year: number;
+  /* Last update timestamp */
   updatedAt?: string;
+  /* Display order in UI */
   displayOrder?: number;
 }
 
+/* API response for metric query */
 interface ServiceFulfilmentMetricResponse {
+  /* Unique metric identifier */
   id?: number | string;
+  /* KPI name */
   kpi: string;
+  /* Target value */
   target: string;
+  /* Platform */
   platform: string;
+  /* Responsible DGM */
   responsibleDgm: string;
+  /* OLA details */
   definedoladetails?: string;
+  /* KPI weightage */
   weightage: number;
+  /* Area code for this metric */
   area: string;
+  /* Achieved KPI value (0-100) */
   kpi_value: number;
+  /* Metric month */
   month: number;
+  /* Metric year */
   year: number;
 }
 
+/* Payload for creating/updating service fulfilment metrics */
 export interface UpsertServiceFulfilmentMetricRequest {
+  /* Service Fulfilment KPI definition ID */
   serviceFulfilmentKpiId: number;
+  /* Area code where metric applies */
   areaCode: string;
+  /* Achieved KPI value */
   kpiValue: number | null;
+  /* Metric month */
   month: number;
+  /* Metric year */
   year: number;
 }
 
+/* Service Fulfilment metric data structure */
 export interface ServiceFulfilmentMetricDto {
+  /* Unique metric identifier */
   id?: number | string;
   kpi: string;
   target: string;

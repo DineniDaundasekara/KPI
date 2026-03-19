@@ -1,8 +1,17 @@
-﻿﻿import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+﻿﻿/*
+ File: ip-nw-op.component.ts
+ Description: IP Network Operations KPI admin management
+ Purpose: CRUD operations for IP NW OP KPI metrics and performance targets.
+ Features: Data table management, add/edit/delete operations, form validation
+*/
+
+import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { IpNwOpService, IpNwOpKpiDto } from '../../../../services/ip-nw-op.service';
+
+/* ========== IP NW OP ADMIN COMPONENT ========== */
 
 @Component({
   selector: 'app-admin-ip-nw-op',
@@ -12,10 +21,13 @@ import { IpNwOpService, IpNwOpKpiDto } from '../../../../services/ip-nw-op.servi
   styleUrls: ['./ip-nw-op.component.scss'],
 })
 export class AdminIpNwOpComponent implements OnInit {
+  /* Page display title */
   pageTitle = 'Admin - IP NW OP';
 
+  /* IP NW OP KPI data table */
   data: IpNwOpKpiDto[] = [];
 
+  /* Form data object */
   form = {
     network_engineer_kpi: '',
     division: '',

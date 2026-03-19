@@ -1,4 +1,12 @@
+/* File: auth-config.ts
+   Description: Azure MSAL authentication configuration
+   Purpose: Configures Azure AD B2C authentication including client ID,
+   authority, redirect URI, and login request scopes.
+*/
+
 import { InteractionType, PublicClientApplication } from '@azure/msal-browser';
+
+/* ========== MSAL CONFIGURATION ========== */
 
 export const msalConfig = {
     auth: {
@@ -12,14 +20,18 @@ export const msalConfig = {
     }
 };
 
+/* MSAL login request configuration */
 export const loginRequest = {
-    // Temporarily remove API scope causing AADSTS500011 (resource not found).
-    // For production, restore the API scope to the correct App ID URI and ensure admin consent.
+    /* Request openid, profile, and offline_access scopes */
+    /* Note: API scope temporarily disabled - causes AADSTS500011 (resource not found) */
     scopes: ['openid', 'profile', 'offline_access']
 };
 
-// Create a single MSAL instance
+/* ========== MSAL INSTANCE MANAGEMENT ========== */
+
+/* Singleton MSAL instance */
 let msalInstance: PublicClientApplication | null = null;
+/* Flag to track if MSAL has been initialized */
 let msalInitialized = false;
 
 export function createMsalInstance(): PublicClientApplication {

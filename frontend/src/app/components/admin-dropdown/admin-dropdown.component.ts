@@ -1,13 +1,28 @@
+/*
+ File: admin-dropdown.component.ts
+ Description: Admin dropdown menu component
+ Purpose: Displays categorized navigation menu for admin and platform pages.
+ Features: Groups options by admin/platform/other themes, handles navigation
+*/
+
 import { Component, Input, Output, EventEmitter, OnChanges, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { NavOption } from '../../page-config';
 
+/* ========== DATA INTERFACES ========== */
+
+/* Navigation menu section grouping */
 interface DropdownSection {
+  /* Section display title */
   title: string;
+  /* Visual theme for section styling */
   theme: 'admin' | 'platform' | 'other';
+  /* Navigation options in this section */
   options: NavOption[];
 }
+
+/* ========== ADMIN DROPDOWN COMPONENT ========== */
 
 @Component({
   selector: 'app-admin-dropdown',
@@ -17,14 +32,21 @@ interface DropdownSection {
   styleUrls: ['./admin-dropdown.component.scss']
 })
 export class AdminDropdownComponent implements OnChanges {
+  /* Input: Navigation options to display */
   @Input() options: NavOption[] = [];
+  /* Input: Whether dropdown menu is open */
   @Input() isOpen: boolean = false;
+  /* Output: Emit when menu toggle requested */
   @Output() toggleMenu = new EventEmitter<void>();
+  /* Output: Emit when menu close requested */
   @Output() closeMenu = new EventEmitter<void>();
+  /* Output: Emit selected route path */
   @Output() selection = new EventEmitter<string>();
 
+  /* Grouped navigation sections */
   sections: DropdownSection[] = [];
 
+  /* Labels for admin-related navigation options */
   private readonly adminSet = new Set([
     'Admin Registration',
     'User Registration',
@@ -33,6 +55,7 @@ export class AdminDropdownComponent implements OnChanges {
     'KPI Management'
   ]);
 
+  /* Labels for platform-related navigation options */
   private readonly platformSet = new Set([
     'Service Fulfilment',
     'BB ANW',
@@ -43,12 +66,14 @@ export class AdminDropdownComponent implements OnChanges {
 
   constructor(private router: Router) {}
 
+  /* Rebuild sections when options input changes */
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['options']) {
       this.buildSections();
     }
   }
 
+  /* Group navigation options into themed sections */
   private buildSections(): void {
     const admin: NavOption[] = [];
     const platform: NavOption[] = [];
@@ -73,14 +98,14 @@ export class AdminDropdownComponent implements OnChanges {
     this.sections = sections.filter(section => section.options.length > 0);
   }
 
+  /* Toggle dropdown menu visibility */
   onToggleMenu(): void {
     this.toggleMenu.emit();
   }
 
+  /* Navigate to selected page and close menu */
   onSelection(path: string): void {
-    // Navigate to the selected page
     this.router.navigate([path]).then(() => {
-      // Close the menu after navigation
       this.closeMenu.emit();
       this.selection.emit(path);
     }).catch((error) => {

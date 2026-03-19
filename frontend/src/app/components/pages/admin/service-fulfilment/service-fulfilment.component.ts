@@ -1,8 +1,18 @@
+/*
+ File: service-fulfilment.component.ts
+ Description: Service fulfilment KPI admin management
+ Purpose: CRUD operations for service fulfilment KPI metrics and thresholds.
+ Features: Data table management, metrics configuration, form handling
+*/
+
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, DOCUMENT } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { ServiceFulfilmentKpiDto, ServiceFulfilmentKpiService } from '../../../../services/service-fulfilment-kpi.service';
 
+/* ========== ADMIN SERVICE FULFILMENT COMPONENT ========== */
+
+/* Service fulfilment KPI row with display order */
 type AdminKpiRow = ServiceFulfilmentKpiDto & { displayOrder?: number };
 
 @Component({

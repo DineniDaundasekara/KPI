@@ -1,37 +1,65 @@
+/* File: otn-op2.service.ts
+   Description: OTN Operations 2 KPI service
+   Purpose: Manages OTN OP2 KPI data with link failure tracking.
+*/
+
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
-// Interfaces
+/* ========== DATA INTERFACES ========== */
+
+/* OTN Operations KPI */
 export interface OtnOpKpi {
+  /* Unique KPI identifier */
   id: number;
+  /* Network engineer responsible */
   networkEngineerKpi: string;
+  /* Division/department */
   division?: string;
+  /* Section/team */
   section?: string;
+  /* Overall KPI percentage */
   kpiPercent?: number;
 }
 
+/* OTN Operations KPI creation payload */
 export interface CreateOtnOpKpi {
+  /* Network engineer responsible */
   networkEngineerKpi: string;
+  /* Division/department */
   division?: string;
+  /* Section/team */
   section?: string;
+  /* Overall KPI percentage */
   kpiPercent?: number;
 }
 
+/* OTN OP2 metric - link failure tracking */
 export interface OtnOp2Metric {
+  /* Unique metric identifier */
   id: number;
+  /* Foreign key to OTN OP2 KPI */
   otnOp2Id: number;
+  /* Site name/code */
   site: string;
+  /* Total failed links during period */
   totalFailedLinks: number;
+  /* Links that did not violate SLA */
   linksSlaNotViolated: number;
+  /* Metric year */
   year: number;
+  /* Metric month */
   month: number;
 }
+
+/* ========== OTN OP2 SERVICE ========== */
 
 @Injectable({
   providedIn: 'root'
 })
 export class OtnOp2Service {
+  /* Backend API base URL */
   private readonly apiUrl = 'http://localhost:5043';
 
   constructor(private http: HttpClient) {}

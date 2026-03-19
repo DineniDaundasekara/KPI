@@ -1,4 +1,10 @@
-﻿using backend.Data;
+﻿/*
+ * File: OtnOp1Controller.cs
+ * Provides API endpoints for managing OTN OP KPIs and their associated
+ * monthly site metrics, including CRUD operations and bulk metric upserts.
+ */
+
+using backend.Data;
 using backend.DTOs;
 using backend.Models;
 using Microsoft.AspNetCore.Mvc;
@@ -9,28 +15,42 @@ using backend.Helpers.Authorization;
 
 namespace backend.Controllers
 {
+    // =========================================================
+    // OTN OP KPI CONTROLLER
+    // Handles KPI definitions and site-level metrics for OTN OP
+    // =========================================================
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
     public class OtnOp1Controller : ControllerBase
     {
+        // Database context for OTN OP data
         private readonly AppDbContext _db;
-        private readonly IAuthorizationService _authorizationService;
-        private const int PageId = 4; // OTN OP
 
+        // Authorization service for page-based policies
+        private readonly IAuthorizationService _authorizationService;
+
+        // Page identifier used for authorization checks
+        private const int PageId = 4;
+
+        // Inject dependencies
         public OtnOp1Controller(AppDbContext db, IAuthorizationService authorizationService)
         {
             _db = db;
             _authorizationService = authorizationService;
         }
 
-        // GET: api/OtnOp1
+        // =========================================================
+        // GET ALL OTN OP KPIs
+        // Requires ViewPagePolicy authorization
+        // =========================================================
         [HttpGet]
         public async Task<ActionResult<IEnumerable<OtnOp1Dto>>> GetAll()
         {
             var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
             if (!authResult.Succeeded) return Forbid();
 
+            // Retrieve KPI definitions ordered by ID
             var items = await _db.OtnOp1
                 .AsNoTracking()
                 .OrderBy(x => x.Id)
@@ -47,13 +67,16 @@ namespace backend.Controllers
             return Ok(items);
         }
 
-        // GET: api/OtnOp1/5
+        // =========================================================
+        // GET OTN OP KPI BY ID
+        // =========================================================
         [HttpGet("{id:int}")]
         public async Task<ActionResult<OtnOp1Dto>> GetById(int id)
         {
             var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
             if (!authResult.Succeeded) return Forbid();
 
+            // Retrieve KPI definition by ID
             var item = await _db.OtnOp1
                 .AsNoTracking()
                 .Where(x => x.Id == id)
@@ -68,17 +91,23 @@ namespace backend.Controllers
                 .FirstOrDefaultAsync();
 
             if (item == null) return NotFound();
+
             return Ok(item);
         }
 
-        // POST: api/OtnOp1
+        // =========================================================
+        // CREATE NEW OTN OP KPI
+        // Admin-only endpoint
+        // =========================================================
         [HttpPost]
         [Authorize(Policy = "AdminOnly")]
         public async Task<ActionResult<OtnOp1Dto>> Create([FromBody] CreateOtnOp1Dto dto)
         {
+            // Validate KPI name
             if (string.IsNullOrWhiteSpace(dto.NetworkEngineerKpi))
                 return BadRequest("NetworkEngineerKpi is required.");
 
+            // Create entity from DTO
             var entity = new OtnOp1
             {
                 NetworkEngineerKpi = dto.NetworkEngineerKpi.Trim(),
@@ -90,6 +119,7 @@ namespace backend.Controllers
             _db.OtnOp1.Add(entity);
             await _db.SaveChangesAsync();
 
+            // Map entity to DTO for response
             var result = new OtnOp1Dto
             {
                 Id = entity.Id,
@@ -102,7 +132,10 @@ namespace backend.Controllers
             return CreatedAtAction(nameof(GetById), new { id = entity.Id }, result);
         }
 
-        // PUT: api/OtnOp1/5
+        // =========================================================
+        // UPDATE EXISTING OTN OP KPI
+        // Admin-only endpoint
+        // =========================================================
         [HttpPut("{id:int}")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Update(int id, [FromBody] CreateOtnOp1Dto dto)
@@ -110,20 +143,25 @@ namespace backend.Controllers
             var entity = await _db.OtnOp1.FirstOrDefaultAsync(x => x.Id == id);
             if (entity == null) return NotFound();
 
+            // Validate KPI name
             if (string.IsNullOrWhiteSpace(dto.NetworkEngineerKpi))
                 return BadRequest("NetworkEngineerKpi is required.");
 
+            // Update fields
             entity.NetworkEngineerKpi = dto.NetworkEngineerKpi.Trim();
             entity.Division = dto.Division;
             entity.Section = dto.Section;
             entity.KpiPercent = dto.KpiPercent;
 
             await _db.SaveChangesAsync();
+
             return NoContent();
         }
 
-        // DELETE: api/OtnOp1/5
-        // Cascade deletes metrics due to FK
+        // =========================================================
+        // DELETE OTN OP KPI
+        // Cascade delete will remove associated metrics
+        // =========================================================
         [HttpDelete("{id:int}")]
         [Authorize(Policy = "AdminOnly")]
         public async Task<IActionResult> Delete(int id)
@@ -133,10 +171,13 @@ namespace backend.Controllers
 
             _db.OtnOp1.Remove(entity);
             await _db.SaveChangesAsync();
+
             return NoContent();
         }
 
-        // GET: api/OtnOp1/5/metrics?year=2026&month=1
+        // =========================================================
+        // GET KPI METRICS FOR SPECIFIC MONTH/YEAR
+        // =========================================================
         [HttpGet("{id:int}/metrics")]
         public async Task<ActionResult<IEnumerable<OtnOp1MetricDto>>> GetMetrics(
             int id,
@@ -146,9 +187,11 @@ namespace backend.Controllers
             var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
             if (!authResult.Succeeded) return Forbid();
 
+            // Ensure KPI definition exists
             var exists = await _db.OtnOp1.AsNoTracking().AnyAsync(x => x.Id == id);
             if (!exists) return NotFound("OtnOp1 KPI not found. Use the KPI id from /api/OtnOp1, not a metric id.");
 
+            // Retrieve metrics for the specified month and year
             var rows = await _db.OtnOp1Metrics
                 .AsNoTracking()
                 .Where(m => m.OtnOp1Id == id && m.Year == year && m.Month == month)
@@ -169,14 +212,18 @@ namespace backend.Controllers
             return Ok(rows);
         }
 
-        // POST: api/OtnOp1/5/metrics
-        // Bulk upsert (insert new or update existing) based on unique key (OtnOp1Id, Site, Year, Month)
+        // =========================================================
+        // BULK UPSERT KPI METRICS
+        // Inserts new metrics or updates existing ones based on
+        // unique key (OtnOp1Id, Site, Year, Month)
+        // =========================================================
         [HttpPost("{id:int}/metrics")]
         public async Task<IActionResult> UpsertMetrics(int id, [FromBody] List<OtnOp1MetricDto> metrics)
         {
             var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "EditPlatformKpiPolicy");
             if (!authResult.Succeeded) return Forbid();
 
+            // Ensure KPI definition exists
             var exists = await _db.OtnOp1.AnyAsync(x => x.Id == id);
             if (!exists) return NotFound("OtnOp1 KPI not found. Use the KPI id from /api/OtnOp1, not a metric id.");
 
@@ -185,17 +232,20 @@ namespace backend.Controllers
 
             foreach (var dto in metrics)
             {
+                // Validate site name
                 if (string.IsNullOrWhiteSpace(dto.Site))
                     return BadRequest("Site is required.");
 
+                // Validate month range
                 if (dto.Month < 1 || dto.Month > 12)
                     return BadRequest("Month must be 1..12.");
 
-                // Always force FK from route
+                // Force foreign key from route
                 dto.OtnOp1Id = id;
 
                 var site = dto.Site.Trim();
 
+                // Check if metric already exists for this site/month/year
                 var existing = await _db.OtnOp1Metrics
                     .FirstOrDefaultAsync(m =>
                         m.OtnOp1Id == id &&
@@ -205,6 +255,7 @@ namespace backend.Controllers
 
                 if (existing == null)
                 {
+                    // Insert new metric record
                     _db.OtnOp1Metrics.Add(new OtnOp1Metrics
                     {
                         OtnOp1Id = id,
@@ -218,6 +269,7 @@ namespace backend.Controllers
                 }
                 else
                 {
+                    // Update existing metric record
                     existing.UnavailableMinutes = dto.UnavailableMinutes;
                     existing.TotalMinutes = dto.TotalMinutes;
                     existing.TotalNodes = dto.TotalNodes;
@@ -225,20 +277,17 @@ namespace backend.Controllers
             }
 
             await _db.SaveChangesAsync();
+
             return Ok();
         }
 
-        // DELETE: api/OtnOp1/metrics/123
+        // =========================================================
+        // DELETE SPECIFIC KPI METRIC
+        // =========================================================
         [HttpDelete("metrics/{metricId:int}")]
         public async Task<IActionResult> DeleteMetric(int metricId)
         {
-            // Allow Admin or PlatformAdmin(Time/Page restricted)
-            // But Delete implies removing data. 
-            // Usually Admin deletes. PlatformAdmin might clear it?
-            // "Admin section /OTN OP KPI (edit/delete)" -> Admin
-            // "Platform section /OTN OP KPI (edit/add)" -> PlatformAdmin
-            // I'll stick to EditPlatformKpiPolicy for now, or AdminOrEdit logic if needed.
-            // Given Upsert is EditPlatform, DeleteMetric might be too.
+            // Require edit permission for this platform KPI
             var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "EditPlatformKpiPolicy");
             if (!authResult.Succeeded) return Forbid();
 
@@ -247,6 +296,7 @@ namespace backend.Controllers
 
             _db.OtnOp1Metrics.Remove(row);
             await _db.SaveChangesAsync();
+
             return NoContent();
         }
     }

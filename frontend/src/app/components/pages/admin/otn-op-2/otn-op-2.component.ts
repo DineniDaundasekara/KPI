@@ -1,7 +1,16 @@
+/*
+ File: otn-op-2.component.ts
+ Description: OTN Operations 2 KPI admin management
+ Purpose: CRUD operations for OTN OP2 KPI metrics and performance targets.
+ Features: Data table management, add/edit/delete operations, form validation
+*/
+
 import { Component, OnInit, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { OtnOp2Service, OtnOpKpi, CreateOtnOpKpi } from '../../../../services/otn-op2.service';
+
+/* ========== OTN OP2 ADMIN COMPONENT ========== */
 
 @Component({
   selector: 'app-otn-op-2',

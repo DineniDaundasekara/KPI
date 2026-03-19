@@ -1,45 +1,77 @@
-// src/app/services/user.service.ts
+/* File: user.service.ts
+   Description: User management service
+   Purpose: Manages user CRUD operations and user data synchronization.
+*/
+
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 
+/* ========== DATA INTERFACES ========== */
+
+/* User entity */
 export interface User {
-  userId: number; // Changed from id: string
-  serviceId: string; // Changed from username: number
+  /* Unique user identifier */
+  userId: number;
+  /* User's service ID (username) */
+  serviceId: string;
+  /* User's display name */
   name: string;
+  /* User's role (Admin, User, etc.) */
   role: string;
-  isActive: boolean; // Changed from string
+  /* Whether user account is active */
+  isActive: boolean;
+  /* Pages assigned to this user */
   pages: string[];
+  /* Last login timestamp */
   lastLogin?: string;
+  /* Account creation timestamp */
   createdAt: string;
+  /* Last update timestamp */
   updatedAt?: string;
 }
 
+/* Payload for creating new user */
 export interface CreateUserDto {
+  /* Service ID (username) */
   serviceId: string;
+  /* Display name */
   name: string;
+  /* User role */
   role: string;
+  /* Account active status */
   isActive: boolean;
+  /* Pages to assign */
   pages: string[];
 }
 
+/* Payload for updating user */
 export interface UpdateUserDto {
+  /* Service ID (optional update) */
   serviceId?: string;
+  /* Display name (optional update) */
   name?: string;
+  /* Role (optional update) */
   role?: string;
+  /* Active status (optional update) */
   isActive?: boolean;
+  /* Pages (optional update) */
   pages?: string[];
 }
+
+/* ========== USER SERVICE ========== */
 
 @Injectable({
   providedIn: 'root'
 })
 export class UserService {
+  /* Backend API endpoint */
   private apiUrl = 'http://localhost:5043/api/users';
 
   constructor(private http: HttpClient) { }
 
+  /* Retrieve all users */
   getAllUsers(): Observable<User[]> {
     return this.http.get<User[]>(this.apiUrl).pipe(
       catchError(this.handleError)

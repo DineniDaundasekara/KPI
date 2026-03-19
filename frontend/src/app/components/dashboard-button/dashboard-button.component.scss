@@ -1,10 +1,20 @@
+/* File: dashboard-button.component.scss
+   Description: Dashboard button styles
+   Purpose: Styling for dashboard navigation button with hover and active states
+*/
+
+/* ========== COMPONENT STYLES ========== */
+
+/* Host container - inline flex layout */
 :host {
   display: inline-flex;
   flex-shrink: 0;
   white-space: nowrap;
 }
 
-/* Same design as nav-btn in header */
+/* ========== BUTTON STYLES ========== */
+
+/* Navigation button base styles */
 .nav-btn {
   display: inline-flex;
   align-items: center;
@@ -28,6 +38,9 @@
   box-shadow: 0 2px 4px rgba(15, 23, 42, 0.15);
 }
 
+/* ========== BUTTON STATES ========== */
+
+/* Hover and focus states */
 /* Hover */
 .nav-btn:hover,
 .nav-btn:focus-visible {
@@ -37,6 +50,7 @@
   box-shadow: 0 3px 8px rgba(15, 23, 42, 0.25);
 }
 
+/* Active page state */
 /* Active (current page) state */
 .nav-btn.active,
 .nav-btn.active:hover {

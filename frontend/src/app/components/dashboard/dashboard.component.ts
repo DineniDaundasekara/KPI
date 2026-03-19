@@ -1,3 +1,10 @@
+/*
+ File: dashboard.component.ts
+ Description: Main KPI dashboard display component
+ Purpose: Display comprehensive KPI metrics with region data, overall performance indicators, and detailed meter information.
+ Features: Region-based KPI display, meter details modal, animations, responsive layout, performance tracking
+*/
+
 import { Component, OnInit, OnDestroy, Inject, PLATFORM_ID, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';

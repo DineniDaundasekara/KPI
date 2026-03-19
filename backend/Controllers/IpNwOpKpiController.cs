@@ -1,3 +1,8 @@
+/*
+ * File: IpNwOpKpiController.cs
+ * Handles KPI data and metrics for the IP NW OP platform.
+ */
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,9 +22,14 @@ namespace backend.Controllers
     [Authorize]
     public class IpNwOpKpiController : ControllerBase
     {
+        // Database context
         private readonly AppDbContext _db;
+
+        // Authorization service for page access control
         private readonly IAuthorizationService _authorizationService;
-        private const int PageId = 1; // IP NW OP
+
+        // Page identifier used for authorization checks
+        private const int PageId = 1;
 
         public IpNwOpKpiController(AppDbContext db, IAuthorizationService authorizationService)
         {
@@ -28,9 +38,8 @@ namespace backend.Controllers
         }
 
         // =========================================================
-        // GET ALL (KPI + Metrics)
+        // GET ALL KPI RECORDS WITH METRICS
         // GET: /ip-nw-op?month=11&year=2025&area=cenhkmd
-        // NOTE: month/year are in Metrics table now
         // =========================================================
         [HttpGet("")]
         public async Task<IActionResult> GetAll(
@@ -38,19 +47,19 @@ namespace backend.Controllers
             [FromQuery] short? year,
             [FromQuery] string? area)
         {
+            // Verify user has permission to view this page
             var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
             if (!authResult.Succeeded) return Forbid();
 
             var normalizedArea = NormalizeAreaCode(area);
 
-            // KPI query
-            var kpiQuery = _db.IpNwOpKpis.AsNoTracking().AsQueryable();
-
-            var kpis = await kpiQuery
+            // Fetch KPI definitions
+            var kpis = await _db.IpNwOpKpis
+                .AsNoTracking()
                 .OrderBy(x => x.Id)
                 .ToListAsync();
 
-            // metrics query (filtered by month/year/area)
+            // Build metrics query with filters
             var metricsQuery = _db.IpNwOpKpiMetrics.AsNoTracking().AsQueryable();
 
             if (month.HasValue && month.Value > 0)
@@ -64,7 +73,7 @@ namespace backend.Controllers
 
             var metrics = await metricsQuery.ToListAsync();
 
-            // group metrics by KPI id
+            // Group metrics by KPI ID for easier mapping
             var metricsByKpi = metrics
                 .GroupBy(m => m.IpNwOpKpiId)
                 .ToDictionary(g => g.Key, g => g.ToList());
@@ -81,7 +90,7 @@ namespace backend.Controllers
         }
 
         // =========================================================
-        // GET BY ID (KPI + Metrics)
+        // GET SINGLE KPI RECORD WITH METRICS
         // GET: /ip-nw-op/{id}?month=11&year=2025&area=cenhkmd
         // =========================================================
         [HttpGet("{id:int}")]
@@ -94,6 +103,7 @@ namespace backend.Controllers
             var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "ViewPagePolicy");
             if (!authResult.Succeeded) return Forbid();
 
+            // Retrieve KPI record
             var entity = await _db.IpNwOpKpis
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id);
@@ -102,6 +112,7 @@ namespace backend.Controllers
 
             var normalizedArea = NormalizeAreaCode(area);
 
+            // Retrieve metrics linked to this KPI
             var metricsQuery = _db.IpNwOpKpiMetrics
                 .AsNoTracking()
                 .Where(m => m.IpNwOpKpiId == id);
@@ -121,7 +132,7 @@ namespace backend.Controllers
         }
 
         // =========================================================
-        // ADD KPI (no metrics here)
+        // ADD KPI HEADER (METRICS NOT INCLUDED)
         // POST: /ip-nw-op/add
         // =========================================================
         [HttpPost("add")]
@@ -146,7 +157,7 @@ namespace backend.Controllers
         }
 
         // =========================================================
-        // UPDATE KPI fields only
+        // UPDATE KPI HEADER FIELDS
         // PUT: /ip-nw-op/update/{id}
         // =========================================================
         [HttpPut("update/{id:int}")]
@@ -169,7 +180,7 @@ namespace backend.Controllers
         }
 
         // =========================================================
-        // DELETE KPI (metrics deleted by FK cascade)
+        // DELETE KPI HEADER (METRICS REMOVED VIA CASCADE)
         // DELETE: /ip-nw-op/delete/{id}
         // =========================================================
         [HttpDelete("delete/{id:int}")]
@@ -186,7 +197,7 @@ namespace backend.Controllers
         }
 
         // =========================================================
-        // UPSERT SINGLE METRIC (month/year required now)
+        // UPSERT KPI METRIC
         // PUT: /ip-nw-op/metrics/{kpiId}/{areaCode}?month=11&year=2025
         // =========================================================
         [HttpPut("metrics/{kpiId:int}/{areaCode}")]
@@ -200,9 +211,11 @@ namespace backend.Controllers
             var authResult = await _authorizationService.AuthorizeAsync(User, PageId, "EditPlatformKpiPolicy");
             if (!authResult.Succeeded) return Forbid();
 
+            // Validate KPI exists
             var exists = await _db.IpNwOpKpis.AnyAsync(x => x.Id == kpiId);
             if (!exists) return NotFound(new { message = "kpiId not found" });
 
+            // Validate date parameters
             if (month < 1 || month > 12) return BadRequest(new { message = "month must be between 1 and 12" });
             if (year <= 0) return BadRequest(new { message = "year must be valid" });
 
@@ -210,12 +223,14 @@ namespace backend.Controllers
             if (string.IsNullOrEmpty(code))
                 return BadRequest(new { message = "areaCode is required" });
 
+            // Check if metric already exists
             var row = await _db.IpNwOpKpiMetrics.FirstOrDefaultAsync(x =>
                 x.IpNwOpKpiId == kpiId &&
                 x.AreaCode.ToLower() == code &&
                 x.Month == month &&
                 x.Year == year);
 
+            // Create metric record if not found
             if (row == null)
             {
                 row = new IpNwOpKpiMetric
@@ -228,6 +243,7 @@ namespace backend.Controllers
                 _db.IpNwOpKpiMetrics.Add(row);
             }
 
+            // Update metric values
             row.UnavailableMinutes = dto.UnavailableMinutes;
             row.TotalMinutes = dto.TotalMinutes;
             row.TotalNodes = dto.TotalNodes;
@@ -237,7 +253,7 @@ namespace backend.Controllers
         }
 
         // =========================================================
-        // GET METRICS (month/year/areaCode)
+        // GET METRICS ONLY
         // GET: /ip-nw-op/metrics?month=11&year=2025&areaCode=cenhkmd
         // =========================================================
         [HttpGet("metrics")]
@@ -266,12 +282,15 @@ namespace backend.Controllers
             return Ok(metrics);
         }
 
-        // =========================
-        // helpers
-        // =========================
+        // =========================================================
+        // HELPER METHODS
+        // =========================================================
+
+        // Normalize area code for consistent comparisons
         private static string NormalizeAreaCode(string? areaCode)
             => string.IsNullOrWhiteSpace(areaCode) ? string.Empty : areaCode.Trim().ToLowerInvariant();
 
+        // Map entity + metrics into DTO format
         private static IpNwOpKpiDto MapToDto(IpNwOpKpi entity, List<IpNwOpKpiMetric> metrics, string normalizedArea)
         {
             return new IpNwOpKpiDto
@@ -289,6 +308,7 @@ namespace backend.Controllers
             };
         }
 
+        // Build dictionary of metrics per area
         private static Dictionary<string, int?> BuildMetricDictionary(
             IEnumerable<IpNwOpKpiMetric> metrics,
             string normalizedArea,
@@ -308,6 +328,7 @@ namespace backend.Controllers
             return result;
         }
 
+        // DTO used for inserting/updating metrics
         public class IpNwOpMetricUpsertDto
         {
             public int? UnavailableMinutes { get; set; }

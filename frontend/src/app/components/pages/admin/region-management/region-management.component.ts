@@ -1,3 +1,10 @@
+/*
+ File: region-management.component.ts
+ Description: Region management and assignment page
+ Purpose: Manage regional entities, assign network engineers, configure LEA codes.
+ Features: CRUD operations, region listing, engineer assignment, data validation
+*/
+
 import { Inject, ChangeDetectorRef } from '@angular/core';
 
 import { Component } from '@angular/core';

@@ -1,3 +1,10 @@
+/*
+ File: bb-anw.component.ts
+ Description: Broadband & Access Network KPI platform page
+ Purpose: Display and manage BB ANW KPI metrics for assigned platforms.
+ Features: Data visualization, export to Excel, node-level analytics
+*/
+
 import { CommonModule } from '@angular/common';
 import { AuthService } from '../../../../services/auth.service';
 import { Component, OnDestroy, OnInit, ChangeDetectorRef } from '@angular/core';
@@ -7,6 +14,9 @@ import { BbAnwService, BbAnwDto } from '../../../../services/bb-anw.service';
 import * as ExcelJS from 'exceljs';
 import { firstValueFrom } from 'rxjs';
 
+/* ========== DATA TYPES ========== */
+
+/* Generic dictionary type */
 type Dict<T = any> = Record<string, T>;
 
 interface RegionRow {
